@@ -179,13 +179,33 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _watchlistHubKey ??= GlobalKey<HubSectionState>();
   }
 
+  static bool _isMusicHub(MediaHub hub) {
+    final type = hub.type.toLowerCase();
+    if (type == 'artist' || type == 'album' || type == 'track' || type == 'music' || type == 'audio') {
+      return true;
+    }
+    return hub.items.isNotEmpty && hub.items.every((item) => item.kind.isMusic);
+  }
+
+  static int _watchlistInsertionIndex(List<MediaHub> hubs) {
+    final firstMusicIndex = hubs.indexWhere(_isMusicHub);
+    return firstMusicIndex == -1 ? hubs.length : firstMusicIndex;
+  }
+
   List<GlobalKey<HubSectionState>> get _allHubKeys {
     final keys = <GlobalKey<HubSectionState>>[];
     if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
       keys.add(_continueWatchingHubKey!);
     }
-    keys.addAll(_orderedHubKeys);
-    if (_watchlistHubKey != null && _watchlistHub != null) {
+    final watchlistInsertAt = _watchlistInsertionIndex(_hubs);
+    final insertWatchlist = _watchlistHubKey != null && _watchlistHub != null;
+    for (int i = 0; i < _orderedHubKeys.length; i++) {
+      if (insertWatchlist && i == watchlistInsertAt) {
+        keys.add(_watchlistHubKey!);
+      }
+      keys.add(_orderedHubKeys[i]);
+    }
+    if (insertWatchlist && watchlistInsertAt >= _orderedHubKeys.length) {
       keys.add(_watchlistHubKey!);
     }
     return keys;
@@ -208,10 +228,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_onDeck.isNotEmpty) {
       hubs.add(_continueWatchingHub);
     }
-    hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
+    final nonEmptyHubs = _hubs.where((hub) => hub.items.isNotEmpty).toList();
     if (watchlistHub != null && watchlistHub.items.isNotEmpty) {
-      hubs.add(watchlistHub);
+      nonEmptyHubs.insert(_watchlistInsertionIndex(nonEmptyHubs), watchlistHub);
     }
+    hubs.addAll(nonEmptyHubs);
     _tvBrowseHubsCache = hubs;
     _tvBrowseHubsCacheKey = key;
     return hubs;
@@ -1035,10 +1056,30 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final watchlistRowHub = _watchlistRowHub;
+    final watchlistInsertAt = _watchlistInsertionIndex(_hubs);
+    final onDeckOffset = _onDeck.isNotEmpty ? 1 : 0;
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
     final continueWatchingHub = _onDeck.isEmpty ? null : _continueWatchingHub;
+    Widget buildHubSliver(int i) {
+      final navIndex = onDeckOffset + i + (watchlistRowHub != null && i >= watchlistInsertAt ? 1 : 0);
+      final isFirstRow = i == 0 && _onDeck.isEmpty && (watchlistRowHub == null || watchlistInsertAt > 0);
+      return SliverToBoxAdapter(
+        child: HubSection(
+          key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
+          hub: _hubs[i],
+          focusMemory: _hubFocusMemory,
+          icon: hubIconFor(_hubs[i]),
+          showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
+          onRefresh: _discover.updateItem,
+          onVerticalNavigation: (isUp) => _handleVerticalNavigation(navIndex, isUp),
+          onNavigateUp: isFirstRow ? _focusTopBoundary : null,
+          onNavigateToSidebar: _navigateToSidebar,
+        ),
+      );
+    }
+
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: Stack(
@@ -1078,24 +1119,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   ),
 
-                // Recommendation Hubs (Trending, Top in Genre, etc.)
-                for (int i = 0; i < _hubs.length; i++)
-                  SliverToBoxAdapter(
-                    child: HubSection(
-                      key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
-                      hub: _hubs[i],
-                      focusMemory: _hubFocusMemory,
-                      icon: hubIconFor(_hubs[i]),
-                      showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
-                      onRefresh: _discover.updateItem,
-                      // Hub index is i + 1 if continue watching exists, otherwise i
-                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                      onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
-                      onNavigateToSidebar: _navigateToSidebar,
-                    ),
-                  ),
+                // Video Recommendation Hubs (Movies, TV Shows, etc.)
+                for (int i = 0; i < watchlistInsertAt; i++) buildHubSliver(i),
 
-                // Watchlist Hub (bottom row on Home when enabled)
+                // Watchlist Hub (right after video hubs, ahead of any music hubs)
                 if (watchlistRowHub != null)
                   SliverToBoxAdapter(
                     child: HubSection(
@@ -1105,12 +1132,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       focusMemory: _hubFocusMemory,
                       icon: Symbols.bookmark_rounded,
                       loadMoreItems: watchlistRowHub.hub.more ? () => _explore!.loadAllForHub(watchlistRowHub) : null,
-                      onVerticalNavigation: (isUp) =>
-                          _handleVerticalNavigation((_onDeck.isNotEmpty ? 1 : 0) + _hubs.length, isUp),
-                      onNavigateUp: (_onDeck.isEmpty && _hubs.isEmpty) ? _focusTopBoundary : null,
+                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(onDeckOffset + watchlistInsertAt, isUp),
+                      onNavigateUp: (watchlistInsertAt == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
                       onNavigateToSidebar: _navigateToSidebar,
                     ),
                   ),
+
+                // Music Hubs (after Watchlist)
+                for (int i = watchlistInsertAt; i < _hubs.length; i++) buildHubSliver(i),
 
                 // Show loading skeleton for hubs while they're loading
                 if (_areHubsLoading && _hubs.isEmpty)
