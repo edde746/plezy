@@ -1004,6 +1004,7 @@ class Translations$videoControls$pt extends Translations$videoControls$en {
 	@override String get noAudioDevicesAvailable => 'Nenhum dispositivo de áudio disponível';
 	@override String get searchSubtitles => 'Pesquisar legendas';
 	@override String get language => 'Idioma';
+	@override String get filterSubtitlesByReleaseName => 'Filtrar por nome do lançamento';
 	@override String get noSubtitlesFound => 'Nenhuma legenda encontrada';
 	@override String get subtitleDownloaded => 'Legenda baixada';
 	@override String get subtitleDownloadedNotApplied => 'A legenda foi baixada, mas não foi possível selecioná-la';
@@ -4232,6 +4233,7 @@ extension on TranslationsPt {
 			'videoControls.noAudioDevicesAvailable' => 'Nenhum dispositivo de áudio disponível',
 			'videoControls.searchSubtitles' => 'Pesquisar legendas',
 			'videoControls.language' => 'Idioma',
+			'videoControls.filterSubtitlesByReleaseName' => 'Filtrar por nome do lançamento',
 			'videoControls.noSubtitlesFound' => 'Nenhuma legenda encontrada',
 			'videoControls.subtitleDownloaded' => 'Legenda baixada',
 			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi baixada, mas não foi possível selecioná-la',
@@ -4423,9 +4425,9 @@ extension on TranslationsPt {
 			'profiles.continueButton' => 'Continuar',
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
-			'connections.sectionTitle' => 'Conexões',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => 'Conexões',
 			'connections.addConnection' => 'Adicionar conexão',
 			'connections.addConnectionSubtitleNoProfile' => 'Entre com Plex ou conecte um servidor Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil',
@@ -4937,9 +4939,9 @@ extension on TranslationsPt {
 			'liveTv.recordSettings.anyChannel' => 'Gravar em qualquer canal',
 			'liveTv.recordSettings.anyTime' => 'Gravar a qualquer hora',
 			'liveTv.recordSettings.skipInLibrary' => 'Ignorar episódios que já estão na biblioteca',
-			'liveTv.recordSettings.keepUpTo' => 'Episódios a manter',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => 'Episódios a manter',
 			'liveTv.recordSettings.keepUpToHint' => '0 mantém todos os episódios',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Começa em ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} às ${time}',
@@ -5451,9 +5453,9 @@ extension on TranslationsPt {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Software',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Ativo',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} com falha)',

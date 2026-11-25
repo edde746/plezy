@@ -8,8 +8,9 @@ import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_text_field.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/media_server_client.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
-import '../../../models/plex/plex_subtitle_search_result.dart';
+import '../../../media/subtitle_search_result.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/language_codes.dart';
@@ -30,19 +31,37 @@ String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Lo
       'en';
 }
 
+/// Says how a download from this sheet ended: from the sheet, or from the player once the sheet has closed.
+void showSubtitleDownloadOutcome(BuildContext context, SubtitleDownloadApplyOutcome outcome) {
+  if (outcome == SubtitleDownloadApplyOutcome.applied) {
+    showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+  } else {
+    showErrorSnackBar(context, switch (outcome) {
+      SubtitleDownloadApplyOutcome.timedOut => t.videoControls.subtitleDownloadTimedOut,
+      SubtitleDownloadApplyOutcome.notDownloaded => t.videoControls.subtitleDownloadFailed,
+      _ => t.videoControls.subtitleDownloadedNotApplied,
+    });
+  }
+}
+
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
   final String? mediaTitle;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    required SubtitleSearchResult result,
+    required bool Function() sheetIsOpen,
+  })?
+  onDownloadSubtitle;
 
   const SubtitleSearchSheet({
     super.key,
     required this.ratingKey,
     required this.serverId,
     this.mediaTitle,
-    this.onSubtitleDownloaded,
+    this.onDownloadSubtitle,
   });
 
   @override
@@ -58,7 +77,8 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   final _firstResultFocusNode = FocusNode(debugLabel: 'SubtitleSearch_firstResult');
   Timer? _debounceTimer;
 
-  List<PlexSubtitleSearchResult>? _results;
+  List<SubtitleSearchResult>? _results;
+  List<SubtitleSearchResult>? _loaded; // every row the last search returned
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
@@ -103,7 +123,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
+      final client = _searchClient();
       if (client == null) {
         if (!mounted || generation != _searchGeneration) return;
         setState(() => _isSearching = false);
@@ -114,11 +134,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       final results = await client.searchSubtitles(
         widget.ratingKey,
         language: language,
-        title: title.isEmpty ? null : title,
+        title: title.isEmpty || _filtersByReleaseName ? null : title,
       );
       if (!mounted || generation != _searchGeneration) return;
       setState(() {
-        _results = results;
+        _results = _filterByReleaseName(_loaded = results);
         _isSearching = false;
       });
     } catch (e) {
@@ -132,7 +152,22 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   void _onTitleChanged(String _) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), _search);
+    if (_filtersByReleaseName) {
+      setState(() => _results = _filterByReleaseName(_loaded));
+    } else {
+      _debounceTimer = Timer(const Duration(milliseconds: 500), _search);
+    }
+  }
+
+  bool get _filtersByReleaseName => _searchClient()?.subtitleTitleFiltersByReleaseName ?? false;
+
+  /// [rows] whose release name holds the title field's letters and digits
+  /// (release names use punctuation for spaces), where the field filters.
+  List<SubtitleSearchResult>? _filterByReleaseName(List<SubtitleSearchResult>? rows) {
+    if (!_filtersByReleaseName) return rows;
+    String letters(String s) => s.toLowerCase().replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
+    final filter = letters(_titleController.text);
+    return rows?.where((row) => letters(row.title ?? '').contains(filter)).toList();
   }
 
   void _showLanguagePickerView() {
@@ -155,7 +190,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   Future<void> _submitSearchAndFocusFirstResult() async {
     _debounceTimer?.cancel();
-    await _search();
+    if (!_filtersByReleaseName || _isSearching || _error != null) await _search();
     if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -179,48 +214,32 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     _search();
   }
 
-  Future<void> _downloadSubtitle(PlexSubtitleSearchResult result) async {
+  /// Null for a server that is gone, or whose client has no subtitle search.
+  ExternalSubtitleSearchClient? _searchClient() {
+    final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
+    return client is ExternalSubtitleSearchClient && client!.capabilities.externalSubtitleSearch
+        ? client as ExternalSubtitleSearchClient
+        : null;
+  }
+
+  Future<void> _downloadSubtitle(SubtitleSearchResult result) async {
     if (_downloadingKey != null) return;
     setState(() => _downloadingKey = result.key);
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
-      if (client == null) {
-        if (!mounted) return;
-        setState(() => _downloadingKey = null);
-        return;
-      }
-      final success = await client.downloadSubtitle(
-        widget.ratingKey,
-        key: result.key,
-        codec: result.codec ?? 'srt',
-        language: result.languageCode ?? _languageCode,
-        hearingImpaired: result.hearingImpaired,
-        forced: result.forced,
-        providerTitle: result.providerTitle ?? '',
-      );
-
+      final outcome =
+          await widget.onDownloadSubtitle?.call(
+            serverId: widget.serverId,
+            ratingKey: widget.ratingKey,
+            result: result,
+            sheetIsOpen: () => mounted,
+          ) ??
+          SubtitleDownloadApplyOutcome.notDownloaded;
       if (!mounted) return;
-
-      if (success) {
-        final outcome =
-            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
-            SubtitleDownloadApplyOutcome.unavailable;
-        if (!mounted) return;
-        if (outcome == SubtitleDownloadApplyOutcome.applied) {
-          showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
-          OverlaySheetController.of(context).close();
-        } else {
-          showErrorSnackBar(
-            context,
-            outcome == SubtitleDownloadApplyOutcome.timedOut
-                ? t.videoControls.subtitleDownloadTimedOut
-                : t.videoControls.subtitleDownloadedNotApplied,
-          );
-          setState(() => _downloadingKey = null);
-        }
+      showSubtitleDownloadOutcome(context, outcome);
+      if (outcome == SubtitleDownloadApplyOutcome.applied) {
+        OverlaySheetController.of(context).close();
       } else {
-        showErrorSnackBar(context, t.videoControls.subtitleDownloadFailed);
         setState(() => _downloadingKey = null);
       }
     } catch (e) {
@@ -242,6 +261,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
     final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
     final hasResults = _results != null && _results!.isNotEmpty && !_isSearching && _error == null;
+    final filtersByReleaseName = _filtersByReleaseName;
 
     return BaseVideoControlSheet(
       title: t.videoControls.searchSubtitles,
@@ -293,8 +313,13 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                     tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     decoration: pillInputDecoration(
                       context,
-                      hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
+                      hintText: filtersByReleaseName
+                          ? t.videoControls.filterSubtitlesByReleaseName
+                          : widget.mediaTitle ?? t.metadataEdit.title,
+                      prefixIcon: AppIcon(
+                        filtersByReleaseName ? Symbols.filter_list_rounded : Symbols.search_rounded,
+                        size: 20,
+                      ),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,

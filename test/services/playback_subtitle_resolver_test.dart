@@ -374,7 +374,7 @@ void main() {
         _sidecar(3, language: 'swe'),
       ],
       preferredSubtitleTrack: SubtitlePreference.trackOrNull(
-        PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+        PlaybackSubtitleResolver.subtitleTrackForSource(mediaInfo.subtitleTracks.last),
       ),
     );
 
@@ -411,7 +411,7 @@ void main() {
         _sidecar(3, isContainer: true, uri: 'https://example.test/video.mkv'),
       ],
       preferredSubtitleTrack: SubtitlePreference.trackOrNull(
-        PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+        PlaybackSubtitleResolver.subtitleTrackForSource(mediaInfo.subtitleTracks.last),
       ),
     );
 
@@ -908,7 +908,7 @@ void main() {
         _sidecar(3, language: 'swe'),
       ],
       preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(
-        PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+        PlaybackSubtitleResolver.subtitleTrackForSource(mediaInfo.subtitleTracks.last),
       ),
     );
 

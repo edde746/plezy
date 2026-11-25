@@ -894,6 +894,7 @@
     "noAudioDevicesAvailable": "Nenhum dispositivo de áudio disponível",
     "searchSubtitles": "Pesquisar legendas",
     "language": "Idioma",
+    "filterSubtitlesByReleaseName": "Filtrar por nome do lançamento",
     "noSubtitlesFound": "Nenhuma legenda encontrada",
     "subtitleDownloaded": "Legenda transferida",
     "subtitleDownloadedNotApplied": "A legenda foi transferida, mas não foi possível selecioná-la",

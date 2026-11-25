@@ -69,7 +69,15 @@ JellyfinClient _clientWithPlaybackInfo(
 }
 
 Future<({PlaybackInitializationResult result, Uri playbackInfoUri, Map<String, dynamic> playbackInfoBody})>
-_initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferredAudioTrack}) async {
+_initializeJellyfinAudioCarry({
+  int? selectedAudioStreamId,
+  AudioTrack? preferredAudioTrack,
+  int? preferredAudioOrdinal,
+  List<Map<String, Object?>> audioStreams = const [
+    {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
+    {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'Title': 'Main'},
+  ],
+}) async {
   late Uri playbackInfoUri;
   late String playbackInfoBody;
   final client = _clientWithPlaybackInfo(
@@ -88,8 +96,7 @@ _initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferred
         'Container': 'mkv',
         'MediaStreams': [
           {'Index': 0, 'Type': 'Video'},
-          {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
-          {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'Title': 'Main'},
+          ...audioStreams,
         ],
       },
     ],
@@ -106,6 +113,7 @@ _initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferred
         selectedMediaIndex: 0,
         selectedAudioStreamId: selectedAudioStreamId,
         preferredAudioTrack: preferredAudioTrack,
+        preferredAudioOrdinal: preferredAudioOrdinal,
       ),
     );
     return (
@@ -2088,6 +2096,29 @@ void main() {
       expect(initialized.playbackInfoBody['AudioStreamIndex'], 4);
       expect(initialized.result.activeAudioStreamId, 4);
       expect(initialized.result.mediaInfo!.audioTracks.singleWhere((track) => track.id == 4).selected, isTrue);
+    });
+
+    test('a carried audio position only breaks a tie between identically tagged rows', () async {
+      const english = AudioTrack(id: 'source:1', language: 'eng', codec: 'aac');
+      const twins = [
+        {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+        {'Index': 4, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+      ];
+      Future<Object?> opened(int ordinal, [List<Map<String, Object?>>? rows]) async =>
+          (await _initializeJellyfinAudioCarry(
+            preferredAudioTrack: english,
+            preferredAudioOrdinal: ordinal,
+            audioStreams: rows ?? twins,
+          )).result.activeAudioStreamId;
+
+      expect(await opened(1), 4, reason: 'after a rescan, the position tells the twins apart');
+      expect(await opened(5), isNull, reason: 'a position past the rows leaves the tie to Jellyfin');
+      final clear = await _initializeJellyfinAudioCarry(preferredAudioTrack: english, preferredAudioOrdinal: 1);
+      expect(
+        clear.result.activeAudioStreamId,
+        1,
+        reason: 'English matches by meaning; the position points at Japanese',
+      );
     });
 
     test('explicit Jellyfin audio stream wins over a conflicting semantic carry', () async {

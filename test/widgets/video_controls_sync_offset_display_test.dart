@@ -6,11 +6,19 @@ import 'package:provider/provider.dart';
 
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/media/subtitle_search_result.dart';
 import 'package:plezy/models/player_setting_scope.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/player_sync_offsets.dart';
+import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -22,6 +30,7 @@ import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart
 import 'package:plezy/widgets/video_controls/widgets/track_chapter_controls.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
@@ -40,6 +49,7 @@ void main() {
   late PlaybackStateProvider playbackState;
   late WatchTogetherProvider watchTogether;
   late AppDatabase database;
+  late ValueNotifier<PlaybackSourceSubtitleChoice?> selectedSubtitle; // what the screen publishes
 
   // A movie with a server id, so the title scope has the identity it keys by.
   final MediaItem metadata = testMediaItem(id: 'sync-offset-scope', serverId: 'server-a');
@@ -62,6 +72,7 @@ void main() {
     volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
     playbackState = PlaybackStateProvider();
     watchTogether = WatchTogetherProvider();
+    selectedSubtitle = ValueNotifier(null);
   });
 
   tearDown(() async {
@@ -72,16 +83,22 @@ void main() {
     watchTogether.dispose();
     chrome.dispose();
     toast.dispose();
+    selectedSubtitle.dispose();
     await database.close();
   });
 
-  Future<void> pumpControls(WidgetTester tester) async {
+  Future<void> pumpControls(
+    WidgetTester tester, {
+    List<MediaServerClient> clients = const [],
+    PlaybackSourceChangeCallback? onPlaybackSourceChanged,
+  }) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           Provider<AppDatabase>.value(value: database),
           ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
           ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: testMultiServer(clients: clients).provider),
         ],
         child: MaterialApp(
           theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
@@ -89,13 +106,18 @@ void main() {
             body: SizedBox(
               width: 800,
               height: 600,
-              child: PlexVideoControls(
-                player: player,
-                volumeController: volume,
-                metadata: metadata,
-                toastController: toast,
-                chromeController: chrome,
-                canNavigateMediaItems: false,
+              child: ValueListenableBuilder(
+                valueListenable: selectedSubtitle,
+                builder: (_, selected, _) => PlexVideoControls(
+                  player: player,
+                  volumeController: volume,
+                  metadata: metadata,
+                  toastController: toast,
+                  chromeController: chrome,
+                  canNavigateMediaItems: false,
+                  selectedSubtitleChoice: selected,
+                  onPlaybackSourceChanged: onPlaybackSourceChanged,
+                ),
               ),
             ),
           ),
@@ -111,6 +133,14 @@ void main() {
   /// is what VideoSettingsSheet reads into its `initialOffset`).
   TrackControlsState displayedTrackState(WidgetTester tester) =>
       tester.widget<TrackChapterControls>(find.byType(TrackChapterControls)).trackControlsState;
+
+  Future<SubtitleDownloadApplyOutcome> download(WidgetTester tester, {bool sheetIsOpen = true}) =>
+      displayedTrackState(tester).onDownloadSubtitle!(
+        serverId: 'server-a',
+        ratingKey: metadata.id,
+        result: const SubtitleSearchResult(key: 'sub'),
+        sheetIsOpen: () => sheetIsOpen,
+      );
 
   /// Disarm the auto-hide timer and unmount so the pending-timer check at the
   /// end of the test stays honest.
@@ -142,6 +172,160 @@ void main() {
 
     await unmountControls(tester);
   });
+
+  /// The user downloads a subtitle, closes the sheet and downloads another before
+  /// the first lands: both polls then take the landed file for theirs. Only the
+  /// newer may reload; a second reload is refused as busy and its sheet reports failure.
+  testWidgets('a newer subtitle download stops the older one polling', (tester) async {
+    var reloads = 0;
+    await pumpControls(
+      tester,
+      clients: [_LandedSubtitleClient()],
+      onPlaybackSourceChanged: ({newMediaIndex, newPreset, newAudioStreamId, newSubtitleChoice}) async {
+        reloads++;
+        selectedSubtitle.value = PlaybackSourceSubtitleChoice.source(newSubtitleChoice!.sourceStreamId!);
+        return PlaybackSourceChangeOutcome.applied;
+      },
+    );
+
+    final older = download(tester, sheetIsOpen: false); // its sheet closed
+    await tester.pump(const Duration(seconds: 1));
+    final newer = download(tester);
+    await tester.pump(const Duration(seconds: 2)); // each poll's first look, a second apart
+
+    expect(await older, SubtitleDownloadApplyOutcome.superseded);
+    expect(await newer, SubtitleDownloadApplyOutcome.applied);
+    expect(reloads, 1);
+    await tester.pump();
+    expect(find.byType(SnackBar), findsNothing, reason: 'the newer download reports; the one it replaced stays silent');
+
+    await unmountControls(tester);
+  });
+
+  /// A newer download takes over while the older one's reload runs: whatever that
+  /// reload returns, the older download stays silent, as when overtaken in its poll.
+  for (final reloaded in [PlaybackSourceChangeOutcome.failed, PlaybackSourceChangeOutcome.applied]) {
+    testWidgets('a download overtaken during its reload stays silent (${reloaded.name})', (tester) async {
+      var reloads = 0;
+      await pumpControls(
+        tester,
+        clients: [_LandedSubtitleClient()],
+        onPlaybackSourceChanged: ({newMediaIndex, newPreset, newAudioStreamId, newSubtitleChoice}) async {
+          if (++reloads > 1) return PlaybackSourceChangeOutcome.busy;
+          await Future<void>.delayed(const Duration(seconds: 1));
+          return reloaded;
+        },
+      );
+
+      final older = download(tester, sheetIsOpen: false);
+      await tester.pump(const Duration(seconds: 2)); // its poll finds the file: the reload starts
+      expect(reloads, 1);
+      final newer = download(tester);
+      await tester.pump(const Duration(seconds: 1)); // the older reload ends
+
+      expect(await older, SubtitleDownloadApplyOutcome.superseded);
+      await tester.pump();
+      expect(find.byType(SnackBar), findsNothing, reason: 'the newer download has its own say');
+
+      await tester.pump(const Duration(seconds: 2));
+      await newer;
+      await unmountControls(tester);
+    });
+  }
+
+  /// The reload reopens the video whatever it selects. On Jellyfin the pick is
+  /// the renumbered row and the screen publishes its id, as for Plex.
+  testWidgets('a download counts as applied only once the reload selects it', (tester) async {
+    PlaybackSourceSubtitleChoice? selectedAfterReload;
+    await pumpControls(
+      tester,
+      clients: [_LandedSubtitleClient(keepsStreamIds: false)],
+      onPlaybackSourceChanged: ({newMediaIndex, newPreset, newAudioStreamId, newSubtitleChoice}) async {
+        selectedSubtitle.value = selectedAfterReload;
+        return PlaybackSourceChangeOutcome.applied;
+      },
+    );
+
+    selectedAfterReload = const PlaybackSourceSubtitleChoice.source(3); // another subtitle
+    final notSelected = download(tester, sheetIsOpen: false);
+    await tester.pump(const Duration(seconds: 2));
+    expect(await notSelected, SubtitleDownloadApplyOutcome.failed);
+    await tester.pump();
+    final report = tester.widget<SnackBar>(find.widgetWithText(SnackBar, t.videoControls.subtitleDownloadedNotApplied));
+    expect(report.backgroundColor, Colors.red, reason: 'a failure shows in red, as from the sheet');
+
+    selectedAfterReload = const PlaybackSourceSubtitleChoice.source(9); // the downloaded row
+    final selected = download(tester);
+    await tester.pump(const Duration(seconds: 2));
+    expect(await selected, SubtitleDownloadApplyOutcome.applied);
+
+    await unmountControls(tester);
+  });
+
+  /// The poll and the reload outlive a closed sheet, which can no longer say
+  /// how the download ended: the player says it instead, and only then.
+  testWidgets('the player reports a download whose sheet has closed', (tester) async {
+    await pumpControls(
+      tester,
+      clients: [_LandedSubtitleClient()],
+      onPlaybackSourceChanged: ({newMediaIndex, newPreset, newAudioStreamId, newSubtitleChoice}) async {
+        selectedSubtitle.value = PlaybackSourceSubtitleChoice.source(newSubtitleChoice!.sourceStreamId!);
+        return PlaybackSourceChangeOutcome.applied;
+      },
+    );
+
+    final reportedBySheet = download(tester);
+    await tester.pump(const Duration(seconds: 2));
+    await reportedBySheet;
+    await tester.pump();
+    expect(find.byType(SnackBar), findsNothing);
+
+    final sheetClosed = download(tester, sheetIsOpen: false);
+    await tester.pump(const Duration(seconds: 2));
+    await sheetClosed;
+    await tester.pump();
+    expect(find.widgetWithText(SnackBar, t.videoControls.subtitleDownloaded), findsOneWidget);
+    await unmountControls(tester);
+  });
+}
+
+/// A server whose downloaded subtitle has landed: every poll finds it.
+class _LandedSubtitleClient implements MediaServerClient, ExternalSubtitleSearchClient {
+  _LandedSubtitleClient({this.keepsStreamIds = true});
+
+  final bool keepsStreamIds;
+
+  @override
+  ServerId get serverId => ServerId('server-a');
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  Duration get subtitleDownloadTimeout => const Duration(seconds: 15);
+
+  @override
+  bool get subtitleDownloadKeepsStreamIds => keepsStreamIds;
+
+  @override
+  bool canSearchSubtitlesFor(MediaKind kind) => true;
+
+  @override
+  String subtitleItemIdFor(String itemId, {String? mediaSourceId}) => itemId;
+
+  @override
+  Future<SubtitleDownload?> downloadSubtitle(
+    String ratingKey,
+    SubtitleSearchResult result, {
+    Duration? position,
+  }) async =>
+      () async => MediaSubtitleTrack(id: 9, external: true, selected: false, forced: false);
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// Minimal [Player] with static state so the controls have no stream activity

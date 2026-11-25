@@ -17,11 +17,20 @@ final class PlaybackSourceSubtitleChoice {
   final bool isOff;
   final int? sourceStreamId;
 
+  /// The row a subtitle download just added, read after the server's rescan.
+  /// The player's catalog predates it, and a rescan may have renumbered the
+  /// streams (Jellyfin), so this row — not a lookup of [sourceStreamId] —
+  /// describes the pick, and it always reloads.
+  final MediaSubtitleTrack? downloadedTrack;
+
   const PlaybackSourceSubtitleChoice.off() : this._(isOff: true);
 
   const PlaybackSourceSubtitleChoice.source(int sourceStreamId) : this._(isOff: false, sourceStreamId: sourceStreamId);
 
-  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId});
+  PlaybackSourceSubtitleChoice.downloaded(MediaSubtitleTrack track)
+    : this._(isOff: false, sourceStreamId: track.id, downloadedTrack: track);
+
+  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId, this.downloadedTrack});
 
   @override
   bool operator ==(Object other) =>
@@ -327,14 +336,6 @@ class PlaybackSubtitleResolver {
       targetIsOff: true,
       targetIsExternalFile: false,
     );
-  }
-
-  /// Stable source descriptor used for an explicit user selection. Supplying
-  /// this as the next open's preferred track makes it the highest-priority
-  /// choice without retaining a stale sidecar URL.
-  static SubtitleTrack? preferredTrackForSource(MediaSourceInfo? mediaInfo, int sourceStreamId) {
-    final sourceTrack = mediaInfo?.subtitleTracks.where((track) => track.id == sourceStreamId).firstOrNull;
-    return sourceTrack == null ? null : subtitleTrackForSource(sourceTrack);
   }
 
   static SubtitleTrack subtitleTrackForSource(MediaSubtitleTrack sourceTrack, {PlaybackSubtitleSidecar? sidecar}) {

@@ -1008,6 +1008,7 @@ class _Translations$videoControls$pt_PT extends Translations$videoControls$pt {
 	@override String get noAudioDevicesAvailable => 'Nenhum dispositivo de áudio disponível';
 	@override String get searchSubtitles => 'Pesquisar legendas';
 	@override String get language => 'Idioma';
+	@override String get filterSubtitlesByReleaseName => 'Filtrar por nome do lançamento';
 	@override String get noSubtitlesFound => 'Nenhuma legenda encontrada';
 	@override String get subtitleDownloaded => 'Legenda transferida';
 	@override String get subtitleDownloadedNotApplied => 'A legenda foi transferida, mas não foi possível selecioná-la';
@@ -4271,6 +4272,7 @@ extension on TranslationsPtPt {
 			'videoControls.noAudioDevicesAvailable' => 'Nenhum dispositivo de áudio disponível',
 			'videoControls.searchSubtitles' => 'Pesquisar legendas',
 			'videoControls.language' => 'Idioma',
+			'videoControls.filterSubtitlesByReleaseName' => 'Filtrar por nome do lançamento',
 			'videoControls.noSubtitlesFound' => 'Nenhuma legenda encontrada',
 			'videoControls.subtitleDownloaded' => 'Legenda transferida',
 			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi transferida, mas não foi possível selecioná-la',
@@ -4460,9 +4462,9 @@ extension on TranslationsPtPt {
 			'profiles.profileNameHint' => 'Ex.: Visitas, Crianças, Sala',
 			'profiles.pinProtectionOptional' => 'Proteção por PIN (opcional)',
 			'profiles.pinExplain' => 'PIN de 4 dígitos necessário para mudar de perfil.',
-			'profiles.continueButton' => 'Continuar',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.continueButton' => 'Continuar',
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
 			'connections.sectionTitle' => 'Ligações',
@@ -4974,9 +4976,9 @@ extension on TranslationsPtPt {
 			'liveTv.guideReloadRequested' => 'Atualização do guia pedida',
 			'liveTv.guideReloadFailed' => 'Não foi possível atualizar o guia',
 			'liveTv.rulesProcessRequested' => 'Reavaliação de regras pedida',
-			'liveTv.rulesProcessFailed' => 'Não foi possível reavaliar as regras de gravação',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.rulesProcessFailed' => 'Não foi possível reavaliar as regras de gravação',
 			'liveTv.recordShow' => 'Gravar programa',
 			'liveTv.recordSettings.startEarly' => 'Começar antes (segundos)',
 			'liveTv.recordSettings.endLate' => 'Terminar depois (segundos)',
@@ -5488,9 +5490,9 @@ extension on TranslationsPtPt {
 			'performanceOverlay.cacheLimit' => 'Limite da cache',
 			'performanceOverlay.speed' => 'Velocidade',
 			'performanceOverlay.player' => 'Reprodutor',
-			'performanceOverlay.playMethod' => 'Método de reprodução',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.playMethod' => 'Método de reprodução',
 			'performanceOverlay.memory' => 'Memória',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',

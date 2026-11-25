@@ -1,11 +1,16 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/subtitle_search_result.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
@@ -89,6 +94,91 @@ void main() {
 
     tearDown(() => database.close());
 
+    testWidgets('on Plex the title field is a title search', (tester) async {
+      final plex = testPlexClient(
+        serverId: ServerId('server'),
+        handler: (_) async =>
+            http.Response('{"MediaContainer":{}}', 200, headers: {'content-type': 'application/json'}),
+      );
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [plex]).provider);
+      expect(find.text(t.metadataEdit.title), findsOneWidget);
+      expect(find.text(t.videoControls.filterSubtitlesByReleaseName), findsNothing);
+    });
+
+    testWidgets('on Jellyfin the title field says it filters by release name', (tester) async {
+      final jellyfin = JellyfinClient.forTesting(
+        connection: testJellyfinConnection(machineId: 'server'),
+        httpClient: MockClient((request) async {
+          final body = switch (request.url.path) {
+            '/Users/Me' => '{"Policy":{"EnableSubtitleManagement":true}}',
+            '/Libraries/AvailableOptions' => '{"SubtitleFetchers":[{"Name":"Open Subtitles"}]}',
+            _ => '[]',
+          };
+          return http.Response(body, 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(jellyfin.close);
+      await jellyfin.probeRemoteSubtitleSearch();
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
+      expect(find.text(t.videoControls.filterSubtitlesByReleaseName), findsOneWidget);
+    });
+
+    testWidgets('on Jellyfin typing filters the rows already loaded instead of searching again', (tester) async {
+      var searches = 0;
+      final jellyfin = JellyfinClient.forTesting(
+        connection: testJellyfinConnection(machineId: 'server'),
+        httpClient: MockClient((request) async {
+          final probe = switch (request.url.path) {
+            '/Users/Me' => '{"Policy":{"EnableSubtitleManagement":true}}',
+            '/Libraries/AvailableOptions' => '{"SubtitleFetchers":[{"Name":"Open Subtitles"}]}',
+            _ => null,
+          };
+          if (probe != null) return http.Response(probe, 200, headers: {'content-type': 'application/json'});
+          // The first search fails, as OpenSubtitles sometimes does.
+          if (searches++ == 0) return http.Response('', 500);
+          return http.Response(
+            jsonEncode([
+              {'Id': 'sub-1', 'Name': 'The Crow (2024) BLURAY', 'Format': 'srt'},
+              {'Id': 'sub-2', 'Name': 'The.Crow.2024.1080p.WEBRip', 'Format': 'srt'},
+            ]),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(jellyfin.close);
+      await jellyfin.probeRemoteSubtitleSearch();
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
+      await tester.enterText(find.byType(TextField), 'crow');
+      await tester.testTextInput.receiveAction(TextInputAction.done); // Enter retries the failed search
+      await tester.pumpAndSettle();
+      expect(find.text('The.Crow.2024.1080p.WEBRip'), findsOneWidget);
+
+      // Release names use punctuation for spaces, so only letters and digits count.
+      await tester.enterText(find.byType(TextField), 'blu ray');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.testTextInput.receiveAction(TextInputAction.done); // with rows loaded, Enter only moves to them
+      await tester.pumpAndSettle();
+
+      expect(searches, 2, reason: 'each search goes to OpenSubtitles through the plugin');
+      expect(find.text('The Crow (2024) BLURAY'), findsOneWidget);
+      expect(find.text('The.Crow.2024.1080p.WEBRip'), findsNothing);
+    });
+
+    testWidgets('on Emby, whose subtitle search needs Premiere, the sheet sends no search', (tester) async {
+      final requests = <String>[];
+      final emby = JellyfinClient.forTesting(
+        connection: testEmbyConnection(machineId: 'server'),
+        httpClient: MockClient((request) async {
+          requests.add(request.url.path);
+          return http.Response('[]', 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(emby.close);
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [emby]).provider);
+      expect(requests, isEmpty);
+    });
+
     testWidgets('HTTP 500 from searchSubtitles shows the sheet error state, not "no subtitles found"', (tester) async {
       final client = testPlexClient(serverId: ServerId('server'), handler: (_) async => http.Response('{}', 500));
       final provider = testMultiServer(clients: [client]).provider;
@@ -120,13 +210,65 @@ void main() {
       await _pumpSearchSheet(
         tester,
         multiServer: provider,
-        onSubtitleDownloaded: ({required serverId, required ratingKey}) async => SubtitleDownloadApplyOutcome.timedOut,
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result, required sheetIsOpen}) async =>
+            SubtitleDownloadApplyOutcome.timedOut,
       );
       await tester.tap(find.text('Film.2024.srt'));
       await tester.pumpAndSettle();
 
       expect(find.text(t.videoControls.subtitleDownloadTimedOut), findsOneWidget);
       expect(find.text(t.videoControls.subtitleDownloadedNotApplied), findsNothing);
+    });
+
+    testWidgets('a download the server refused says the download failed', (tester) async {
+      final client = testPlexClient(
+        serverId: ServerId('server'),
+        handler: (request) async => http.Response(
+          '{"MediaContainer":{"Stream":[{"id":1,"key":"/sub/1","title":"Film.2024.srt","displayTitle":"English"}]}}',
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+
+      await _pumpSearchSheet(
+        tester,
+        multiServer: testMultiServer(clients: [client]).provider,
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result, required sheetIsOpen}) async =>
+            SubtitleDownloadApplyOutcome.notDownloaded,
+      );
+      await tester.tap(find.text('Film.2024.srt'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.videoControls.subtitleDownloadFailed), findsOneWidget);
+    });
+
+    /// Once the sheet has closed, the player reports the download instead.
+    testWidgets('the download hears when its sheet has closed', (tester) async {
+      final client = testPlexClient(
+        serverId: ServerId('server'),
+        handler: (request) async => http.Response(
+          '{"MediaContainer":{"Stream":[{"id":1,"key":"/sub/1","title":"Film.2024.srt","displayTitle":"English"}]}}',
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      late bool Function() isOpen;
+
+      await _pumpSearchSheet(
+        tester,
+        multiServer: testMultiServer(clients: [client]).provider,
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result, required sheetIsOpen}) async {
+          isOpen = sheetIsOpen;
+          return SubtitleDownloadApplyOutcome.timedOut;
+        },
+      );
+      await tester.tap(find.text('Film.2024.srt'));
+      await tester.pumpAndSettle();
+      expect(isOpen(), isTrue);
+
+      OverlaySheetController.of(tester.element(find.byType(SubtitleSearchSheet))).close();
+      await tester.pumpAndSettle();
+      expect(isOpen(), isFalse);
     });
   });
 }
@@ -139,8 +281,13 @@ double _sheetHeight(WidgetTester tester) {
 Future<void> _pumpSearchSheet(
   WidgetTester tester, {
   MultiServerProvider? multiServer,
-  Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded,
+  Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    required SubtitleSearchResult result,
+    required bool Function() sheetIsOpen,
+  })?
+  onDownloadSubtitle,
 }) async {
   final app = MaterialApp(
     theme: ThemeData(extensions: const [testMonoTokens]),
@@ -150,7 +297,7 @@ Future<void> _pumpSearchSheet(
           body: ElevatedButton(
             onPressed: () => OverlaySheetController.of(context).show<void>(
               builder: (_) =>
-                  SubtitleSearchSheet(ratingKey: '1', serverId: 'server', onSubtitleDownloaded: onSubtitleDownloaded),
+                  SubtitleSearchSheet(ratingKey: '1', serverId: 'server', onDownloadSubtitle: onDownloadSubtitle),
             ),
             child: const Text('Open'),
           ),

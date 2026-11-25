@@ -34,7 +34,7 @@ import '../../focus/focus_navigation_intent.dart';
 import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
-import '../../media/media_backend.dart';
+import '../../media/media_server_client.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../models/livetv_capture_buffer.dart';
@@ -42,6 +42,7 @@ import '../../providers/multi_server_provider.dart';
 import '../../media/media_source_info.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../media/media_version.dart';
+import '../../media/subtitle_search_result.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
@@ -71,6 +72,7 @@ import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
+import 'sheets/subtitle_search_sheet.dart' show showSubtitleDownloadOutcome;
 import 'widgets/double_tap_feedback.dart';
 import 'helpers/mobile_edge_adjustment_tracker.dart';
 import 'helpers/render_geometry.dart';
@@ -147,14 +149,6 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
 }
 
 @visibleForTesting
-MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
-  for (final track in tracks) {
-    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
-  }
-  return null;
-}
-
-@visibleForTesting
 SubtitleDownloadApplyOutcome subtitleDownloadApplyOutcomeFor(PlaybackSourceChangeOutcome outcome) {
   return switch (outcome) {
     PlaybackSourceChangeOutcome.applied ||
@@ -187,6 +181,7 @@ ShaderPreset resolveShaderTogglePreset({
   List<MediaSubtitleTrack> sourceSubtitleTracks,
   PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
   bool canSwitch,
+  bool subtitleSearchSupported,
 })
 effectiveVersionQualityControls({
   required bool isOfflinePlayback,
@@ -197,6 +192,7 @@ effectiveVersionQualityControls({
   required int? selectedAudioStreamId,
   required List<MediaSubtitleTrack> sourceSubtitleTracks,
   required PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
+  required bool subtitleSearchSupported,
 }) {
   if (isOfflinePlayback) {
     return (
@@ -208,6 +204,8 @@ effectiveVersionQualityControls({
       sourceSubtitleTracks: const <MediaSubtitleTrack>[],
       selectedSubtitleChoice: null,
       canSwitch: false,
+      // A download would land on the server; the reload reopens the local copy.
+      subtitleSearchSupported: false,
     );
   }
   return (
@@ -219,6 +217,7 @@ effectiveVersionQualityControls({
     sourceSubtitleTracks: sourceSubtitleTracks,
     selectedSubtitleChoice: selectedSubtitleChoice,
     canSwitch: true,
+    subtitleSearchSupported: subtitleSearchSupported,
   );
 }
 
@@ -899,6 +898,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _subtitlesVisible = true;
   bool _confirmedSubtitlesVisible = true;
   int _subtitleVisibilityWriteGeneration = 0;
+  int _subtitleDownloadGeneration = 0;
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
