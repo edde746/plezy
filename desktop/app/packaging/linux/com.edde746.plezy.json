@@ -1,0 +1,73 @@
+{
+  "app-id": "com.edde746.plezy",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "26.08",
+  "sdk": "org.freedesktop.Sdk",
+  "command": "plezy",
+  "finish-args": [
+    "--share=network",
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--socket=pulseaudio",
+    "--device=dri",
+    "--filesystem=xdg-videos/Plezy:create",
+    "--filesystem=xdg-run/discord-ipc-0",
+    "--filesystem=xdg-run/discord-ipc-1",
+    "--filesystem=xdg-run/discord-ipc-2",
+    "--filesystem=xdg-run/discord-ipc-3",
+    "--filesystem=xdg-run/discord-ipc-4",
+    "--filesystem=xdg-run/discord-ipc-5",
+    "--filesystem=xdg-run/discord-ipc-6",
+    "--filesystem=xdg-run/discord-ipc-7",
+    "--filesystem=xdg-run/discord-ipc-8",
+    "--filesystem=xdg-run/discord-ipc-9",
+    "--filesystem=xdg-run/app/com.discordapp.Discord:create",
+    "--filesystem=xdg-run/app/com.discordapp.DiscordCanary:create",
+    "--talk-name=org.freedesktop.secrets",
+    "--talk-name=org.freedesktop.ScreenSaver"
+  ],
+  "build-options": {
+    "strip": false,
+    "no-debuginfo": true
+  },
+  "modules": [
+    {
+      "name": "noto-sans",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm644 -t /app/share/fonts/noto-sans NotoSans/hinted/ttf/NotoSans-Regular.ttf NotoSans/hinted/ttf/NotoSans-Medium.ttf NotoSans/hinted/ttf/NotoSans-SemiBold.ttf NotoSans/hinted/ttf/NotoSans-Bold.ttf"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/notofonts/latin-greek-cyrillic/releases/download/NotoSans-v2.015/NotoSans-v2.015.zip",
+          "sha256": "0c34df072a3fa7efbb7cbf34950e1f971a4447cffe365d3a359e2d4089b958f5",
+          "strip-components": 0
+        }
+      ]
+    },
+    {
+      "name": "plezy",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cp -a Plezy /app/plezy",
+        "install -Dm644 -t /app/lib ubuntu-libs/*",
+        "mkdir -p /app/share/licenses/com.edde746.plezy && cp -a Plezy/lib/app/resources/licenses/. /app/share/licenses/com.edde746.plezy/",
+        "mkdir -p /app/share/licenses/com.edde746.plezy/mpv-build && cp -a Plezy/lib/app/resources/mpv/licenses/. /app/share/licenses/com.edde746.plezy/mpv-build/",
+        "mkdir -p /app/bin && ln -s ../plezy/bin/Plezy /app/bin/plezy",
+        "install -Dm644 com.edde746.plezy.desktop /app/share/applications/com.edde746.plezy.desktop",
+        "desktop-file-edit --set-icon=com.edde746.plezy /app/share/applications/com.edde746.plezy.desktop",
+        "install -Dm644 com.edde746.plezy.metainfo.xml /app/share/metainfo/com.edde746.plezy.metainfo.xml",
+        "mkdir -p /app/share/icons && cp -a hicolor /app/share/icons/"
+      ],
+      "sources": [
+        { "type": "dir", "path": "Plezy", "dest": "Plezy" },
+        { "type": "dir", "path": "ubuntu-libs", "dest": "ubuntu-libs" },
+        { "type": "dir", "path": "hicolor", "dest": "hicolor" },
+        { "type": "file", "path": "com.edde746.plezy.desktop" },
+        { "type": "file", "path": "com.edde746.plezy.metainfo.xml" }
+      ]
+    }
+  ]
+}
