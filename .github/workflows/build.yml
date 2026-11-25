@@ -622,7 +622,8 @@ jobs:
           - arch: arm64
             runner: windows-11-arm
             java_distribution: zulu
-            java_version: 27.0.1+9
+            # Zulu 27.0.1.1 (build 4) in setup-java's spelling: Azul lists no 27.0.1+9.
+            java_version: 27.0.1+1.4
             jbr: jbrsdk-25.0.4.1-windows-aarch64-b635.75
             jbr_sha512: 034bfd183d3062f5fd8a35eb3461dd06b473eb3b6c348cac6c957f16128f1f4b9a718d38e743f14941772f3f884cc7f43af3f6d187a4537a1236ac7e0f081acd
     defaults:
