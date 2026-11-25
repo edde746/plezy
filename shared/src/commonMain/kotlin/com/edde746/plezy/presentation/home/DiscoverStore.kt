@@ -367,6 +367,38 @@ class DiscoverStore(
             cleared = true
         }
 
+        // Puts back what the pass replaced, or shows [errorText] when there was nothing to put back.
+        fun fail(errorText: String) {
+            outcome = if (isProfileBinding()) DiscoverRefreshOutcome.CANCELLED else DiscoverRefreshOutcome.FAILED
+            if (previousOnDeck.isEmpty() && previousHubs.isEmpty()) {
+                error = errorText
+                onDeckLoad = DiscoverLoad.ERROR
+                hubsLoad = DiscoverLoad.ERROR
+                publish()
+                return
+            }
+            val hidden = hiddenLibraries.hiddenLibraryKeys
+            if (commitRevision == expectedCommit) {
+                replaceOnDeck(previousOnDeck.filter { it.isVisible(hidden) }, previousHasMore)
+                copies = previousCopies
+                keepCopies { it.isVisible(hidden) }
+                replaceHubs(hubsWithoutHiddenLibraries(previousHubs, hidden))
+                loadedOnDeckServerIds = previousLoadedOnDeck
+                loadedHubServerIds = previousLoadedHubs
+                onDeckLoad = previousOnDeckLoad
+                hubsLoad = previousHubsLoad
+            } else {
+                filterCurrentContentForHiddenLibraries()
+            }
+            val hiddenServers = hidden.mapNotNullTo(mutableSetOf()) { parseGlobalKey(it)?.first }
+            loadedOnDeckServerIds = if (onDeckFetched) loadedOnDeckServerIds - failed - cancelled - hiddenServers else emptySet()
+            loadedHubServerIds = if (hubsFetched) loadedHubServerIds - failed - cancelled - hiddenServers else emptySet()
+            error = null
+            onDeckLoad = DiscoverLoad.LOADED
+            hubsLoad = DiscoverLoad.LOADED
+            publish()
+        }
+
         try {
             if (closed || isProfileBinding()) return
             contentRevision++
@@ -375,7 +407,12 @@ class DiscoverStore(
             error = null
             publish()
 
-            if (servers.visibleOnlineClients.isEmpty()) throw IllegalStateException("No servers available")
+            if (servers.visibleOnlineClients.isEmpty()) {
+                // No server signed in or reachable yet is a normal state, not a failure worth a stack trace.
+                Log.i(TAG) { "Home has no servers to load" }
+                fail(T.errors.unableToLoad(T.discover.title))
+                return
+            }
             hiddenLibraries.ensureInitialized()
             if (closed) return
             val hidden = hiddenLibraries.hiddenLibraryKeys
@@ -458,35 +495,8 @@ class DiscoverStore(
             throw e
         } catch (e: Exception) {
             if (closed) return
-            outcome = if (isProfileBinding()) DiscoverRefreshOutcome.CANCELLED else DiscoverRefreshOutcome.FAILED
             Log.e(TAG, e) { "Loading Home failed" }
-            if (previousOnDeck.isEmpty() && previousHubs.isEmpty()) {
-                error = localizedLoadErrorText(e, T.discover.title)
-                onDeckLoad = DiscoverLoad.ERROR
-                hubsLoad = DiscoverLoad.ERROR
-                publish()
-                return
-            }
-            val hidden = hiddenLibraries.hiddenLibraryKeys
-            if (commitRevision == expectedCommit) {
-                replaceOnDeck(previousOnDeck.filter { it.isVisible(hidden) }, previousHasMore)
-                copies = previousCopies
-                keepCopies { it.isVisible(hidden) }
-                replaceHubs(hubsWithoutHiddenLibraries(previousHubs, hidden))
-                loadedOnDeckServerIds = previousLoadedOnDeck
-                loadedHubServerIds = previousLoadedHubs
-                onDeckLoad = previousOnDeckLoad
-                hubsLoad = previousHubsLoad
-            } else {
-                filterCurrentContentForHiddenLibraries()
-            }
-            val hiddenServers = hidden.mapNotNullTo(mutableSetOf()) { parseGlobalKey(it)?.first }
-            loadedOnDeckServerIds = if (onDeckFetched) loadedOnDeckServerIds - failed - cancelled - hiddenServers else emptySet()
-            loadedHubServerIds = if (hubsFetched) loadedHubServerIds - failed - cancelled - hiddenServers else emptySet()
-            error = null
-            onDeckLoad = DiscoverLoad.LOADED
-            hubsLoad = DiscoverLoad.LOADED
-            publish()
+            fail(localizedLoadErrorText(e, T.discover.title))
         } finally {
             lastOutcome = outcome
             if (cleared && commitRevision == expectedCommit && !closed) {

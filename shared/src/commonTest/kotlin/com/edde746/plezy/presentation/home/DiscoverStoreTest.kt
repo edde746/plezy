@@ -5,6 +5,7 @@ package com.edde746.plezy.presentation.home
 import com.edde746.plezy.backend.FakeMediaBackend
 import com.edde746.plezy.backend.MediaServerHttpErrorType
 import com.edde746.plezy.backend.MediaServerHttpException
+import com.edde746.plezy.log.Log
 import com.edde746.plezy.model.BackendKind
 import com.edde746.plezy.model.ExternalIds
 import com.edde746.plezy.model.LibraryChangeEvent
@@ -155,6 +156,7 @@ private class Fixture(val test: TestScope, profileId: String? = "profile-a", wit
     val libraryContent = LibraryContentNotifier()
     var binding = false
     var playing = false
+    var globalHubs: () -> Boolean = { true }
     val store: DiscoverStore
 
     init {
@@ -170,7 +172,7 @@ private class Fixture(val test: TestScope, profileId: String? = "profile-a", wit
             libraryContent = libraryContent,
             profileId = profileId,
             isProfileBinding = { binding },
-            useGlobalHubs = { true },
+            useGlobalHubs = { globalHubs() },
             isRefreshBlocked = { playing },
             parentScope = scope,
             timeSource = test.testScheduler.timeSource,
@@ -502,6 +504,28 @@ class DiscoverStoreTest {
         assertFalse(f.state.isLoading)
         assertEquals(DiscoverLoad.ERROR, f.state.onDeckLoad)
         assertNotNull(f.state.error)
+    }
+
+    @Test
+    fun noServersLogsNoErrorButAFailedLoadDoes() = runTest {
+        val original = Log.sink
+        val errors = mutableListOf<String>()
+        Log.sink = Log.Sink { level, _, message, _ -> if (level >= Log.Level.ERROR) errors += message }
+        try {
+            val empty = Fixture(this, withServer = false)
+            empty.store.load().await()
+            assertEquals(DiscoverLoad.ERROR, empty.state.onDeckLoad)
+            assertNotNull(empty.state.error)
+            assertEquals(emptyList(), errors)
+
+            val broken = Fixture(this)
+            broken.globalHubs = { error("settings unreadable") }
+            broken.store.load().await()
+            assertEquals(DiscoverLoad.ERROR, broken.state.onDeckLoad)
+            assertEquals(listOf("Loading Home failed"), errors)
+        } finally {
+            Log.sink = original
+        }
     }
 
     @Test
