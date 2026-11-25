@@ -94,9 +94,14 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.version.outputs.build_number }}
     steps:
+      # The public beta builds from kmp-beta, as Actions artifacts only: a release tag still requires main.
       - name: Require the protected main branch
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/kmp-beta" && -z "$RELEASE_TAG" ]]; then
+            echo "Beta build from kmp-beta: artifacts only."
+          elif [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
             echo "Release builds may only run from refs/heads/main." >&2
             exit 1
           fi
