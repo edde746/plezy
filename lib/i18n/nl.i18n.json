@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Toon gecombineerde hubs op het startscherm. Gebruik anders bibliotheekaanbevelingen.",
     "showServerNameOnHubs": "Servernaam tonen bij hubs",
     "showServerNameOnHubsDescription": "Toon servernamen altijd in hubtitels.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Bibliotheken groeperen per server",
     "groupLibrariesByServerDescription": "Groepeer zijbalkbibliotheken onder elke mediaserver.",
     "alwaysKeepSidebarOpen": "Zijbalk altijd open houden",

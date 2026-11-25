@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Показывать единые разделы главной. Иначе использовать рекомендации библиотек.",
     "showServerNameOnHubs": "Показывать имя сервера в хабах",
     "showServerNameOnHubsDescription": "Всегда показывать имена серверов в заголовках разделов.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Группировать библиотеки по серверам",
     "groupLibrariesByServerDescription": "Группировать библиотеки боковой панели по медиасерверам.",
     "alwaysKeepSidebarOpen": "Всегда держать боковую панель открытой",

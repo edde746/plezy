@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "显示统一主页内容；否则使用各媒体库的推荐内容。",
     "showServerNameOnHubs": "在推荐栏显示服务器名称",
     "showServerNameOnHubsDescription": "始终在推荐栏标题中显示服务器名称。",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "按服务器分组媒体库",
     "groupLibrariesByServerDescription": "在侧边栏中按媒体服务器分组媒体库。",
     "alwaysKeepSidebarOpen": "始终保持侧边栏展开",

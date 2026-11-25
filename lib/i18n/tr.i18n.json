@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Birleştirilmiş ana sayfa bölümlerini göster. Aksi takdirde kitaplık önerilerini kullanır.",
     "showServerNameOnHubs": "Bölümlerde Sunucu Adını Göster",
     "showServerNameOnHubsDescription": "Bölüm başlıklarında her zaman sunucu adlarını göster.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Kitaplıkları Sunucuya Göre Grupla",
     "groupLibrariesByServerDescription": "Yan menü kitaplıklarını her medya sunucusunun altında grupla.",
     "alwaysKeepSidebarOpen": "Yan Menüyü Her Zaman Açık Tut",

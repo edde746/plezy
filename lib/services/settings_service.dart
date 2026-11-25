@@ -658,6 +658,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
+  static const showWatchlistOnHome = BoolPref('show_watchlist_on_home');
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
@@ -1598,6 +1599,7 @@ class SettingsService extends BaseSharedPreferencesService {
     focusGlow,
     useGlobalHubs,
     showServerNameOnHubs,
+    showWatchlistOnHome,
     groupLibrariesByServer,
     rotationLocked,
     subAssOverride,

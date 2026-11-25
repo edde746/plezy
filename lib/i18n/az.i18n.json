@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Birləşdirilmiş ana səhifə bölmələrini göstər. Əks halda kitabxana tövsiyələrini istifadə edir.",
     "showServerNameOnHubs": "Bölmələrdə server adını göstər",
     "showServerNameOnHubsDescription": "Bölmə başlıqlarında həmişə server adlarını göstər.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Kitabxanaları serverə görə qrupla",
     "groupLibrariesByServerDescription": "Yan menyu kitabxanalarını hər media serverinin altında qruplaşdır.",
     "alwaysKeepSidebarOpen": "Yan menyunu həmişə açıq saxla",
