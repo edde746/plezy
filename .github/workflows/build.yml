@@ -30,8 +30,8 @@ run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_t
 #   MACOS_CERTIFICATE_BASE64 (Developer ID Application .p12), MACOS_CERTIFICATE_PASSWORD, KEYCHAIN_PASSWORD,
 #   MACOS_PROVISIONING_PROFILE_BASE64 (Developer ID profile for com.edde746.plezy that grants the keychain access
 #     group of apple/Plezy/AppKit/Plezy-macOS.entitlements),
-#   APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_BASE64 (an App Store Connect team API
-#     key, its .p8 in base64: notarytool notarizes with it)
+#   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID (the Apple ID, an app-specific password of it and its team:
+#     notarytool notarizes with them)
 #   SPARKLE_PRIVATE_KEY (base64 EdDSA seed of Plezy's update key, whose public key is SPARKLE_PUBLIC_KEY below; signs
 #     the DMG and the Windows installer, tools/sparkle_sign.py)
 #   PLEZY_SENTRY_DSN (the DSN of the Plezy project on bugs.plezy.app, where crash reports go)
@@ -382,7 +382,7 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
       APP_PATH: apple/build/dd/Build/Products/Release/Plezy.app
       HAS_SIGNING: ${{ secrets.MACOS_CERTIFICATE_BASE64 != '' }}
-      HAS_NOTARIZATION: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 != '' }}
+      HAS_NOTARIZATION: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
       HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
       RELEASE_TAG: ${{ inputs.release_tag }}
       HAS_SYMBOL_UPLOAD: ${{ secrets.BUGS_ADMIN_TOKEN != '' && github.repository == 'edde746/plezy' }}
@@ -404,7 +404,7 @@ jobs:
       - name: Require signing, notarization and Sparkle for a release
         if: ${{ inputs.release_tag != '' && (env.HAS_SIGNING != 'true' || env.HAS_NOTARIZATION != 'true' || env.HAS_SPARKLE_KEY != 'true') }}
         run: |
-          echo "Release $RELEASE_TAG needs the MACOS_*, APP_STORE_CONNECT_* and SPARKLE_PRIVATE_KEY secrets." >&2
+          echo "Release $RELEASE_TAG needs the MACOS_*, APPLE_* and SPARKLE_PRIVATE_KEY secrets." >&2
           exit 1
 
       - name: Generate the Xcode project
@@ -517,14 +517,10 @@ jobs:
       - name: Notarize Application
         if: ${{ env.HAS_SIGNING == 'true' && env.HAS_NOTARIZATION == 'true' }}
         env:
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # notarytool reads the API key from a file.
-          KEY_PATH=$RUNNER_TEMP/AuthKey_$APP_STORE_CONNECT_KEY_ID.p8
-          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode -o "$KEY_PATH"
-
           # Create a temporary ZIP for notarization submission
           echo "Creating ZIP for notarization..."
           ditto -c -k --keepParent "$APP_PATH" notarization.zip
@@ -532,7 +528,7 @@ jobs:
           # Submit for notarization. notarytool exits 0 however the notary service decides, Invalid included, so the
           # submission's status decides the step, and anything but Accepted prints Apple's log of the submission.
           echo "Submitting to Apple's notary service..."
-          AUTH=(--key "$KEY_PATH" --key-id "$APP_STORE_CONNECT_KEY_ID" --issuer "$APP_STORE_CONNECT_ISSUER_ID")
+          AUTH=(--apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID")
           xcrun notarytool submit notarization.zip "${AUTH[@]}" --wait --output-format json \
             > "$RUNNER_TEMP/notarization.json"
           cat "$RUNNER_TEMP/notarization.json"
@@ -543,7 +539,6 @@ jobs:
             xcrun notarytool log "$SUBMISSION_ID" "${AUTH[@]}"
             exit 1
           fi
-          rm "$KEY_PATH"
 
           # Staple the notarization ticket to the app
           echo "Stapling notarization ticket..."
