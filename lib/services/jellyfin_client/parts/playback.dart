@@ -292,10 +292,17 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final preset = options.qualityPreset;
     final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
     final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
+    final ordinal = options.preferredAudioOrdinal;
+    final atOrdinal = ordinal == null || ordinal < 0 ? null : mediaInfo.audioTracks.elementAtOrNull(ordinal);
     final requestedAudioStreamId = options.selectedAudioStreamId == null
         ? options.preferredAudioTrack == null
               ? null
-              : findSourceAudioTrackForIntent(options.preferredAudioTrack!, mediaInfo.audioTracks)?.id
+              // On a tie, the row at the carried position, if it matches.
+              : (findSourceAudioTrackForIntent(options.preferredAudioTrack!, mediaInfo.audioTracks) ??
+                        (atOrdinal == null
+                            ? null
+                            : findSourceAudioTrackForIntent(options.preferredAudioTrack!, [atOrdinal])))
+                    ?.id
         : _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
     final requestedSubtitleStreamId = _validJellyfinSubtitleStreamId(options.preferredSubtitleTrack, mediaInfo);
     // A real external subtitle file stays a file the client fetches, on a transcode as much as on

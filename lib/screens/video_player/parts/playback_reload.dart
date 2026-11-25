@@ -128,7 +128,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       } catch (_) {}
     }
 
-    if (newSubtitleChoice != null && newMediaIndex == null && newPreset == null && newAudioStreamId == null) {
+    if (newSubtitleChoice != null &&
+        newSubtitleChoice.downloadedTrack == null &&
+        newMediaIndex == null &&
+        newPreset == null &&
+        newAudioStreamId == null) {
       try {
         final selected = await _selectSourceSubtitleLocally(
           currentPlayer,
@@ -154,11 +158,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     final currentSubtitleChoice = _selectedSourceSubtitleChoiceForControls(_sourceSubtitleTracksForControls());
     final preferredSubtitleTrackForReload = newSubtitleChoice == null
         ? SubtitlePreference.trackOrNull(_playbackSession?.subtitleSelection.primaryTrack)
-        : newSubtitleChoice.isOff
-        ? const SubtitlePreference.off()
-        : SubtitlePreference.trackOrNull(
-            PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!),
-          );
+        : sessionPreferenceForSourceSubtitleChoice(newSubtitleChoice, _currentMediaInfo?.subtitleTracks ?? const []);
     final effectiveMediaSourceId = newMediaIndex != null
         ? PlaybackSession.mediaSourceIdForIndex(_availableVersions, effectiveMediaIndex) ?? _requestedMediaSourceId
         : _requestedMediaSourceId;
@@ -168,7 +168,13 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         (_requestedMediaSourceId != null && effectiveMediaSourceId != _requestedMediaSourceId);
     final isPresetChange = effectivePreset != _selectedQualityPreset;
     final isAudioChange = effectiveAudioStreamId != _selectedAudioStreamId;
-    final isSubtitleChange = newSubtitleChoice != null && newSubtitleChoice != currentSubtitleChoice;
+    // A downloaded pick follows a rescan that may have renumbered every stream.
+    final streamIdsMayHaveShifted = newSubtitleChoice?.downloadedTrack != null;
+    final carriedAudioRow = streamIdsMayHaveShifted
+        ? _currentMediaInfo?.audioTracks.where((row) => row.id == _selectedAudioStreamId).firstOrNull
+        : null;
+    final isSubtitleChange =
+        newSubtitleChoice != null && (streamIdsMayHaveShifted || newSubtitleChoice != currentSubtitleChoice);
     if (!isVersionChange && !isPresetChange && !isAudioChange && !isSubtitleChange) {
       rememberSourceAudioPreference();
       rememberSourceSubtitlePreference();
@@ -221,10 +227,24 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         qualityPreset: effectivePreset,
         // A version change selects a different part, and stream ids are
         // per-part — only same-part switches may carry the current id.
-        selectedAudioStreamId: isVersionChange ? newAudioStreamId : effectiveAudioStreamId,
-        useCurrentAudioStreamSelection: !isVersionChange,
+        selectedAudioStreamId: isVersionChange || streamIdsMayHaveShifted ? newAudioStreamId : effectiveAudioStreamId,
+        useCurrentAudioStreamSelection: !isVersionChange && !streamIdsMayHaveShifted,
         resumePosition: currentPlayer.state.position,
-        preserveCurrentTrackSelection: false,
+        // After a renumbering the tracks travel by meaning: the audio as its
+        // source row (a transcode's live track describes the output), the
+        // secondary demoted to an intent instead of its stale native id.
+        preserveCurrentTrackSelection: streamIdsMayHaveShifted,
+        preservedAudioTrack: carriedAudioRow == null
+            ? null
+            : PlaybackSubtitleResolver.audioTrackForSource(carriedAudioRow),
+        // A subtitle rescan keeps the audio rows' order, so the position tells twins apart.
+        preservedAudioOrdinal: carriedAudioRow == null ? null : _currentMediaInfo?.audioTracks.indexOf(carriedAudioRow),
+        preservedSecondarySubtitleTrack: streamIdsMayHaveShifted
+            ? SubtitlePreference.demoteToIntent(
+                    SubtitlePreference.trackOrNull(currentPlayer.state.track.secondarySubtitle),
+                  ) ??
+                  const SubtitlePreference.off()
+            : null,
         preferredSubtitleTrackOverride: preferredSubtitleTrackForReload,
         transitionLease: transitionLease,
         reason: 'source switch',
@@ -378,6 +398,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     Duration? resumePosition,
     bool preserveCurrentTrackSelection = false,
     AudioTrack? preservedAudioTrack,
+    int? preservedAudioOrdinal,
     SubtitlePreference? preservedSubtitleTrack,
     SubtitlePreference? preservedSecondarySubtitleTrack,
     SubtitlePreference? preferredSubtitleTrackOverride,
@@ -590,6 +611,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             qualityPreset: targetQualityPreset,
             selectedAudioStreamId: targetAudioStreamId,
             preferredAudioTrack: initializationAudioTrack,
+            preferredAudioOrdinal: preservedAudioOrdinal,
             preferredSubtitleTrack: initializationSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,

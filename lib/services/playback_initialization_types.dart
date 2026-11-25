@@ -50,6 +50,11 @@ class PlaybackInitializationOptions {
   /// recover it). Resolution failure falls back to the server's pick.
   final AudioTrack? preferredAudioTrack;
 
+  /// 0-based position of [preferredAudioTrack] among the source's audio rows,
+  /// for a reload after a rescan that renumbered the streams. When the match
+  /// by meaning ties, the row at this position is taken if it matches.
+  final int? preferredAudioOrdinal;
+
   /// Preferred subtitle carried across navigation/reloads. Backends that put
   /// embedded subtitles in the rendition can use this during negotiation;
   /// sidecar-capable backends keep subtitle delivery independent.
@@ -84,6 +89,7 @@ class PlaybackInitializationOptions {
     this.audioQualityPreset,
     this.selectedAudioStreamId,
     this.preferredAudioTrack,
+    this.preferredAudioOrdinal,
     this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,

@@ -1004,6 +1004,7 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get noAudioDevicesAvailable => 'Inga ljudenheter tillgängliga';
 	@override String get searchSubtitles => 'Sök undertexter';
 	@override String get language => 'Språk';
+	@override String get filterSubtitlesByReleaseName => 'Filtrera efter releasenamn';
 	@override String get noSubtitlesFound => 'Inga undertexter hittades';
 	@override String get subtitleDownloaded => 'Undertexten har laddats ned';
 	@override String get subtitleDownloadedNotApplied => 'Undertexten laddades ned men kunde inte väljas';
@@ -4232,6 +4233,7 @@ extension on TranslationsSv {
 			'videoControls.noAudioDevicesAvailable' => 'Inga ljudenheter tillgängliga',
 			'videoControls.searchSubtitles' => 'Sök undertexter',
 			'videoControls.language' => 'Språk',
+			'videoControls.filterSubtitlesByReleaseName' => 'Filtrera efter releasenamn',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
 			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
@@ -4423,9 +4425,9 @@ extension on TranslationsSv {
 			'profiles.continueButton' => 'Fortsätt',
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
-			'connections.sectionTitle' => 'Anslutningar',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => 'Anslutningar',
 			'connections.addConnection' => 'Lägg till anslutning',
 			'connections.addConnectionSubtitleNoProfile' => 'Logga in med Plex eller anslut en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning',
@@ -4937,9 +4939,9 @@ extension on TranslationsSv {
 			'liveTv.recordSettings.anyChannel' => 'Spela in på alla kanaler',
 			'liveTv.recordSettings.anyTime' => 'Spela in när som helst',
 			'liveTv.recordSettings.skipInLibrary' => 'Hoppa över avsnitt som redan finns i biblioteket',
-			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
 			'liveTv.recordSettings.keepUpToHint' => '0 behåller alla avsnitt',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
@@ -5451,9 +5453,9 @@ extension on TranslationsSv {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Programvara',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderSoftware' => 'Programvara',
 			'performanceOverlay.decoderHardware' => 'Maskinvara',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',

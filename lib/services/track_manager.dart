@@ -416,10 +416,11 @@ class TrackManager {
     return next;
   }
 
-  /// Cycle to the next audio track and save the preference.
-  void cycleAudioTrack() {
+  /// Cycle to the next audio track and save the preference. Returns the track
+  /// cycled to, or null when there is nothing to cycle through.
+  AudioTrack? cycleAudioTrack() {
     final tracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
-    if (tracks.length <= 1) return;
+    if (tracks.length <= 1) return null;
 
     final current = player.state.track.audio;
     final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
@@ -441,6 +442,7 @@ class TrackManager {
       );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
+    return next;
   }
 
   // ── Explicit user selection ────────────────────────────────────────

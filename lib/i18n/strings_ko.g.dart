@@ -1001,6 +1001,7 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get noAudioDevicesAvailable => '사용 가능한 오디오 기기가 없습니다';
 	@override String get searchSubtitles => '자막 검색';
 	@override String get language => '언어';
+	@override String get filterSubtitlesByReleaseName => '릴리스 이름으로 필터';
 	@override String get noSubtitlesFound => '자막을 찾을 수 없습니다';
 	@override String get subtitleDownloaded => '자막이 다운로드되었습니다';
 	@override String get subtitleDownloadedNotApplied => '자막을 다운로드했지만 선택할 수 없습니다';
@@ -4220,6 +4221,7 @@ extension on TranslationsKo {
 			'videoControls.noAudioDevicesAvailable' => '사용 가능한 오디오 기기가 없습니다',
 			'videoControls.searchSubtitles' => '자막 검색',
 			'videoControls.language' => '언어',
+			'videoControls.filterSubtitlesByReleaseName' => '릴리스 이름으로 필터',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
 			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
 			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
@@ -4411,9 +4413,9 @@ extension on TranslationsKo {
 			'profiles.continueButton' => '계속',
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
 			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
-			'connections.sectionTitle' => '연결',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결',
@@ -4925,9 +4927,9 @@ extension on TranslationsKo {
 			'liveTv.recordSettings.anyChannel' => '모든 채널에서 녹화',
 			'liveTv.recordSettings.anyTime' => '모든 시간대에 녹화',
 			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
-			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
@@ -5439,9 +5441,9 @@ extension on TranslationsKo {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			'performanceOverlay.decoderHardware' => '하드웨어',
 			'performanceOverlay.tunnelingActive' => '활성',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',

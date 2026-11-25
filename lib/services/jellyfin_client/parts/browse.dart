@@ -839,7 +839,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// [fetchItem], but a fresh cached row (≤ [playbackMetadataCacheFreshness]
   /// old) short-circuits the network round trip.
   ///
-  /// The single writer for this endpoint's row is [_fetchItemOnce] with the
+  /// Every full write of this endpoint's row uses the
   /// full [_detailFields] shape, so a fresh row always carries `MediaSources`,
   /// `Chapters` and `Trickplay`, and the raw DTO survives [_mapItem] — the
   /// offline path below already relies on that. Playback start and the
@@ -1842,8 +1842,8 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
-  /// Not cached: [fetchItem] is the single writer of this endpoint's cache
-  /// row, and a person carries none of its detail fields.
+  /// Not cached: this endpoint's cache row holds [fetchItem]'s detail fields,
+  /// and a person carries none of them.
   @override
   Future<MediaPersonDetails> fetchPersonDetails(String personId, {AbortController? abort}) async {
     if (isOfflineMode) return MediaPersonDetails.empty;

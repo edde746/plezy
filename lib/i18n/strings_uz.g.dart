@@ -1004,6 +1004,7 @@ class _Translations$videoControls$uz extends Translations$videoControls$en {
 	@override String get noAudioDevicesAvailable => 'Mavjud audio qurilmalar yoʻq';
 	@override String get searchSubtitles => 'Subtitr qidirish';
 	@override String get language => 'Til';
+	@override String get filterSubtitlesByReleaseName => 'Reliz nomi boʻyicha filtrlash';
 	@override String get noSubtitlesFound => 'Subtitr topilmadi';
 	@override String get subtitleDownloaded => 'Subtitr yuklab olindi';
 	@override String get subtitleDownloadedNotApplied => 'Subtitr yuklab olindi, lekin qoʻllanilmadi';
@@ -4232,6 +4233,7 @@ extension on TranslationsUz {
 			'videoControls.noAudioDevicesAvailable' => 'Mavjud audio qurilmalar yoʻq',
 			'videoControls.searchSubtitles' => 'Subtitr qidirish',
 			'videoControls.language' => 'Til',
+			'videoControls.filterSubtitlesByReleaseName' => 'Reliz nomi boʻyicha filtrlash',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitr yuklab olindi, lekin qoʻllanilmadi',
@@ -4423,9 +4425,9 @@ extension on TranslationsUz {
 			'profiles.continueButton' => 'Davom ettirish',
 			'profiles.pinsDontMatch' => 'PIN kodlar mos kelmadi',
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
-			'connections.sectionTitle' => 'Ulanishlar',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish',
@@ -4937,9 +4939,9 @@ extension on TranslationsUz {
 			'liveTv.recordSettings.anyChannel' => 'Istalgan kanaldan yozib olish',
 			'liveTv.recordSettings.anyTime' => 'Istalgan vaqtda yozib olish',
 			'liveTv.recordSettings.skipInLibrary' => 'Kutubxonada mavjud epizodlarni oʻtkazib yuborish',
-			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 barcha epizodlarni saqlaydi',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
@@ -5451,9 +5453,9 @@ extension on TranslationsUz {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Dasturiy',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderSoftware' => 'Dasturiy',
 			'performanceOverlay.decoderHardware' => 'Apparat',
 			'performanceOverlay.tunnelingActive' => 'Faol',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',

@@ -1045,6 +1045,34 @@ void main() {
       expect(manager.isServerOnline(ServerId('jf-machine')), isFalse);
     });
 
+    test('a server unreachable at launch gets its subtitle-search probe once it reconnects', () async {
+      var reachable = false;
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((request) async {
+          if (!reachable) throw const SocketException('Connection refused');
+          final body = switch (request.url.path) {
+            '/Users/Me' => '{"Policy":{"IsAdministrator":false,"EnableSubtitleManagement":true}}',
+            '/Libraries/AvailableOptions' => '{"SubtitleFetchers":[{"Name":"Open Subtitles"}]}',
+            _ => '{}',
+          };
+          return http.Response(body, 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+      final manager = MultiServerManager(connectivityChanges: () => const Stream.empty());
+      addTearDown(manager.dispose);
+      manager.debugRegisterJellyfinClientForTesting(client, online: false);
+      expect(await client.probeRemoteSubtitleSearch(), isFalse, reason: 'the launch-time probe failed');
+
+      reachable = true;
+      await manager.checkServerHealth();
+      await pumpEventQueue();
+
+      expect(manager.isServerOnline(ServerId('jf-machine')), isTrue);
+      expect(client.capabilities.externalSubtitleSearch, isTrue);
+    });
+
     test('a Plex client that connects after the timeout is closed instead of leaked', () async {
       await _prepareFreshPlexManagerTest();
       final endpoint = _plexEndpoint('late');

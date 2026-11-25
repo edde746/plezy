@@ -61,5 +61,8 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
     }
   }
 
-  void _cycleAudioTrack() => _trackManager?.cycleAudioTrack();
+  void _cycleAudioTrack() {
+    final next = _trackManager?.cycleAudioTrack();
+    if (next != null) _rememberAudioPick(next);
+  }
 }
