@@ -5,7 +5,8 @@ Plezy's code is licensed under [GPL-3.0](LICENSE). The license covers the code, 
 ## What this covers
 
 - The name "Plezy", and names built on it or confusingly similar to it, such as "PlezyNG" or "Plezy Pro".
-- The Plezy logo and app icons, including the alternate icons in `assets/app_icons/`, and icons that look like them.
+- The Plezy logo and app icons, including the alternate icons (`apple/AlternateAppIcons-*.xcassets` and Android's
+  `ic_launcher_<id>` and `tv_banner_<id>` resources), and icons that look like them.
 
 ## Personal use
 

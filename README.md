@@ -1,9 +1,9 @@
 <h1>
-  <img src="assets/plezy.png" alt="Plezy Logo" height="24" style="vertical-align: middle;" />
+  <img src=".github/readme/plezy.png" alt="Plezy Logo" height="24" style="vertical-align: middle;" />
   Plezy
 </h1>
 
-A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
+A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built with Kotlin Multiplatform, with native interfaces in Compose and SwiftUI.
 
 <p>
   <a href="https://plezy.app">Website</a> ·
@@ -14,19 +14,19 @@ A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built w
 </p>
 
 <p align="center">
-  <img src="assets/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
+  <img src=".github/readme/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
 </p>
 
 ## Download
 
-<a href='https://apps.apple.com/app/apple-store/id6754315964?pt=128238902&ct=GitHub&mt=8'><img height='60' alt='Download on the App Store' src='./assets/app-store-badge.png'/></a>
-<a href='https://play.google.com/store/apps/details?id=com.edde746.plezy&referrer=utm_source%3Dgithub%26utm_campaign%3Dreadme_badge'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
-<a href='https://www.amazon.com/gp/product/B0GK65CVS1'><img height='60' alt='Available at the Amazon App Store' src='./assets/amazon-badge.png'/></a>
-<a href='https://get.microsoft.com/installer/download/9n5r1s1t68h7?referrer=appbadge&cid=github'><img height='60' alt='Get it from Microsoft' src='./assets/microsoft-badge.png'/></a>
+<a href='https://apps.apple.com/app/apple-store/id6754315964?pt=128238902&ct=GitHub&mt=8'><img height='60' alt='Download on the App Store' src='./.github/readme/app-store-badge.png'/></a>
+<a href='https://play.google.com/store/apps/details?id=com.edde746.plezy&referrer=utm_source%3Dgithub%26utm_campaign%3Dreadme_badge'><img height='60' alt='Get it on Google Play' src='./.github/readme/play-store-badge.png'/></a>
+<a href='https://www.amazon.com/gp/product/B0GK65CVS1'><img height='60' alt='Available at the Amazon App Store' src='./.github/readme/amazon-badge.png'/></a>
+<a href='https://get.microsoft.com/installer/download/9n5r1s1t68h7?referrer=appbadge&cid=github'><img height='60' alt='Get it from Microsoft' src='./.github/readme/microsoft-badge.png'/></a>
 
 | Platform | Download |
 | --- | --- |
-| macOS | [DMG (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg) |
+| macOS | [DMG (Apple silicon, macOS 14 or later)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg) |
 | Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.flatpak) · [.AppImage](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.AppImage) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
 | Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.flatpak) · [.AppImage](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.AppImage) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
 
@@ -52,7 +52,7 @@ Install Flatpak with your distribution's package manager, download the bundle fo
 
 ```bash
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user flathub org.freedesktop.Platform//25.08
+flatpak install --user flathub org.freedesktop.Platform//26.08
 flatpak install --user ./plezy-linux-x64.flatpak
 flatpak run com.edde746.plezy
 ```
@@ -64,8 +64,8 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 
 - Not on Flathub — the remote supplies the Freedesktop runtime only.
 - Video playback needs a Wayland session; a pure X11 session shows the interface but cannot create the video plane.
-- No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
-- Network, display, audio, and device access are enabled. `--device=all` (Flatpak 1.14 compatibility) exposes more than GPUs and controllers; session-bus access stays filtered.
+- No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Downloads go to `Plezy` in your Videos folder; other folders come through the desktop file chooser portal.
+- Network, display, audio, and GPU access are enabled, with the Secret Service (account tokens), the screen saver service, and Discord's sockets (Rich Presence, including Flatpak Discord); session-bus access stays filtered.
 
 </details>
 
@@ -78,7 +78,7 @@ chmod +x plezy-linux-x64.AppImage
 ./plezy-linux-x64.AppImage
 ```
 
-[Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) and AppImageUpdate update it from the latest release. Without FUSE, add `--appimage-extract-and-run`.
+[Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) and AppImageUpdate update it from the latest release. Without FUSE, add `--appimage-extract-and-run`. The AppImage and the portable tar.gz (start `plezy.sh` in the extracted folder) use the system's graphics, audio, font and VA-API libraries, which desktop distributions install; the .deb, .rpm and .pkg.tar.zst packages declare them.
 
 ### Arch Linux — Pacman
 
@@ -108,7 +108,7 @@ sudo moss pad plezy
 
 ## Features
 
-### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
+### <img src=".github/readme/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
 - Shuffle a whole movie or TV library
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
@@ -120,14 +120,14 @@ sudo moss pad plezy
 - Favorites and unwatched library filters[^mb]
 - Extras — trailers, deleted scenes, behind-the-scenes
 
-### <img src="assets/readme_icons/explore.svg" height="20" alt="" align="center" /> Explore & Requests
+### <img src=".github/readme/readme_icons/explore.svg" height="20" alt="" align="center" /> Explore & Requests
 - Explore tab — watchlist, trending, popular, and recommendation rows from Plex Discover[^plex], Trakt, MyAnimeList, AniList, Simkl, and Seerr[^connect]
 - Search any connected catalog source
 - Catalog titles matched back to your own libraries by external ID
 - Seerr — request movies and shows with per-season, 4K, and advanced destination options, and see request status inline
 - Watchlist sync — add and remove titles on Plex, Trakt, MyAnimeList, AniList, and Simkl from anywhere in the app
 
-### <img src="assets/readme_icons/playback.svg" height="20" alt="" align="center" /> Playback
+### <img src=".github/readme/readme_icons/playback.svg" height="20" alt="" align="center" /> Playback
 - Wide codec support (HEVC, AV1, VP9, and more)
 - HDR and Dolby Vision[^hdr]
 - Direct play, or transcode presets from 240p/320 kbps to 1080p/20 Mbps
@@ -147,7 +147,7 @@ sudo moss pad plezy
 - Refresh-rate matching[^rrm]
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
 
-### <img src="assets/readme_icons/music.svg" height="20" alt="" align="center" /> Music
+### <img src=".github/readme/readme_icons/music.svg" height="20" alt="" align="center" /> Music
 - Music libraries — artist, album, and track browsing with square artwork
 - Album and artist screens with play, shuffle, and Instant Mix
 - Gapless playback with a full play queue — reorder, remove, play next, add to queue
@@ -156,25 +156,25 @@ sudo moss pad plezy
 - Offline playback of downloaded albums and tracks
 - Streaming quality presets — Original, 320, 192, or 128 kbps
 
-### <img src="assets/readme_icons/live-tv.svg" height="20" alt="" align="center" /> Live TV & DVR
+### <img src=".github/readme/readme_icons/live-tv.svg" height="20" alt="" align="center" /> Live TV & DVR
 - Live TV channel browsing, tuning, and favorites
 - EPG guide with What's On and per-show schedules
 - DVR recording rules, scheduled recordings, and a rememberable recording target library[^plex]
 - Multi-server Live TV support where available
 
-### <img src="assets/readme_icons/downloads.svg" height="20" alt="" align="center" /> Downloads & Offline
+### <img src=".github/readme/readme_icons/downloads.svg" height="20" alt="" align="center" /> Downloads & Offline
 - Download movies, shows, and music for offline playback[^dl]
 - Background queue with pause / resume
 - Sync rules for automatic downloads, with per-show "Include Specials"
 - Offline browsing with watch state sync-back on reconnect
 
-### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
+### <img src=".github/readme/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
 - Rooms on [Open Watch Party](https://openwatch.party) — share a six-character code; friends join from Plezy or another Open Watch Party app
 - Everyone plays their own copy from their own server — Plex, Jellyfin, or Emby — matched by catalogue IDs, with a picker when several copies fit
 - Synchronized play / pause / seek, host or shared control, room lock, and host handoff
 - Public relays by default, or point Plezy at your own self-hosted relay
 
-### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
+### <img src=".github/readme/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
 - Discord Rich Presence[^desktop]
 - Trakt, MyAnimeList, AniList, and Simkl — ratings, watched sync, and real-time scrobbling[^rt]
 - Scores from connected trackers on detail pages — Trakt, Simkl, MyAnimeList, and AniList, plus Rotten Tomatoes, Metacritic, Letterboxd, IMDb, and TMDB through MDBList
@@ -182,12 +182,12 @@ sudo moss pad plezy
 - Watch Next row and tvOS Top Shelf[^shelf]
 - [`plezy://` links](#plezy-links) to open a profile, play a title, or tune a channel from Home Assistant, launchers, or an NFC tag; any movie, show, or episode menu shows its link[^links]
 
-### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
+### <img src=".github/readme/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
 - Multiple servers at once — Plex, Jellyfin, and Emby side by side
 - Profiles with per-profile downloads, watch state, and settings; Plex Home switching with PIN
 - Jellyfin and Emby local-server discovery and multiple URLs per server; Quick Connect sign-in[^jf]
-- TV layout options — corner spotlight backdrop, full-card artwork, and Force TV mode on desktop
+- TV layout options — full-card artwork, and Force TV mode on desktop
 - Customizable keyboard shortcuts[^desktop]
 - Metadata and artwork editing
 - Settings import/export
@@ -199,7 +199,7 @@ sudo moss pad plezy
 [^connect]: Requires connecting the service under Settings > Services.
 [^hdr]: In-app HDR toggle on Windows, macOS, iOS, tvOS, and Linux — Linux needs a colour-managed Wayland compositor. Dolby Vision on Android, macOS, and Apple TV.
 [^pass]: Desktop, Android TV, and Apple TV.
-[^mpv]: Requires the mpv player backend — Android defaults to ExoPlayer. Not applied to Dolby Vision on Apple platforms.
+[^mpv]: Not applied to Dolby Vision on Apple platforms.
 [^pip]: Android, iOS, and macOS — not on Android TV or Apple TV.
 [^rrm]: Windows, Android, and tvOS.
 [^android]: Progress sync on Android.
@@ -229,6 +229,8 @@ For a show, `mode=next` (the default) plays the next episode to watch, and `mode
 adb shell am start -a android.intent.action.VIEW -d "plezy://play?type=show\&tvdb=81189\&profile=Kids"
 # macOS
 open "plezy://play?type=movie&tmdb=603"
+# Linux (the .deb, .rpm, .pkg.tar.zst and Flatpak register the scheme)
+xdg-open "plezy://play?type=movie&tmdb=603"
 ```
 
 On iOS, use the Open URLs action in Shortcuts.
@@ -236,7 +238,8 @@ On iOS, use the Open URLs action in Shortcuts.
 ## Building from Source
 
 ### Prerequisites
-- Flutter SDK 3.47.0+
+- JDK 27 and JDK 25 (Gradle finds both through its toolchain resolver)
+- The Android SDK for the Android apps; Xcode 27.2 on a Mac for the Apple apps
 - A Plex account, or a Jellyfin or Emby server with user credentials
 
 ### Setup
@@ -244,76 +247,55 @@ On iOS, use the Open URLs action in Shortcuts.
 ```bash
 git clone https://github.com/edde746/plezy.git
 cd plezy
-flutter pub get
-scripts/codegen.sh
-flutter run
+./gradlew :app-desktop:run              # Windows, Linux
+./gradlew :app-android:installDebug     # Android
 ```
+
+For the Apple apps, generate the Xcode project and run its `Plezy-iOS`, `Plezy-tvOS` or `Plezy-macOS` scheme; [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 
 <details>
 <summary>Code generation</summary>
 
-After modifying model classes or other generated sources:
+After changing `relay_protocol.json` or the collation data:
 
 ```bash
-scripts/codegen.sh
-```
-
-After modifying translations:
-
-```bash
-dart run slang
+python3 scripts/codegen/generate_relay_protocol.py
+python3 scripts/codegen/generate_ducet_order.py
 ```
 
 </details>
 
 <details>
-<summary>Packaging a Flatpak bundle</summary>
+<summary>Packaging for Linux</summary>
 
-Packages an **already fully resolved Linux release bundle** — pinned libmpv and bundled libraries included, not a Flathub source-build manifest. Run it on Linux, on the same architecture as the bundle, after following the bundle preparation steps in [the Linux release workflow](.github/workflows/build.yml): `flutter build linux` alone does not produce all the required bundled libraries.
-
-Install the packaging tools (Debian/Ubuntu shown) plus the native-architecture SDK and runtime:
+The packages wrap the desktop app image, `./gradlew :app-desktop:createReleaseDistributable` (`desktop/app/build/compose/binaries/main-release/app/Plezy`: JetBrains Runtime, the app as ProGuard shrank it, libmpv). Run the scripts on Ubuntu 24.04, natively on the image's architecture, with the packaging tools and the libraries the app needs from the host installed; `check-host-deps.py` names any library that is missing or undeclared.
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y flatpak flatpak-builder imagemagick
-flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+sudo apt-get install -y ruby rpm binutils libarchive-tools zstd xz-utils zsync file curl \
+  liblua5.2-0 libmujs3 libdisplay-info1 libbz2-1.0 libasound2t64 libdrm2 libegl1 libfontconfig1 libfreetype6 \
+  libfribidi0 libgbm1 libgl1 libglib2.0-0t64 libgnutls30t64 libharfbuzz0b liblcms2-2 libpipewire-0.3-0t64 libpulse0 \
+  libsecret-1-0 libstdc++6 libva-drm2 libva-wayland2 libva-x11-2 libva2 libwayland-client0 libwayland-cursor0 \
+  libwayland-egl1 libx11-6 libxext6 libxi6 libxkbcommon0 libxrandr2 libxrender1 libxtst6 zlib1g
+sudo gem install fpm -v 1.17.0 --no-document
 
-BUNDLE_DIR=build/linux/x64/release/bundle
-python3 linux/packaging/build-flatpak.py --bundle "$BUNDLE_DIR" --arch x64 --output "$PWD"
+APP=desktop/app/build/compose/binaries/main-release/app/Plezy
+python3 desktop/app/packaging/linux/build-packages.py --app "$APP" --arch x64 --version 2.26.0 --output "$PWD"
+bash desktop/app/packaging/linux/build-appimage.sh --app "$APP" --arch x64 --output "$PWD"
+python3 -m unittest discover desktop/app/packaging/linux
 ```
 
-That writes `plezy-linux-x64.flatpak`, installable with the Flatpak commands above; on arm64, use the prepared arm64 bundle directory and `--arch arm64`. Package from the checkout matching the bundle, since the version comes from `pubspec.yaml`.
-
-Cross-architecture packaging needs native Flatpak tools, a registered binfmt interpreter, and the target SDK/runtime installed with `flatpak install --user --arch=x86_64` (or `aarch64`) — never run Flatpak's namespace tools under emulation. Pass `--arch x64` or `--arch arm64` to the checker and the matching Flatpak architecture to `flatpak run --arch=...`.
-
-Check the installed package against the runtime (not just the SDK), then launch it on a Wayland desktop and exercise streaming, audio, downloads/offline playback, and file chooser portals:
-
-```bash
-python3 linux/packaging/check-flatpak.py
-```
-
-The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
+That writes `plezy-linux-x64.deb`, `.rpm`, `.pkg.tar.zst`, `.tar.gz`, `.AppImage` and `.AppImage.zsync`. The Flatpak (`build-flatpak.py`, runtime `org.freedesktop.Platform//26.08`) also takes the Ubuntu libraries libmpv links, unpacked from their packages (`--libs`); its header and the Linux job of [the release workflow](.github/workflows/build.yml) show how, and `check-flatpak.py` checks the installed Flatpak.
 
 </details>
 
 <details>
 <summary>Local checks</summary>
 
-```bash
-scripts/ci_checks.sh
-```
-
-To install the same pre-commit checks locally:
+The checks CI runs are listed in [CONTRIBUTING.md](CONTRIBUTING.md#checks); for the server and the website:
 
 ```bash
-scripts/setup_hooks.sh
-```
-
-End-to-end tests (Android emulator plus a Dockerized Jellyfin fixture):
-
-```bash
-python3 scripts/maestro/run_maestro.py basic
+scripts/ci_server_checks.sh
+scripts/ci_website_checks.sh
 ```
 
 </details>
@@ -328,6 +310,6 @@ Plezy is licensed under [GPL-3.0](LICENSE). The license covers the code, not the
 
 ## Acknowledgments
 
-- Built with [Flutter](https://flutter.dev)
+- Built with [Kotlin Multiplatform](https://kotlinlang.org/multiplatform/), [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) and SwiftUI
 - Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
-- Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), and [libass-android](https://github.com/peerless2012/libass-android)
+- Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android))
