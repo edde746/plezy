@@ -34,6 +34,14 @@ class NavigationTabsTest {
     }
 
     @Test
+    fun aPhonesMoreHoldsDownloadsAndSettingsOnlyWhileExploreShows() {
+        assertEquals(listOf(DOWNLOADS, SETTINGS), NavigationTabs.moreHeld(NavigationTabs.visible(offline = false, hasExplore = true, downloads = true)))
+        assertEquals(emptyList(), NavigationTabs.moreHeld(NavigationTabs.visible(offline = false, hasExplore = false, downloads = true)))
+        assertEquals(emptyList(), NavigationTabs.moreHeld(NavigationTabs.visible(offline = false, hasExplore = true, downloads = false)))
+        assertEquals(emptyList(), NavigationTabs.moreHeld(NavigationTabs.visible(offline = true, hasExplore = true, downloads = true)))
+    }
+
+    @Test
     fun startupPrefersTheVisiblePreferenceThenTheFirst() {
         val online = NavigationTabs.visible(offline = false, hasExplore = false, downloads = true)
         assertEquals(SEARCH, NavigationTabs.startup(online, preferred = SEARCH))

@@ -19,6 +19,13 @@ object NavigationTabs {
             }
         }
 
+    /**
+     * What a phone's bar leaves to its More menu among [visible]: Downloads and Settings while the destinations outnumber
+     * the bar's five places (Explore shown), else nothing.
+     */
+    fun moreHeld(visible: List<TopLevelDestination>): List<TopLevelDestination> =
+        if (visible.size > 5) visible.filter { it == TopLevelDestination.DOWNLOADS || it == TopLevelDestination.SETTINGS } else emptyList()
+
     /** The destination to start on among [visible]: the [preferred] one while it shows, otherwise the first. */
     fun startup(visible: List<TopLevelDestination>, preferred: TopLevelDestination?): TopLevelDestination =
         preferred?.takeIf { it in visible } ?: visible.first()

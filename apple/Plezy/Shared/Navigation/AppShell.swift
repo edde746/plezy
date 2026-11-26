@@ -387,14 +387,14 @@ struct AppShell: View {
     }
     #endif
 
-    /// The destinations iPhone's tab bar leaves to its More tab: Downloads and Settings while the destinations outnumber
-    /// the five tabs UIKit's compact tab bar holds, Search's among them (with Explore shown), which past five makes a
-    /// More list of its own. From iOS 17.4, which opens a menu from code (`MoreMenu`); before it that list holds the
-    /// rest. None on iPad, the Mac and Apple TV.
+    /// The destinations iPhone's tab bar leaves to its More tab (`NavigationTabs.moreHeld`: Downloads and Settings while
+    /// Explore shows), as past the five tabs UIKit's compact tab bar holds, Search's among them, it makes a More list of
+    /// its own. From iOS 17.4, which opens a menu from code (`MoreMenu`); before it that list holds the rest. None on
+    /// iPad, the Mac and Apple TV.
     private func moreHeld(_ shell: ShellUiState) -> [TopLevelDestination] {
         #if os(iOS)
-        guard #available(iOS 17.4, *), UIDevice.current.userInterfaceIdiom == .phone, shell.destinations.count > 5 else { return [] }
-        return shell.destinations.filter { $0 == .downloads || $0 == .settings }
+        guard #available(iOS 17.4, *), UIDevice.current.userInterfaceIdiom == .phone else { return [] }
+        return NavigationTabs.shared.moreHeld(visible: shell.destinations)
         #else
         return []
         #endif
