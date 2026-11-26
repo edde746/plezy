@@ -6,11 +6,14 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import coil3.Bitmap
 import coil3.BitmapImage
 import coil3.ComponentRegistry
+import coil3.ImageLoader
 import org.jetbrains.skia.ColorAlphaType
 
 internal actual fun Bitmap.toComposeBitmap(): ImageBitmap = asComposeImageBitmap()
 
 internal actual fun ImageBitmap.toCoilBitmap(): Bitmap = asSkiaBitmap()
+
+internal actual fun ImageLoader.Builder.tierBitmaps(reduced: Boolean): ImageLoader.Builder = this
 
 internal actual fun ComponentRegistry.Builder.addDecoders() {
     add(FilteredSkiaDecoder.Factory())
