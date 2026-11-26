@@ -290,7 +290,7 @@ private struct HeaderRow<Row: View, Actions: View>: View {
                 #if os(macOS)
                 LineForms(width: width) { headerLine(sides) }
                 #else
-                HeaderForms(ranks: HeaderRank.lineForms) { headerLine(sides) }
+                LineForms(width: rowFrame.width > 0 ? rowFrame.width : nil) { headerLine(sides) }
                 #endif
             } else {
                 headerLine(sides)
@@ -340,7 +340,7 @@ private struct HeaderRow<Row: View, Actions: View>: View {
     #if os(iOS)
     /// The content is scrolled up under the row (`drawnScrollEdge`): the fade under it shows (iOS 26 and later).
     @Environment(\.drawnScrollEdge) private var drawnEdge
-    /// The row's frame in the window.
+    /// The row's frame in the window: where the fade under it ends, and its width for its forms (`LineForms`).
     @State private var rowFrame = CGRect.zero
 
     /// None on iOS 26 and later, where the row is the screen's bar over the soft edge; before, the screen's black.
@@ -366,13 +366,13 @@ private struct HeaderRow<Row: View, Actions: View>: View {
 
     /// The filters (Search's field): one row of glass. The actions stay out of it: on iOS a menu's entries over a group
     /// that holds a glass menu went to the group's glass (`glassGroup`). A row kept to one line (`scrolls`) gives way a
-    /// step at a time, the first form that fits (`HeaderForms`): everything whole; then the actions' titles (the Mac's:
-    /// Library's Shuffle, then its ⋯); then the filters ranked to give way (`symbolRank`: Library's sort, then its view,
-    /// then its Filters and type) each showing its symbol alone, the named one (Library's library) keeping its symbol
-    /// and name; then every filter with a symbol showing it alone (`compactFilters`), the widest left, Library's name,
-    /// cut short (`FittingRow`). So the name is cut only once every other control is its symbol. On iPad and the Mac
-    /// the whole line takes those forms (`body`); on a phone, whose actions show their icons alone, its filters do, in
-    /// a line that scrolls sideways where even the last doesn't fit (`FilterStrip`).
+    /// step at a time, the first form that fits (`LineForms`; a phone's filters, `HeaderForms`): everything whole; then
+    /// the actions' titles (the Mac's: Library's Shuffle, then its ⋯); then the filters ranked to give way (`symbolRank`:
+    /// Library's sort, then its view, then its Filters and type) each showing its symbol alone, the named one (Library's
+    /// library) keeping its symbol and name; then every filter with a symbol showing it alone (`compactFilters`), the
+    /// widest left, Library's name, cut short (`FittingRow`). So the name is cut only once every other control is its
+    /// symbol. On iPad and the Mac the whole line takes those forms (`body`); on a phone, whose actions show their icons
+    /// alone, its filters do, in a line that scrolls sideways where even the last doesn't fit (`FilterStrip`).
     @ViewBuilder
     private func filters(leading: CGFloat) -> some View {
         let glass = row.glassGroup(spacing: HeaderMetrics.spacing)
@@ -489,12 +489,12 @@ private struct Proposing: Layout {
     }
 }
 
-/// `content` in the first of its forms that fits the width it is given: at each of `ranks` (`symbolRank`), then with
-/// every filter its symbol and every action its icon (`compactFilters`), the last whether it fits or not. Each choice
-/// is between two forms: a ViewThatFits of three or more views hung an iPad in landscape for good as a library was
-/// picked (the main thread laying the header out), where one of two never did. A ViewThatFits proposed no width
-/// takes its first form, so each nested one is tried at its first form's width, and the outer one keeps the first form
-/// that fits all the same.
+/// A phone's row of filters (`FilterStrip`): `content` in the first of its forms that fits the width it is given: at
+/// each of `ranks` (`symbolRank`), then with every filter its symbol and every action its icon (`compactFilters`), the
+/// last whether it fits or not. Each choice is between two forms: a ViewThatFits of three or more views hung an iPad in
+/// landscape for good as a library was picked (the main thread laying the header out), where one of two never did. A
+/// ViewThatFits proposed no width takes its first form, so each nested one is tried at its first form's width, and the
+/// outer one keeps the first form that fits all the same.
 private struct HeaderForms<Content: View>: View {
     let ranks: ArraySlice<Int>
     let content: Content
@@ -522,41 +522,77 @@ private struct HeaderForms<Content: View>: View {
     }
 }
 
-#if os(macOS)
-/// A one-line row's forms on the Mac (`HeaderForms` of `HeaderRank.lineForms`), where the row is mostly wide enough
-/// for its first: that form alone while it fits whole, else every form in turn. Choosing among the forms
-/// (`ViewThatFits`) makes each of them anew whenever the row changes (a library opening, its sorts arriving), 100 to
-/// 300 ms of the Mac's main thread each time; the first form alone is only updated. The first form's own width is
-/// measured while it shows (`FormFit`), and every form shows once that is more than the row's width, until the row is
-/// that wide again: the choice never depends on which shows, so it settles at once. `width` is the row's frame as laid
-/// out (`HeaderRow`'s), not a width it is placed in: SwiftUI places a view in other sizes too, to find its alignment
-/// guides, and a choice made on those went back and forth for good. Not on iPad: there, measuring the row's width
-/// left an iPad turned to landscape never finishing its animations for UI tests. Not hidden while the width is unknown
-/// (its first frame, which a row too narrow for its first form shows cut short): the Mac's accessibility kept the
-/// frames of the row's menus from then, or reported each menu twice.
+/// A one-line row's forms on iPad and the Mac: `content` at each of `HeaderRank.lineForms` (`symbolRank`), then with
+/// every filter its symbol and every action its icon (`compactFilters`), the first whose own width fits the row's
+/// `width`, the last whether it fits or not. Only the form shown is made, and while it isn't the first, the next wider
+/// one beside it, unseen: each measures its own width (`FormFit`). The row steps to the next narrower form while the
+/// shown one is wider than the row, and back to the wider one once that fits, a step per update, so a row wide enough
+/// for its first form (the usual iPad and Mac window) makes that alone, and a narrow one settles within a few frames.
+/// Every form at once (`ViewThatFits` in `ViewThatFits`, a level per rank) made the forms anew whenever the row changed:
+/// on iPad (iOS 27.0) 4 to 8 s of the main thread as Libraries first showed and each time a library opened from the
+/// sidebar, on the Mac 100 to 300 ms. The forms' widths only shrink rank by rank, so the steps never go back and forth.
+/// `width` is the row's frame as laid out (`HeaderRow`'s), not a width it is placed in: SwiftUI places a view in other
+/// sizes too, to find its alignment guides, and a choice made on those went back and forth for good. Not hidden while
+/// the width is unknown (its first frame, which a row too narrow for its first form shows cut short): the Mac's
+/// accessibility kept the frames of the row's menus from then, or reported each menu twice.
 private struct LineForms<Content: View>: View {
     let width: CGFloat?
     @ViewBuilder let content: Content
 
-    /// The first form's own width, as last measured while it showed.
-    @State private var need: CGFloat?
+    /// The form shown: an index of `HeaderRank.lineForms`, or their count for the compact form.
+    @State private var shown = 0
+    /// The shown form's own width and the next wider one's, as last measured.
+    @State private var needs = FormNeeds()
 
     var body: some View {
-        let first = if let need, let width { need <= width + 0.5 } else { true }
-        FormFit(measures: first, need: $need) {
-            if first {
-                content.environment(\.symbolRank, 0)
-            } else {
-                HeaderForms(ranks: HeaderRank.lineForms) { content }
+        FormFit(need: $needs.shown) { form(shown) }
+            .background(alignment: .topLeading) {
+                if shown > 0 {
+                    FormFit(need: $needs.wider) { form(shown - 1) }
+                        .fixedSize()
+                        .hidden()
+                        .accessibilityHidden(true)
+                }
             }
+            .onChange(of: FormStep(width: width, needs: needs), initial: true) { step() }
+    }
+
+    /// `content` as the form `index` shows it.
+    private func form(_ index: Int) -> some View {
+        let ranks = HeaderRank.lineForms
+        return content
+            .environment(\.symbolRank, index < ranks.count ? ranks[index] : Int.max)
+            .environment(\.compactFilters, index >= ranks.count)
+    }
+
+    /// One step to the narrower form while the shown one doesn't fit, else to the wider one where that fits.
+    private func step() {
+        guard let width else { return }
+        if let need = needs.shown, need > width + 0.5, shown < HeaderRank.lineForms.count {
+            shown += 1
+            needs = FormNeeds(shown: nil, wider: need)
+        } else if shown > 0, let wider = needs.wider, wider <= width + 0.5 {
+            shown -= 1
+            needs = FormNeeds(shown: wider, wider: nil)
         }
     }
 }
 
-/// Its one view at the size it is given, and where it `measures`, the view's own width in `need` (after the update
-/// under way: SwiftUI's state changes in the next one).
+/// The own widths `LineForms` chooses by: the shown form's and the next wider one's, nil until measured.
+private struct FormNeeds: Equatable {
+    var shown: CGFloat?
+    var wider: CGFloat?
+}
+
+/// What `LineForms` steps on: the row's width and its forms' widths.
+private struct FormStep: Equatable {
+    let width: CGFloat?
+    let needs: FormNeeds
+}
+
+/// Its one view at the size it is given, its own width in `need` (after the update under way: SwiftUI's state changes
+/// in the next one).
 private struct FormFit: Layout {
-    let measures: Bool
     let need: Binding<CGFloat?>
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -565,19 +601,16 @@ private struct FormFit: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         guard let view = subviews.first else { return }
-        if measures {
-            let own = view.sizeThatFits(.unspecified).width
-            if own != need.wrappedValue {
-                let need = need
-                Task { @MainActor in
-                    if need.wrappedValue != own { need.wrappedValue = own }
-                }
+        let own = view.sizeThatFits(.unspecified).width
+        if own != need.wrappedValue {
+            let need = need
+            Task { @MainActor in
+                if need.wrappedValue != own { need.wrappedValue = own }
             }
         }
         view.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
     }
 }
-#endif
 
 extension View {
     /// A header action whose title gives way at `rank` (`HeaderRank`) in a one-line row: from then on its icon alone.
