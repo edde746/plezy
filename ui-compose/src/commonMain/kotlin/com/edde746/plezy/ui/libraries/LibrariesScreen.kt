@@ -157,6 +157,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import androidx.compose.foundation.lazy.grid.LazyGridLayoutInfo
 import com.edde746.plezy.ui.components.MediaGrid
+import com.edde746.plezy.ui.components.gridMotionReach
 import com.edde746.plezy.ui.components.TouchPullToRefresh
 import kotlinx.coroutines.launch
 
@@ -856,14 +857,15 @@ internal fun PagedItemsGrid(
     val bar = letters.isNotEmpty()
     val side = dimens.screenPadding
     val gridState = rememberHeaderGridState()
+    val reach = if (appearance.tv && appearance.viewMode != ViewMode.LIST) gridMotionReach() else 0
     val scope = rememberCoroutineScope()
     val jumper = remember(gridState) { AlphaJumper(gridState) }
     val layout by rememberUpdatedState(onLayout)
     val visible by rememberUpdatedState(onVisible)
     val scrolling by rememberUpdatedState(onScrolling)
     val letter by rememberUpdatedState(onLetter)
-    LaunchedEffect(gridState) {
-        snapshotFlow { gridState.layoutInfo.screenGeometry() }.filterNotNull().distinctUntilChanged().collect { (columns, rows) -> layout(columns, rows) }
+    LaunchedEffect(gridState, reach) {
+        snapshotFlow { gridState.layoutInfo.screenGeometry(reach) }.filterNotNull().distinctUntilChanged().collect { (columns, rows) -> layout(columns, rows) }
     }
     LaunchedEffect(gridState) {
         snapshotFlow { gridState.firstVisibleItemIndex to gridState.layoutInfo.visibleItemsInfo.size }
@@ -928,6 +930,7 @@ internal fun PagedItemsGrid(
                     cardModifier = { _, item -> Modifier.rememberFocus(focus.memory, itemKey(item.id)) },
                     onLongClick = onLongClick,
                     onMissing = onMissing,
+                    layerMotion = appearance.tv,
                 )
                 if (total == 0) empty?.invoke()
             }
@@ -971,11 +974,14 @@ internal fun PagedItemsGrid(
     }
 }
 
-/** The columns and the rows a screen of the grid holds, once laid out: rows from its first cell's height. */
-private fun LazyGridLayoutInfo.screenGeometry(): Pair<Int, Int>? {
+/**
+ * The columns and the rows a screen of the grid holds, once laid out: rows from its first cell's height, in its height
+ * less the [reach] it is laid out past each end ([gridMotionReach]).
+ */
+private fun LazyGridLayoutInfo.screenGeometry(reach: Int): Pair<Int, Int>? {
     val cell = visibleItemsInfo.firstOrNull() ?: return null
     val row = cell.size.height + mainAxisItemSpacing
-    return maxSpan.coerceAtLeast(1) to (viewportSize.height / row.coerceAtLeast(1)).coerceAtLeast(1)
+    return maxSpan.coerceAtLeast(1) to ((viewportSize.height - 2 * reach) / row.coerceAtLeast(1)).coerceAtLeast(1)
 }
 
 /**
