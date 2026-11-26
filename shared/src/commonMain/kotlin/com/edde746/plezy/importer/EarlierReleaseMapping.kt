@@ -89,11 +89,13 @@ internal class ImportPlan(
     private val profileSettings: List<Profile_setting>,
     private val serverSettings: List<Server_setting>,
     private val liveTvFavorites: List<Live_tv_favorite>,
-    private val trackerAccounts: List<Tracker_account>,
     val unidentifiedPlexAccount: String?,
 ) {
-    /** Inserts every row and setting in [tx]; a row already there fails the transaction. */
-    fun writeRows(tx: Tx) {
+    /**
+     * Inserts every row and setting in [tx], with the tracker accounts of [storedSessions], the [trackerSessions]
+     * stored; a row already there fails the transaction.
+     */
+    fun writeRows(tx: Tx, storedSessions: List<ImportedTrackerSession>) {
         val q = tx.q
         connections.forEach { q.connectionQueries.insertRow(it) }
         profiles.forEach { q.profileQueries.insertRow(it) }
@@ -161,14 +163,18 @@ internal class ImportPlan(
         profileSettings.forEach { q.deviceSettingQueries.upsertProfileSetting(it) }
         serverSettings.forEach { q.deviceSettingQueries.upsertServerSetting(it) }
         liveTvFavorites.forEach { q.liveTvFavoriteQueries.insertRow(it) }
-        trackerAccounts.forEach { q.trackerQueries.upsertAccount(it) }
+        for (session in storedSessions) {
+            q.trackerQueries.upsertAccount(
+                Tracker_account(session.scope, session.service.id, session.stored.session.username, session.stored.connectedAt),
+            )
+        }
     }
 
     /** Counts of what the import keeps, for the log. */
     fun summary(): String =
         "${connections.size} connections, ${profiles.size} profiles, ${bindings.size} bindings, " +
             "${database.downloadedMedia.size} downloads, ${deviceSettings.size} settings, ${profileSettings.size} profile settings, " +
-            "${serverSettings.size} server settings, ${trackerAccounts.size} tracker accounts"
+            "${serverSettings.size} server settings"
 }
 
 /**
@@ -236,9 +242,6 @@ internal suspend fun planImport(found: EarlierRelease, now: Long, plexUser: Plex
         profileSettings = mapped.profile.map { (key, value) -> Profile_setting(key.first, key.second, value.toString()) },
         serverSettings = mapped.server.map { (key, value) -> Server_setting(key.first, key.second, value.toString()) },
         liveTvFavorites = liveTvFavorites(prefs, connections),
-        trackerAccounts = sessions.trackers.map {
-            Tracker_account(it.scope, it.service.id, it.stored.session.username, it.stored.connectedAt)
-        },
         unidentifiedPlexAccount = unidentifiedPlexAccount,
     )
 }

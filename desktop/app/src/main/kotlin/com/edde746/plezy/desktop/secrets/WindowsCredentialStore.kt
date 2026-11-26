@@ -30,7 +30,9 @@ import java.nio.charset.StandardCharsets.UTF_16LE
  * (`Plezy_Part1`, `Plezy_Part2`, …) of the same credential: one write, never a half-updated value.
  *
  * Credential Manager needs the credentials of an interactive logon: in a session without them (an SSH session with
- * key authentication, a service) every call fails with ERROR_NO_SUCH_LOGON_SESSION.
+ * key authentication, a service) every call fails with ERROR_NO_SUCH_LOGON_SESSION. Every app of a Windows user shares
+ * one store of limited size: once the user's credentials fill it, every write fails with ERROR_NOT_ENOUGH_MEMORY,
+ * however much memory is free (an elevated process gets a few more kilobytes).
  *
  * Calls run one at a time in the process. Concurrent CredWriteW calls from several threads of one process lose
  * writes: on Windows 11, of 16 parallel writes to distinct targets, up to 14 read back stale or missing, while
@@ -150,6 +152,7 @@ internal class WindowsCredentialStore : SecretStore {
         private const val CRED_TYPE_GENERIC = 1
         private const val CRED_PERSIST_LOCAL_MACHINE = 2
         private const val ERROR_NOT_FOUND = 1168
+        private const val ERROR_NOT_ENOUGH_MEMORY = 8
         private const val ERROR_NO_SUCH_LOGON_SESSION = 1312
 
         // CRED_MAX_CREDENTIAL_BLOB_SIZE, CRED_MAX_ATTRIBUTES, CRED_MAX_VALUE_SIZE.
@@ -207,10 +210,12 @@ internal class WindowsCredentialStore : SecretStore {
         private fun Arena.bytes(bytes: ByteArray): MemorySegment = allocate(bytes.size.toLong()).copyFrom(MemorySegment.ofArray(bytes))
 
         private fun failure(function: String, error: Int): IllegalStateException {
-            val detail = if (error == ERROR_NO_SUCH_LOGON_SESSION) {
-                "this logon session has no credentials; Credential Manager needs an interactive logon"
-            } else {
-                Api.describe(error)
+            val detail = when (error) {
+                ERROR_NO_SUCH_LOGON_SESSION -> "this logon session has no credentials; Credential Manager needs an interactive logon"
+                ERROR_NOT_ENOUGH_MEMORY ->
+                    "Credential Manager is full: remove saved credentials this Windows user no longer needs in Control Panel, " +
+                        "Credential Manager, Windows Credentials"
+                else -> Api.describe(error)
             }
             return IllegalStateException("$function failed: error $error ($detail)")
         }
