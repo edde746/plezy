@@ -66,9 +66,9 @@ data class MenuEntry(
 data class ItemMenu(val title: String, val entries: List<MenuEntry>)
 
 /**
- * Where a [MenuEntryProvider]'s entries go in an item's menu, in menu order: music actions first; Rate after View
- * details; metadata edits (Edit, Quick Tag, Match) after Rate; downloads after the file entries; the watchlist after
- * downloads. A playlist's or collection's download entries go in [LIST_DOWNLOADS], between Shuffle and Delete.
+ * Where a [MenuEntryProvider]'s entries go in an item's menu, in menu order: music actions first; Rate after Mark as
+ * Watched and the watchlist after Rate; downloads before Add to…; metadata edits (Edit, Quick Tag, Match) after the file
+ * entries. A playlist's or collection's download entries go in [LIST_DOWNLOADS], between Shuffle and Delete.
  */
 enum class MenuSlot { MUSIC, RATE, METADATA, DOWNLOADS, WATCHLIST, LIST_DOWNLOADS }
 
@@ -169,12 +169,12 @@ enum class RowAction { PLAY, VERSIONS, TRAILER, SHUFFLE, INSTANT_MIX, DOWNLOAD, 
 private val musicRowEntries = mapOf(RowAction.PLAY to "music_play", RowAction.INSTANT_MIX to "music_instant_mix")
 
 /**
- * A single item's entries, in order: [provided] music actions, Play from beginning, Play trailer (only with [trailer]:
- * the detail screen passes it), Mark as Watched / Unwatched (Played / Unplayed for music), Remove from Continue
- * Watching, View details, Rate, metadata edits, Remove from collection, Go to series, Shuffle Play, Show link, Play
- * Version (a submenu of the versions and qualities where the item's versions are known: [playVersionChoices]), File
- * Info, Play in External Player, downloads, watchlist, Add to… (a submenu of Playlist and Collection where both may be
- * added to), Delete from server. The entries of the buttons in [onRow] are left out: the detail's row shows them. Its
+ * A single item's entries, in order: [provided] music actions; Play from beginning, Mark as Watched / Unwatched
+ * (Played / Unplayed for music), Rate, watchlist, Remove from Continue Watching; Go to series, View details, Shuffle
+ * Play, Play trailer (only with [trailer]: the detail screen passes it); downloads, Add to… (a submenu of Playlist and
+ * Collection where both may be added to), Remove from collection; Play Version (a submenu of the versions and qualities
+ * where the item's versions are known: [playVersionChoices]), Play in External Player, File Info, Show link; metadata
+ * edits; Delete from server. The entries of the buttons in [onRow] are left out: the detail's row shows them. Its
  * watched toggle does one of the two (Mark as Unwatched once the item is watched, else Mark as Watched): a partly
  * watched item keeps the other.
  */
@@ -201,7 +201,6 @@ internal fun itemMenuEntries(
             addAll(provided[MenuSlot.MUSIC].orEmpty().filter { it.id !in shown })
         }
         if (activeProgress) add(MenuEntry(PLAY_FROM_BEGINNING, menu.playFromBeginning, MenuIcon.REPLAY))
-        if (trailer && RowAction.TRAILER !in onRow) add(MenuEntry(PLAY_TRAILER, T.tooltips.playTrailer, MenuIcon.TRAILER))
         if (kind != MediaKind.PHOTO) {
             val music = kind.isMusic
             val toggle = if (RowAction.WATCHED !in onRow) null else if (item.isWatched) UNWATCH else WATCH
@@ -212,27 +211,18 @@ internal fun itemMenuEntries(
                 add(MenuEntry(UNWATCH, if (music) menu.markAsUnplayed else menu.markAsUnwatched, MenuIcon.UNWATCHED))
             }
         }
+        if (video) addAll(provided[MenuSlot.RATE].orEmpty())
+        if (RowAction.WATCHLIST !in onRow) addAll(provided[MenuSlot.WATCHLIST].orEmpty())
         if (place.continueWatching && gates.canRemoveFromContinueWatching) {
             add(MenuEntry(REMOVE_FROM_CONTINUE_WATCHING, menu.removeFromContinueWatching, MenuIcon.CLOSE))
-        }
-        if (place.continueWatching && video) add(MenuEntry(DETAILS, menu.viewDetails, MenuIcon.INFO))
-        if (video) addAll(provided[MenuSlot.RATE].orEmpty())
-        addAll(provided[MenuSlot.METADATA].orEmpty())
-        if (place.collectionId != null && canManageCollections) {
-            add(MenuEntry(REMOVE_FROM_COLLECTION, T.collections.removeFromCollection, MenuIcon.REMOVE))
         }
         if ((kind == MediaKind.EPISODE || kind == MediaKind.SEASON) && seriesKey != null && !place.continueWatching && place.seriesId != seriesKey) {
             add(MenuEntry(SERIES, menu.goToSeries, MenuIcon.TV))
         }
+        if (place.continueWatching && video) add(MenuEntry(DETAILS, menu.viewDetails, MenuIcon.INFO))
         if ((kind == MediaKind.SHOW || kind == MediaKind.SEASON) && RowAction.SHUFFLE !in onRow) add(MenuEntry(SHUFFLE_PLAY, menu.shufflePlay, MenuIcon.SHUFFLE))
-        if (serverItemLink(item) != null) add(MenuEntry(SHOW_LINK, T.deepLinks.showLink, MenuIcon.LINK))
-        if (movieOrEpisode && (hasVersionChoice || gates.canTranscode) && gates.serverOnline && RowAction.VERSIONS !in onRow) {
-            add(MenuEntry(PLAY_VERSION, menu.playVersion, MenuIcon.VIDEO_FILE, children = playVersionChoices(item, gates)))
-        }
-        if (kind.hasFileInfo) add(MenuEntry(FILE_INFO, menu.fileInfo, MenuIcon.INFO))
-        if (gates.externalPlayers && movieOrEpisode) add(MenuEntry(PLAY_EXTERNAL, T.externalPlayer.playInExternalPlayer, MenuIcon.OPEN_IN_NEW))
+        if (trailer && RowAction.TRAILER !in onRow) add(MenuEntry(PLAY_TRAILER, T.tooltips.playTrailer, MenuIcon.TRAILER))
         if (RowAction.DOWNLOAD !in onRow) addAll(provided[MenuSlot.DOWNLOADS].orEmpty())
-        if (RowAction.WATCHLIST !in onRow) addAll(provided[MenuSlot.WATCHLIST].orEmpty())
         if (video) {
             val targets = if (canManageCollections) {
                 listOf(
@@ -244,6 +234,16 @@ internal fun itemMenuEntries(
             }
             add(MenuEntry(ADD_TO, T.common.addTo, MenuIcon.ADD, children = targets))
         }
+        if (place.collectionId != null && canManageCollections) {
+            add(MenuEntry(REMOVE_FROM_COLLECTION, T.collections.removeFromCollection, MenuIcon.REMOVE))
+        }
+        if (movieOrEpisode && (hasVersionChoice || gates.canTranscode) && gates.serverOnline && RowAction.VERSIONS !in onRow) {
+            add(MenuEntry(PLAY_VERSION, menu.playVersion, MenuIcon.VIDEO_FILE, children = playVersionChoices(item, gates)))
+        }
+        if (gates.externalPlayers && movieOrEpisode) add(MenuEntry(PLAY_EXTERNAL, T.externalPlayer.playInExternalPlayer, MenuIcon.OPEN_IN_NEW))
+        if (kind.hasFileInfo) add(MenuEntry(FILE_INFO, menu.fileInfo, MenuIcon.INFO))
+        if (serverItemLink(item) != null) add(MenuEntry(SHOW_LINK, T.deepLinks.showLink, MenuIcon.LINK))
+        addAll(provided[MenuSlot.METADATA].orEmpty())
         if (gates.canDeleteFromServer) add(MenuEntry(DELETE_MEDIA, deleteMenuLabel(kind), MenuIcon.DELETE_FOREVER, destructive = true))
     }
 }
