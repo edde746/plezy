@@ -25,6 +25,7 @@ import com.edde746.plezy.settings.ServerSettings
 import com.edde746.plezy.settings.ThemeMode
 import com.edde746.plezy.settings.TrackerLibraryFilterMode
 import com.edde746.plezy.settings.ViewMode
+import com.edde746.plezy.trackers.FailingSecretStore
 import com.edde746.plezy.trackers.TrackerService
 import com.edde746.plezy.trackers.TrackerSession
 import com.edde746.plezy.trackers.TrackerTokenStore
@@ -356,6 +357,33 @@ class EarlierReleaseImportTest {
         assertEquals(EarlierReleaseOutcome.IMPORTED, import.run(desktopInstall("v25", "desktop-upgrade")))
         assertEquals(4, connections.list().size)
         assertEquals(ViewMode.LIST, data.deviceSettings.value(AppSettings.viewMode))
+    }
+
+    @Test
+    fun aSecretStoreThatRefusesEveryWriteImportsEverythingButTheTokens() = runTest {
+        // Windows' Credential Manager once this user's credentials fill it.
+        val refusing = FailingSecretStore().apply { failWrites = true }
+        val data = data()
+        val import = EarlierReleaseImport(data, refusing)
+
+        assertEquals(EarlierReleaseOutcome.IMPORTED, import.run(desktopInstall("v25", "desktop-upgrade")))
+
+        assertEquals(EarlierReleaseOutcome.IMPORTED, import.outcome())
+        assertEquals(emptyMap(), refusing.memory.entries)
+        // Every account's row is kept without its tokens: it signs in again.
+        assertEquals(
+            setOf("plex-acct-1", "jf-machine/user-1", "emby-machine/user-9", "jf-lost/user-2"),
+            data.db.read { connectionQueries.selectAll().executeAsList() }.map { it.id }.toSet(),
+        )
+        val listed = ConnectionStore(data, refusing).list()
+        assertTrue(listed.isNotEmpty() && listed.all { it.text("accountToken") == null && it.text("accessToken") == null })
+        // The rest as with a working store: profiles, settings, downloads.
+        assertEquals(listOf("local-aaa", "local-bbb"), data.profiles.list().map { it.id })
+        assertEquals(ViewMode.LIST, data.deviceSettings.value(AppSettings.viewMode))
+        assertTrue(data.db.read { downloadedMediaQueries.selectAllMedia().executeAsList() }.isNotEmpty())
+        // A tracker account whose session wasn't stored isn't listed as connected.
+        assertEquals(emptyList(), data.trackerAccounts.accounts("local-aaa"))
+        assertEquals(emptyList(), data.trackerAccounts.accounts("plex-home-plex-acct-1-0123456789abcdef"))
     }
 
     @Test

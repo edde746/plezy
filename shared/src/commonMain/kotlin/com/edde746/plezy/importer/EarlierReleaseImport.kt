@@ -55,8 +55,10 @@ enum class EarlierReleaseOutcome {
  * The order: the preference store, the credential vault's key from it, the database (read from a private copy, older
  * schemas upgraded on the copy; on Apple TV the recovery copy of a purged one), then the mapping. Tokens go to
  * [secrets] first (writing them again is harmless); then every row, every setting and the done marker land in one
- * transaction, so an import that fails leaves nothing behind and runs again on the next launch. The earlier release's
- * files are never changed: reinstalling it keeps working.
+ * transaction, so an import that fails leaves nothing behind and runs again on the next launch. A token the secret
+ * store refuses is lost as one that won't decrypt is: its account signs in again, and everything else is imported, so
+ * a store that refuses every write (Windows' Credential Manager once this user's credentials fill it) never holds up
+ * the start. The earlier release's files are never changed: reinstalling it keeps working.
  *
  * After the app's data was reset ([com.edde746.plezy.data.DataReset]) the earlier release is handled for good: the
  * reset's mark ([resetMarker] in the app's files directory, outside the database the reset replaced) makes the next
@@ -96,17 +98,35 @@ class EarlierReleaseImport(private val data: LocalData, private val secrets: Sec
             return EarlierReleaseOutcome.NOTHING
         }
         val plan = planImport(found, data.db.wallClock(), plexUser)
-        for ((key, value) in plan.secrets) secrets.put(key, value)
+        var lost = 0
+        for ((key, value) in plan.secrets) {
+            if (!stored(key) { secrets.put(key, value) }) lost++
+        }
         val tokens = TrackerTokenStore(secrets)
-        for (session in plan.trackerSessions) tokens.save(session.scope, session.service, session.stored)
+        val trackerSessions = plan.trackerSessions.filter { session ->
+            stored("the ${session.service.id} session of ${session.scope}") { tokens.save(session.scope, session.service, session.stored) }
+        }
+        lost += plan.trackerSessions.size - trackerSessions.size
         data.db.write {
-            plan.writeRows(this)
+            plan.writeRows(this, trackerSessions)
             SettingsMigrations.applyLegacyMigrations(this)
             SettingsMigrations.applyStartupMigrations(this)
             mark(found.outcome, plan.unidentifiedPlexAccount)
         }
-        Log.i(TAG) { "earlier release imported (${found.outcome}): ${plan.summary()}" }
+        Log.i(TAG) { "earlier release imported (${found.outcome}): ${plan.summary()}, ${trackerSessions.size} tracker accounts" }
+        if (lost > 0) Log.w(TAG) { "$lost credentials weren't stored: their accounts sign in again" }
         return found.outcome
+    }
+
+    /** Runs [write], which stores the credential [what]; false (logged) when the secret store refuses it. */
+    private suspend fun stored(what: String, write: suspend () -> Unit): Boolean = try {
+        write()
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, e) { "the secret store refused $what" }
+        false
     }
 
     /**
