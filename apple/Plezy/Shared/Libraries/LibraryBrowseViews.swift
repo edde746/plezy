@@ -186,6 +186,11 @@ struct LibraryPagedGrid: View {
     @State private var jumpGeneration = 0
     /// The newest jump once its animation ran: scrolled to exactly.
     @State private var settled: GridJump?
+    #if os(tvOS)
+    /// The cell focus was last on, by its index and its item's id: coming back to the grid (Menu from the screen a card
+    /// opened) puts focus back there, whether or not the system has restored it yet when the grid's first focus runs.
+    @State private var lastFocus: (index: Int, id: String)?
+    #endif
     #if os(iOS)
     /// Holds the screen at its full refresh rate while the grid moves.
     @State private var fullRate = FullRateLink()
@@ -246,15 +251,18 @@ struct LibraryPagedGrid: View {
         // Down from the header row lands on the grid.
         .shelfFocusSection()
         #if os(tvOS)
-        // Focus enters on the first item once it loads, unless a controller's shoulder button put it on the view menu.
+        // Focus enters on the first item once it loads, unless a controller's shoulder button put it on the view menu; back
+        // from a screen a card opened, on that card if it is still there.
         .task(id: "\(card(0) != nil)|\(claimsFocus)|\(active)|\(tabBarHoldsFocus)") {
             guard !list, claimsFocus, active, !tabBarHoldsFocus, let first = card(0) else { return }
-            await FocusRestore.restore($cellFocus, to: first.id, hold: 1)
+            let back = lastFocus.flatMap { last in card(last.index)?.id == last.id ? last.id : nil }
+            await FocusRestore.restore($cellFocus, to: back ?? first.id, hold: 1)
         }
         .onChange(of: focusRequest) {
             if let first = shown.indices.min(), let item = card(first) { cellFocus = item.id }
         }
         .onChange(of: cellFocus) { old, new in
+            if let new, let index = shown.indices.first(where: { card($0)?.id == new }) { lastFocus = (index, new) }
             if old != nil, new != nil { onMove() }
         }
         #endif
