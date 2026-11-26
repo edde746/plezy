@@ -16,8 +16,8 @@ final class ShellChromeTests: PlezyUITestCase {
         )
     }
 
-    private func launch(_ destination: String = "home", settings: [String] = []) throws {
-        launchDev(settings: settings, arguments: ["--dev-server", try server(), "--dev-open", destination])
+    private func launch(_ destination: String = "home", settings: [String] = [], extra: [String] = []) throws {
+        launchDev(settings: settings, arguments: ["--dev-server", try server(), "--dev-open", destination] + extra)
     }
 
     #if !os(tvOS)
@@ -259,6 +259,67 @@ final class ShellChromeTests: PlezyUITestCase {
         }
         #endif
     }
+
+    #if os(iOS)
+    /// The fake Seerr (`PLEZY_SEERR_URL`, else the lab's), a run of its own: connected, it shows Explore.
+    private let seerrUrl = "\(ProcessInfo.processInfo.environment["PLEZY_SEERR_URL"] ?? "http://192.168.0.15:28099")/run/\(UUID().uuidString)"
+
+    /// iPhone with Explore shown (a Seerr connected), six destinations: the bar holds Home, Libraries, Explore and More
+    /// beside Search; More opens a menu of Downloads and Settings, and each picked there shows with More the selected
+    /// tab, checked in the menu opened again. Without Explore the bar holds Downloads and Settings and no More.
+    func testExploreLeavesDownloadsAndSettingsToMore() throws {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("More is the iPhone's bar's") }
+        try launch(extra: ["--dev-seerr", "maestro@plezy.test:maestro@\(seerrUrl)"])
+        require("home.screen", timeout: 60, "Home")
+        require("nav.explore", timeout: 30, "Explore's tab with a Seerr connected")
+        for (id, name) in [("nav.home", "Home"), ("nav.libraries", "Libraries"), ("nav.explore", "Explore"), ("nav.more", "More"), ("nav.search", "Search")] {
+            XCTAssertEqual(self.name(of: require(id, "\(name)'s tab with Explore")), name, "\(id) reads as \(name)")
+        }
+        XCTAssertEqual(app.tabBars.buttons.count, 5, "the bar holds five tabs with Explore")
+        XCTAssertFalse(element("nav.downloads").exists, "no Downloads tab with Explore: More holds it")
+        XCTAssertFalse(element("nav.settings").exists, "no Settings tab with Explore: More holds it")
+        if #available(iOS 26, *) {
+            XCTAssertGreaterThan(element("nav.search").frame.minX, element("nav.more").frame.maxX, "Search is the round button past More")
+        }
+        shot("home with explore")
+
+        for (label, screen) in [("Downloads", "downloads.screen"), ("Settings", "settings.screen")] {
+            hit(element("nav.more"))
+            let entry = moreEntry(label)
+            if label == "Downloads" { shot("more menu") }
+            XCTAssertFalse(entry.isSelected, "\(label) isn't checked while it doesn't show")
+            entry.tap()
+            require(screen, "More's \(label) shows \(screen)")
+            _ = waitUntil(5) { element("nav.more").isSelected }
+            XCTAssertTrue(element("nav.more").isSelected, "More is the selected tab while \(label) shows")
+            XCTAssertFalse(element("nav.home").isSelected, "Home isn't selected while \(label) shows")
+            shot("\(label.lowercased()) from more")
+        }
+        hit(element("nav.more"))
+        XCTAssertTrue(moreEntry("Settings").isSelected, "the menu opened again over Settings checks Settings")
+        XCTAssertFalse(moreEntry("Downloads").isSelected, "and not Downloads")
+        moreEntry("Downloads").tap()
+        require("downloads.screen", "Downloads from the menu opened over Settings")
+        XCTAssertEqual(app.tabBars.buttons.count, 5, "the bar keeps its five tabs after More's menus")
+        pick("nav.home")
+        require("home.screen", "Home picked after More's destinations")
+        XCTAssertFalse(element("nav.more").isSelected, "More isn't selected while Home shows")
+
+        try launch()
+        require("home.screen", timeout: 60, "Home without Explore")
+        requireTabs("without Explore")
+        XCTAssertFalse(element("nav.more").exists, "no More without Explore")
+        shot("home without explore")
+    }
+
+    /// More's open menu's entry `label` (the system menu's entries carry no identifiers: not Home's Downloads shortcut,
+    /// which has one).
+    private func moreEntry(_ label: String) -> XCUIElement {
+        let entry = app.buttons.matching(NSPredicate(format: "label == %@ AND identifier == ''", label)).firstMatch
+        if !entry.exists(within: 5) { fail("More's menu has no entry '\(label)'") }
+        return entry
+    }
+    #endif
 
     /// An artist opened over Home, the sidebar shown (iPad, the Mac): its server's Music library is the highlighted row,
     /// not Home, and every destination keeps its row; Home picked then goes back to its root, highlighted again. On an

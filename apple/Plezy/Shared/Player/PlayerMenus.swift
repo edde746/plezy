@@ -1206,10 +1206,10 @@ enum PlayerMenuTracking {
 #endif
 
 #if os(iOS)
-/// A UIKit button with the menu as its primary action (iOS). UIKit tells a button when its menu shows and goes, which a
-/// SwiftUI `Menu` doesn't: the store hears the menu open and close, and an entry that opens a popover or a sheet (the
-/// delay, the playback info) does so once the menu is gone. The menu (`content`) is built again only when what it shows
-/// changes (`NativeMenu.signature`).
+/// A UIKit button with the menu as its primary action (iOS, `SystemMenuButton`). UIKit tells a button when its menu shows
+/// and goes, which a SwiftUI `Menu` doesn't: the store hears the menu open and close, and an entry that opens a popover or
+/// a sheet (the delay, the playback info) does so once the menu is gone. The menu (`content`) is built again only when
+/// what it shows changes (`NativeMenu.signature`).
 private struct NativeMenuButton: UIViewRepresentable {
     let menu: PlayerMenu
     let systemImage: String
@@ -1309,68 +1309,13 @@ private struct NativeMenuButton: UIViewRepresentable {
         }
     }
 
-    final class MenuButton: UIButton {
-        var onOpen: (() -> Void)?
-        var onClose: (() -> Void)?
+    /// The menu's button, with what its configuration shows and what its menu was built from.
+    final class MenuButton: SystemMenuButton {
         var signature: [AnyHashable] = []
         /// The symbol the button's configuration shows.
         var systemImage: String?
         /// The point size of the symbol the configuration shows.
         var symbolPointSize: CGFloat?
-        private(set) var menuShown = false
-        /// The menu's dismissal is under way: its end runs what waits (`flushAfterClose`).
-        private var closing = false
-        /// What runs once the menu has gone (an entry that opens a popover).
-        private var afterClose: (() -> Void)?
-
-        /// Runs `action` once the menu has gone. UIKit doesn't promise whether an entry's handler runs before the menu
-        /// starts to go, during its dismissal or after it: while the menu shows or goes, its dismissal's end runs
-        /// `action`; once it has gone, it runs now.
-        func runAfterClose(_ action: @escaping () -> Void) {
-            afterClose = action
-            if !menuShown, !closing { flushAfterClose() }
-        }
-
-        override func contextMenuInteraction(
-            _ interaction: UIContextMenuInteraction,
-            willDisplayMenuFor configuration: UIContextMenuConfiguration,
-            animator: (any UIContextMenuInteractionAnimating)?
-        ) {
-            // No first responder while the menu shows: with one (the player's key view, `HardwareKeys`, or before it
-            // SwiftUI's hosting view), UIKit brings the software keyboard up with the menu when no hardware keyboard
-            // is attached. The key view takes first responder back once the menu has gone.
-            _ = UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: self, for: nil)
-            super.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: animator)
-            menuShown = true
-            onOpen?()
-        }
-
-        override func contextMenuInteraction(
-            _ interaction: UIContextMenuInteraction,
-            willEndFor configuration: UIContextMenuConfiguration,
-            animator: (any UIContextMenuInteractionAnimating)?
-        ) {
-            super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
-            menuShown = false
-            closing = true
-            onClose?()
-            if let animator {
-                animator.addCompletion { [weak self] in self?.closed() }
-            } else {
-                DispatchQueue.main.async { [weak self] in self?.closed() }
-            }
-        }
-
-        private func closed() {
-            closing = false
-            flushAfterClose()
-        }
-
-        private func flushAfterClose() {
-            guard !menuShown, let action = afterClose else { return }
-            afterClose = nil
-            action()
-        }
     }
 }
 #endif
