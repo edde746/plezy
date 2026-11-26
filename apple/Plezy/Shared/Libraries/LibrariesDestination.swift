@@ -96,11 +96,14 @@ private struct LibrariesSections: View {
         .onChange(of: section, initial: true) { app.librariesSection = section }
     }
 
-    /// Downloads' view menu: the library's tabs, which show it again on that tab, then Downloads, shown.
+    /// Downloads' view menu: the library's tabs, which show it again on that tab, then Downloads, shown. While the
+    /// libraries load it shows with Downloads alone: Downloads opened as the app starts would otherwise get it ahead of
+    /// what shows once the server's libraries came in, moving that menu from under a click on it.
     private func downloadsViews(_ model: StoreModel<LibrariesScreenStore, LibrariesUiState>) -> LibraryViews {
         let state = model.state.state
         let tabs = state.load == .content && state.selected != nil ? state.tabs : []
-        return LibraryViews(labels: tabs.map(\.label) + [LibrarySection.downloads.label], selected: tabs.count) { index in
+        let labels = tabs.map(\.label) + [LibrarySection.downloads.label]
+        return LibraryViews(labels: labels, selected: tabs.count, loading: state.load == .loading) { index in
             guard index < tabs.count else { return }
             model.store.selectTab(tab: tabs[index])
             chosen = .library
