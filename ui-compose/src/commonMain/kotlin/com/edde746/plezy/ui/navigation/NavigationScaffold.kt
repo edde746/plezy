@@ -40,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationItemColors
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarDefaults
 import androidx.compose.material3.ShortNavigationBarItem
@@ -108,12 +109,15 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.presentation.probeName
 import com.edde746.plezy.ui.adaptive.LocalWindowLayout
 import com.edde746.plezy.ui.adaptive.LocalWindowSize
 import com.edde746.plezy.ui.adaptive.NavigationKind
 import com.edde746.plezy.ui.components.LocalOverlayOpeners
+import com.edde746.plezy.ui.components.PlezySheet
+import com.edde746.plezy.ui.components.SheetOption
 import com.edde746.plezy.ui.components.PlezySurface
 import com.edde746.plezy.ui.components.SystemBackHandler
 import com.edde746.plezy.ui.components.appArea
@@ -122,6 +126,8 @@ import com.edde746.plezy.ui.focus.focusEntry
 import com.edde746.plezy.ui.focus.isFocusVisible
 import com.edde746.plezy.ui.icons.PlezyIcons
 import com.edde746.plezy.ui.libraries.libraryIcon
+import com.edde746.plezy.ui.player.MenuList
+import com.edde746.plezy.strings.T
 import com.edde746.plezy.ui.image.effectMillis
 import com.edde746.plezy.ui.probe.layoutProbe
 import com.edde746.plezy.ui.theme.LocalPlezyDimens
@@ -483,6 +489,9 @@ internal val BarHeightWithoutLabels = 56.dp
 /**
  * The phone's bar: Material 3 Expressive's short navigation bar, icon over label ([labels]; icons alone in a 56 dp bar
  * without), a hairline above it. The labels take one size ([rememberLabelSize]), each item an equal share of the width.
+ * While the destinations outnumber its places, More ends the bar holding what it leaves ([NavigationTabs.moreHeld]):
+ * its pick opens their menu, in the player's menu sheet, and More shows selected while one of them does. A destination
+ * picked there goes through [onSelect] as a tab's pick does (the shown one picked again goes back to its root).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -500,7 +509,11 @@ private fun BottomBar(
         val density = LocalDensity.current
         val direction = LocalLayoutDirection.current
         val sides = with(density) { (insets.getLeft(density, direction) + insets.getRight(density, direction)).toDp() }
-        val labelSize = rememberLabelSize(destinations.map { it.label }, (maxWidth - sides) / destinations.size)
+        val held = NavigationTabs.moreHeld(destinations)
+        val shown = destinations - held.toSet()
+        val more = T.navigation.more
+        val labelSize = rememberLabelSize(shown.map { it.label } + listOfNotNull(more.takeIf { held.isNotEmpty() }), (maxWidth - sides) / (shown.size + if (held.isEmpty()) 0 else 1))
+        var moreOpen by remember { mutableStateOf(false) }
         Column {
             HorizontalDivider(color = PlezyColors.Hairline)
             ShortNavigationBar(
@@ -516,23 +529,62 @@ private fun BottomBar(
                     unselectedIconColor = PlezyColors.TextMuted,
                     unselectedTextColor = PlezyColors.TextMuted,
                 )
-                for (destination in destinations) {
-                    ShortNavigationBarItem(
-                        selected = destination == selected,
-                        onClick = { onSelect(destination) },
-                        modifier = Modifier.layoutProbe("nav.${destination.probeName}"),
-                        icon = { Icon(destination.icon(libraryKind), contentDescription = if (labels) null else destination.label) },
-                        label = if (labels) {
-                            { NavigationLabel(destination.label, LocalTextStyle.current, labelSize) }
-                        } else {
-                            null
-                        },
-                        colors = colors,
-                    )
+                for (destination in shown) {
+                    BarItem(destination.label, destination.icon(libraryKind), destination == selected, "nav.${destination.probeName}", labels, labelSize, colors) {
+                        onSelect(destination)
+                    }
+                }
+                if (held.isNotEmpty()) {
+                    BarItem(more, PlezyIcons.MoreHoriz, selected in held, "nav.more", labels, labelSize, colors) { moreOpen = true }
+                }
+            }
+        }
+        if (held.isNotEmpty()) {
+            PlezySheet(onDismiss = { moreOpen = false }, visible = moreOpen, probe = "nav.more.menu", label = more) {
+                MenuList(Modifier) {
+                    for (destination in held) {
+                        SheetOption(
+                            destination.label,
+                            onClick = {
+                                moreOpen = false
+                                onSelect(destination)
+                            },
+                            modifier = Modifier.layoutProbe("nav.more.${destination.probeName}"),
+                            selected = destination == selected,
+                            icon = destination.icon(libraryKind),
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+/** One of [BottomBar]'s items: its icon over its [label] ([labels]; else the icon alone, named [label]). */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun BarItem(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    probe: String,
+    labels: Boolean,
+    labelSize: TextUnit,
+    colors: NavigationItemColors,
+    onClick: () -> Unit,
+) {
+    ShortNavigationBarItem(
+        selected = selected,
+        onClick = onClick,
+        modifier = Modifier.layoutProbe(probe),
+        icon = { Icon(icon, contentDescription = if (labels) null else label) },
+        label = if (labels) {
+            { NavigationLabel(label, LocalTextStyle.current, labelSize) }
+        } else {
+            null
+        },
+        colors = colors,
+    )
 }
 
 /** The on-screen keyboard's height in px over the window; the window's IME inset unless provided (tests). */
