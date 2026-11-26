@@ -35,6 +35,7 @@ import com.edde746.plezy.settings.AppSettings
 import com.edde746.plezy.ui.app.PlezyApp
 import com.edde746.plezy.ui.app.PlezyRoot
 import com.edde746.plezy.ui.app.StartupFailureScreen
+import com.edde746.plezy.ui.components.LocalKeepsSemantics
 import com.edde746.plezy.ui.components.appArea
 import com.edde746.plezy.ui.probe.LocalLayoutProbe
 import com.edde746.plezy.ui.probe.LocalPerfProbe
@@ -147,6 +148,7 @@ class PlezyActivity : ComponentActivity() {
                 CompositionLocalProvider(
                     LocalLayoutProbe provides launch?.probe,
                     LocalPerfProbe provides launch?.perfProbe,
+                    LocalKeepsSemantics provides keepsSemantics(launch),
                 ) {
                     val modifier = Modifier.windowInsetsPadding(WindowInsets.appArea)
                     if (failure != null) {

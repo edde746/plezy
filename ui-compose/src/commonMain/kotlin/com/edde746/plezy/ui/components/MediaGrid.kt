@@ -96,7 +96,7 @@ fun MediaGrid(
         contentPadding = padding,
         horizontalArrangement = Arrangement.spacedBy(dimens.gutter),
         verticalArrangement = Arrangement.spacedBy(if (list) GroupGap else dimens.gutter),
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().semanticsForReaders(),
     ) {
         header()
         items(
