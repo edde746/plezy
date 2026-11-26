@@ -346,13 +346,13 @@ class MediaMenuTest {
         val entries = menu().opened(inProgress)
 
         assertEquals(
-            listOf(PLAY_FROM_BEGINNING, WATCH, UNWATCH, SERIES, SHOW_LINK, PLAY_VERSION, FILE_INFO, ADD_TO, DELETE_MEDIA),
+            listOf(PLAY_FROM_BEGINNING, WATCH, UNWATCH, SERIES, ADD_TO, PLAY_VERSION, FILE_INFO, SHOW_LINK, DELETE_MEDIA),
             ids(entries),
         )
     }
 
     @Test
-    fun playTrailerFollowsPlayFromBeginningOnlyWhenTheDetailPassesIt() = runTest {
+    fun playTrailerFollowsGoToSeriesOnlyWhenTheDetailPassesIt() = runTest {
         plex()
         val inProgress = episode.copy(viewOffsetMs = 600_000, durationMs = 2_700_000)
         val menu = menu()
@@ -363,7 +363,7 @@ class MediaMenuTest {
         menu.open(inProgress, playTrailer = { trailers++ })
         advanceUntilIdle()
         val entries = ids(menu.menu.value!!.entries)
-        assertEquals(listOf(PLAY_FROM_BEGINNING, PLAY_TRAILER, WATCH), entries.take(3))
+        assertEquals(listOf(PLAY_FROM_BEGINNING, WATCH, UNWATCH, SERIES, PLAY_TRAILER), entries.take(5))
 
         menu.select(PLAY_TRAILER)
         advanceUntilIdle()
@@ -522,7 +522,7 @@ class MediaMenuTest {
         }
         val menu = menu(providers = listOf(provider))
         val entries = menu.opened(episode)
-        assertEquals(ids(entries).indexOf(FILE_INFO) + 1, ids(entries).indexOf("download"))
+        assertEquals(ids(entries).indexOf("download") + 1, ids(entries).indexOf(ADD_TO))
 
         menu.select("download")
         advanceUntilIdle()
@@ -549,15 +549,15 @@ class MediaMenuTest {
     private val artist = MediaItem("ar", BackendKind.PLEX, MediaKind.ARTIST, title = "Artist", serverId = SERVER)
 
     @Test
-    fun aMusicItemsMenuIsTheMusicActionsThenMarkWatchedFileInfoAndDownload() = runTest {
+    fun aMusicItemsMenuIsTheMusicActionsThenMarkWatchedDownloadAndFileInfo() = runTest {
         val server = plex(SERVER)
         val music = MusicHarness(backgroundScope, backend = server)
         val menu = menu(listOf(MusicMenuEntries { music.screens }) + downloadEntries())
         val queueing = listOf("music_play", "music_play_next", "music_add_to_queue", "music_instant_mix")
 
-        assertEquals(queueing + listOf("music_go_to_album", "music_go_to_artist", WATCH, FILE_INFO, "download"), ids(menu.opened(track)))
+        assertEquals(queueing + listOf("music_go_to_album", "music_go_to_artist", WATCH, "download", FILE_INFO), ids(menu.opened(track)))
         // On its album's screen no Go to album, on its artist's no Go to artist.
-        assertEquals(queueing + listOf("music_go_to_artist", WATCH, FILE_INFO, "download"), ids(menu.opened(track, MenuPlace(albumId = track.parentId))))
+        assertEquals(queueing + listOf("music_go_to_artist", WATCH, "download", FILE_INFO), ids(menu.opened(track, MenuPlace(albumId = track.parentId))))
         assertEquals(queueing + listOf(WATCH, "download"), ids(menu.opened(album, MenuPlace(artistId = album.parentId))))
         // An album has no file of its own; an artist's whole discography is no one-tap download.
         assertEquals(queueing + listOf("music_go_to_artist", WATCH, "download"), ids(menu.opened(album)))
@@ -572,7 +572,7 @@ class MediaMenuTest {
         val music = MusicHarness(backgroundScope, backend = server)
         val menu = menu(listOf(MusicMenuEntries { music.screens }) + downloadEntries())
         downloaded(track)
-        assertEquals(listOf(FILE_INFO, "delete_download"), ids(menu.opened(track)).takeLast(2))
+        assertEquals(listOf("delete_download", FILE_INFO), ids(menu.opened(track)).takeLast(2))
 
         // Offline (the server has no client): the queueing and going entries stay, Instant Mix goes, the download can
         // still be deleted and a track that isn't downloaded offers no download, which needs the server.
@@ -580,7 +580,7 @@ class MediaMenuTest {
         val offlineMusic = MusicHarness(backgroundScope, backend = server, online = false)
         val offlineMenu = menu(listOf(MusicMenuEntries { offlineMusic.screens }) + downloadEntries(offline::client))
         assertEquals(
-            listOf("music_play", "music_play_next", "music_add_to_queue", "music_go_to_album", "music_go_to_artist", WATCH, FILE_INFO, "delete_download"),
+            listOf("music_play", "music_play_next", "music_add_to_queue", "music_go_to_album", "music_go_to_artist", WATCH, "delete_download", FILE_INFO),
             ids(offlineMenu.opened(track)),
         )
         assertFalse(ids(offlineMenu.opened(musicTrack("u"))).any { it.contains("download") })
@@ -1230,13 +1230,13 @@ class MediaMenuTest {
 
         assertEquals(
             listOf(
-                PLAY_FROM_BEGINNING, PLAY_TRAILER, WATCH, UNWATCH, "rate", "edit", REMOVE_FROM_COLLECTION, SERIES, SHOW_LINK, PLAY_VERSION,
-                FILE_INFO, PLAY_EXTERNAL, "download", "watchlist", ADD_TO, DELETE_MEDIA,
+                PLAY_FROM_BEGINNING, WATCH, UNWATCH, "rate", "watchlist", SERIES, PLAY_TRAILER, "download", ADD_TO, REMOVE_FROM_COLLECTION,
+                PLAY_VERSION, PLAY_EXTERNAL, FILE_INFO, SHOW_LINK, "edit", DELETE_MEDIA,
             ),
             ids(itemMenuEntries(inProgress, MenuPlace(collectionId = "c-1"), gates, provided, trailer = true)),
         )
         assertEquals(
-            listOf(PLAY_FROM_BEGINNING, WATCH, UNWATCH, REMOVE_FROM_CONTINUE_WATCHING, DETAILS, "rate", "edit", SHOW_LINK),
+            listOf(PLAY_FROM_BEGINNING, WATCH, UNWATCH, "rate", "watchlist", REMOVE_FROM_CONTINUE_WATCHING, DETAILS, "download"),
             ids(itemMenuEntries(inProgress, MenuPlace(continueWatching = true), gates, provided)).take(8),
         )
         val season = MediaItem("s-1", BackendKind.PLEX, MediaKind.SEASON, title = "Season 1", parentId = "show-1", serverId = "plex")
@@ -1249,6 +1249,50 @@ class MediaMenuTest {
     }
 
     @Test
+    fun eachKindsMenuOffersItsEntriesInTheReviewedOrder() {
+        fun slot(id: String) = listOf(MenuEntry(id, id, MenuIcon.INFO))
+        val provided = mapOf(
+            MenuSlot.RATE to slot("rate"),
+            MenuSlot.METADATA to slot("edit"),
+            MenuSlot.DOWNLOADS to slot("download"),
+            MenuSlot.WATCHLIST to slot("watchlist"),
+        )
+        val gates = MenuGates(
+            isAdmin = true,
+            canTranscode = true,
+            serverOnline = true,
+            canRemoveFromContinueWatching = true,
+            canDeleteFromServer = true,
+            externalPlayers = true,
+        )
+        val movie = MediaItem("m-1", BackendKind.PLEX, MediaKind.MOVIE, title = "Heat", serverId = "plex")
+        val show = MediaItem("show-1", BackendKind.PLEX, MediaKind.SHOW, title = "Show", serverId = "plex")
+        val season = MediaItem("s-1", BackendKind.PLEX, MediaKind.SEASON, title = "Season 1", parentId = "show-1", serverId = "plex")
+        fun order(item: MediaItem, place: MenuPlace = MenuPlace()) = ids(itemMenuEntries(item, place, gates, provided))
+
+        assertEquals(
+            listOf(WATCH, "rate", "watchlist", "download", ADD_TO, PLAY_VERSION, PLAY_EXTERNAL, FILE_INFO, SHOW_LINK, "edit", DELETE_MEDIA),
+            order(movie),
+        )
+        assertEquals(
+            listOf(WATCH, "rate", "watchlist", SERIES, "download", ADD_TO, PLAY_VERSION, PLAY_EXTERNAL, FILE_INFO, SHOW_LINK, "edit", DELETE_MEDIA),
+            order(episode),
+        )
+        assertEquals(listOf(WATCH, "rate", "watchlist", SHUFFLE_PLAY, "download", ADD_TO, SHOW_LINK, "edit", DELETE_MEDIA), order(show))
+        assertEquals(
+            listOf(WATCH, "rate", "watchlist", SERIES, SHUFFLE_PLAY, "download", ADD_TO, "edit", DELETE_MEDIA),
+            order(season),
+        )
+        assertEquals(
+            listOf(
+                WATCH, "rate", "watchlist", REMOVE_FROM_CONTINUE_WATCHING, DETAILS, "download", ADD_TO, PLAY_VERSION, PLAY_EXTERNAL,
+                FILE_INFO, SHOW_LINK, "edit", DELETE_MEDIA,
+            ),
+            order(movie, MenuPlace(continueWatching = true)),
+        )
+    }
+
+    @Test
     fun aDetailMenuLeavesOutTheEntriesItsRowShowsAsButtons() {
         fun slot(id: String) = listOf(MenuEntry(id, id, MenuIcon.INFO))
         val provided = mapOf(MenuSlot.DOWNLOADS to slot("download"), MenuSlot.WATCHLIST to slot("watchlist"))
@@ -1258,10 +1302,10 @@ class MediaMenuTest {
 
         val full = ids(itemMenuEntries(movie, MenuPlace(), gates, provided, trailer = true))
         assertTrue(listOf(PLAY_TRAILER, WATCH, PLAY_VERSION, "download", "watchlist").all { it in full }, "$full")
-        assertEquals(listOf(SHOW_LINK, FILE_INFO, ADD_TO), ids(itemMenuEntries(movie, MenuPlace(), gates, provided, trailer = true, onRow = everything)))
+        assertEquals(listOf(ADD_TO, FILE_INFO, SHOW_LINK), ids(itemMenuEntries(movie, MenuPlace(), gates, provided, trailer = true, onRow = everything)))
         // A row that shed its download and watched buttons for room: the menu offers them again.
         val narrow = ids(itemMenuEntries(movie, MenuPlace(), gates, provided, trailer = true, onRow = setOf(RowAction.VERSIONS, RowAction.TRAILER)))
-        assertEquals(listOf(WATCH, SHOW_LINK, FILE_INFO, "download", "watchlist", ADD_TO), narrow)
+        assertEquals(listOf(WATCH, "watchlist", "download", ADD_TO, FILE_INFO, SHOW_LINK), narrow)
         val season = MediaItem("s-1", BackendKind.PLEX, MediaKind.SEASON, title = "Season 1", parentId = "show-1", serverId = "plex")
         assertFalse(SHUFFLE_PLAY in ids(itemMenuEntries(season, MenuPlace(), gates, provided, onRow = setOf(RowAction.SHUFFLE))))
         // The row's watched toggle marks the item the other way from what it is: a partly watched show keeps Unwatched.
