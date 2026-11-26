@@ -575,9 +575,11 @@ final class HomeLibrariesTests: PlezyUITestCase {
     /// Home's chips press like glass buttons, lighting up and swelling under a finger (a held press on
     /// Watch Together, slid off so it doesn't run; the run's recording shows it mid-press), and a card's menu entry over
     /// the chips still runs: the chips' glass stops taking touches while a menu is open (`OpenItemMenu`). The entry is
-    /// one that changes nothing (Show link, File Info): its sheet shows it ran. Home Videos is hidden first (Manage
-    /// libraries, this session's own setting): its short shelf would sit between Codec Samples' and Movies', leaving
-    /// Movies' cards too low on the screen to press, and the cards above open their menus below the chips.
+    /// one that changes nothing (Rate, Show link, File Info): its sheet shows it ran. Rate sits near the top of a card's
+    /// menu, so over the chips when a Movies card's menu opens upwards; Show link and File Info sit near its foot.
+    /// Home Videos is hidden first (Manage libraries, this session's own setting): its short shelf would sit between
+    /// Codec Samples' and Movies', leaving Movies' cards too low on the screen to press, and the cards above open their
+    /// menus below the chips.
     func testHomeChipsPressAndLetMenusOverThemRun() throws {
         try launch("libraries")
         require("libraries.screen", timeout: 60, "Libraries")
@@ -596,9 +598,10 @@ final class HomeLibrariesTests: PlezyUITestCase {
         shot("home chips after a press")
         let chips = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'home.'"))
             .allElementsBoundByIndex.map(\.identifier).filter { $0 != "home.shortcuts" && $0 != "home.screen" && $0 != "home.rail" }
+        let sheets = ["menu.rate": "ratingSheet", "menu.show_link": "menu.link", "menu.fileinfo": "menu.fileInfo"]
         guard let entry = menuEntryOverGlass(
             chips, pressing: NSPredicate(format: "identifier BEGINSWITH 'card.' AND NOT identifier ENDSWITH '.menu'"),
-            below: shortcuts.frame.maxY, allowed: ["menu.show_link", "menu.fileinfo"]
+            below: shortcuts.frame.maxY, allowed: Set(sheets.keys)
         ) else {
             if UIDevice.current.userInterfaceIdiom == .pad { throw XCTSkip("no card's menu opens over Home's chips") }
             return fail("no card's menu opens over Home's chips")
@@ -608,8 +611,7 @@ final class HomeLibrariesTests: PlezyUITestCase {
         if !element(entry.id).waitForNonExistence(timeout: 5) {
             fail("\(entry.id) over \(entry.glass) doesn't run: the menu stays open")
         }
-        let sheet = entry.id == "menu.show_link" ? "menu.link" : "menu.fileInfo"
-        require(sheet, timeout: 15, "\(entry.id)'s sheet")
+        require(sheets[entry.id]!, timeout: 15, "\(entry.id)'s sheet")
         shot("after \(entry.id)")
     }
     #endif
