@@ -44,7 +44,7 @@ class LibraryGridScrollTest {
                         tab = LibraryTab.BROWSE,
                         focus = focus,
                         total = CARDS.size,
-                        card = { CARDS[it] },
+                        card = CARDS::getOrNull,
                         shape = CardShape.POSTER,
                         appearance = LocalAppearance.current,
                         onMissing = {},

@@ -30,6 +30,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.LocalPlatformContext
 import com.edde746.plezy.presentation.browse.MediaCardUi
@@ -46,14 +48,14 @@ import com.edde746.plezy.ui.theme.LocalPlezyDimens
 import com.edde746.plezy.ui.theme.PlezyColors
 import com.edde746.plezy.ui.theme.PlezyDimens
 import coil3.request.Disposable
+import kotlin.math.ceil
 
 /**
- * The app's grid of items; every grid of cards is one. [count] cells, [card] each, as [PosterCard]s of [shape] in as
- * many columns as fit the width at least [gridCardWidth][PlezyDimens.gridCardWidth] wide (the library density setting,
- * [GridCells.Adaptive]), the gutter between them, [padding] around the grid, scrolled by [state]. With [list] they are
- * the library's list instead: one column of [MediaRow]s at the density. A cell whose card is null (its page not loaded
- * yet) is a [BlankCard] (a blank row in the list), and [onMissing] comes with its index once it shows. Each card tells
- * screen readers its row and column ("Row 2 of 5, column 3 of 4").
+ * The app's grid of items; every grid of cards is one. [count] cells, [card] each, as [PosterCard]s of [shape] in the
+ * columns [mediaGridCells] gives (the library density setting), the gutter between them, [padding] around the grid,
+ * scrolled by [state]. With [list] they are the library's list instead: one column of [MediaRow]s at the density. A cell
+ * whose card is null (its page not loaded yet) is a [BlankCard] (a blank row in the list), and [onMissing] comes with its
+ * index once it shows. Each card tells screen readers its row and column ("Row 2 of 5, column 3 of 4").
  *
  * [header] goes above the cards; under them, while [loadingMore] the loading indicator, or with [moreError] the error
  * with Retry ([onRetryMore]) ([MoreFooter]). [onNearEnd] comes as the last cards come into view, once for each [count].
@@ -157,10 +159,25 @@ fun MoreFooter(error: String?, onRetry: () -> Unit, modifier: Modifier = Modifie
     }
 }
 
-/** A media grid's columns: as many as fit, each at least the density setting's card width for [shape]. */
+/**
+ * A media grid's columns at the density setting: as many as fit, each at least its card width for [shape]; on TV as few
+ * as keep each at most its card width ([PlezyDimens.gridCardMaxWidth]), which fills a TV screen with more cards.
+ */
 @Composable
-fun mediaGridCells(shape: CardShape, appearance: Appearance): GridCells =
-    GridCells.Adaptive(LocalPlezyDimens.current.gridCardWidth(shape, appearance.libraryDensity))
+fun mediaGridCells(shape: CardShape, appearance: Appearance): GridCells {
+    val dimens = LocalPlezyDimens.current
+    val density = appearance.libraryDensity
+    return dimens.gridCardMaxWidth(shape, density)?.let(::AtMostCells) ?: GridCells.Adaptive(dimens.gridCardWidth(shape, density))
+}
+
+/** Columns at most [width] wide: the grid's width over the width with a gap after it, rounded up. */
+private data class AtMostCells(val width: Dp) : GridCells {
+    override fun Density.calculateCrossAxisCellSizes(availableSize: Int, spacing: Int): List<Int> {
+        val count = ceil(availableSize / (width.toPx() + spacing)).toInt().coerceAtLeast(1)
+        val cells = (availableSize - spacing * (count - 1)).coerceAtLeast(0)
+        return List(count) { cells / count + if (it < cells % count) 1 else 0 }
+    }
+}
 
 /** Where cell [index] of [count] sits for screen readers: "Row 2 of 5, column 3 of 4" ("Row 2 of 5" in one column). */
 private fun position(index: Int, count: Int, columns: Int): String {

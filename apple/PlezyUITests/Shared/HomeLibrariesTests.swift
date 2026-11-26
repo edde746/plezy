@@ -358,6 +358,45 @@ final class HomeLibrariesTests: PlezyUITestCase {
         XCTAssertGreaterThan(row.frame.width, width / 2, "an item is a list row across the screen (\(row.frame.width) of \(width))")
     }
 
+    #if os(tvOS)
+    /// Apple TV's grids hold as many cards across as a TV's grids always have: a hub's View all 4 episode thumbnails or
+    /// 7 posters, a library's Browse grid 7 posters, at the default density.
+    func testTvGridColumns() throws {
+        try launch("home")
+        require("home.screen", timeout: 60, "Home")
+        require("hub.continue_watching", timeout: 30, "Continue Watching")
+        // Lets the shelves settle their focus before moving through them.
+        sleep(3)
+        openViewAll()
+        XCTAssertTrue(anyCard.firstMatch.exists(within: 20), "the hub detail's items")
+        // Lets the items' artwork load before the shot; nothing signals it.
+        sleep(3)
+        shot("hub detail columns")
+        requireColumns(wide: 4, poster: 7, "View all")
+        try launch("libraries")
+        require("libraries.screen", timeout: 60, "Libraries")
+        let steps = LibrarySteps(test: self)
+        steps.pickLibrary("Movies")
+        steps.showLibraryTab("browse")
+        require("libraries.grid", timeout: 30, "the Browse grid")
+        XCTAssertTrue(anyCard.firstMatch.exists(within: 30), "the library's cards")
+        // Lets the cards' artwork load before the shot; nothing signals it.
+        sleep(4)
+        shot("library grid columns")
+        requireColumns(wide: 4, poster: 7, "Movies' Browse grid")
+    }
+
+    /// The cards in the grid's first row number `wide` for episode thumbnails, `poster` for posters.
+    private func requireColumns(wide: Int, poster: Int, _ what: String) {
+        let cards = anyCard.allElementsBoundByIndex.map(\.frame).filter { !$0.isEmpty }
+        guard let top = cards.map(\.minY).min(), let first = cards.first(where: { $0.minY == top }) else { return fail("\(what): no cards") }
+        // A focused card lifts out of its row: a row is the cards within half a card of the top one.
+        let row = cards.filter { abs($0.minY - top) < first.height / 2 }
+        let expected = first.width > first.height ? wide : poster
+        XCTAssertEqual(row.count, expected, "\(what): cards across, each \(first.width) wide, the row \(row.map(\.minX).min() ?? 0)–\(row.map(\.maxX).max() ?? 0)")
+    }
+    #endif
+
     /// Opens a hub's View all from Home: on Apple TV the card ending a row, elsewhere a hub's heading link.
     private func openViewAll() {
         #if os(tvOS)
