@@ -8,9 +8,10 @@ import android.os.ParcelFileDescriptor
 import java.io.FileNotFoundException
 
 /**
- * The Watch Next posters ([ShelfArtwork]) to the launchers: not exported, so a launcher reads a poster only through
- * the read grant the app gave it for that one URI. Read-only, and only files of the artwork folder by the confined
- * `art/<owner key>/<key>.art` path; everything else is not found. Nothing can be queried, inserted, updated or deleted.
+ * The Watch Next posters ([ShelfArtwork]) to the launchers: exported, readable by any app that may read the TV
+ * provider's rows (`READ_EPG_DATA`), as a launcher that isn't the home app has no other way in. Read-only, and only
+ * files of the artwork folder by the confined `art/<owner key>/<key>.art` path; everything else is not found. Nothing
+ * can be queried, inserted, updated or deleted.
  */
 class ShelfArtworkProvider : ContentProvider() {
     private lateinit var artwork: ShelfArtwork
