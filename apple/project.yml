@@ -30,8 +30,10 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    # Kotlin/Native builds the shared core for arm64 only, so neither the simulators nor the Mac get an x86_64 slice.
+    # Kotlin/Native builds the shared core for arm64 on iOS and tvOS, so the simulators get no x86_64 slice. The Mac
+    # app is universal (macosArm64 and macosX64), for Intel Macs too; Debug builds only the active architecture.
     ARCHS: arm64
+    "ARCHS[sdk=macosx*]": arm64 x86_64
     # Ad-hoc signing for simulators and the Mac by default. The iOS and tvOS apps sign with the team (their targets
     # below), for real devices; the Mac signs with the team in development-signed UI-test
     # builds and in the release workflow. An ad-hoc Mac build compiles but can't use the keychain (CONTRIBUTING.md,
@@ -125,8 +127,9 @@ targetTemplates:
         product: Sentry
     preBuildScripts:
       # Kotlin integration: PLEZY_KIT_MODULE's embedAndSignAppleFrameworkForXcode reads SDK_NAME, ARCHS and
-      # CONFIGURATION from Xcode and links only the slice this build needs (iosArm64, iosSimulatorArm64, macosArm64,
-      # tvosArm64 or tvosSimulatorArm64; :dev's Debug or :shared's Release) into
+      # CONFIGURATION from Xcode and links only the slices this build needs (iosArm64, iosSimulatorArm64, tvosArm64 or
+      # tvosSimulatorArm64; macosArm64 and macosX64, which Gradle combines into one universal framework when the Mac
+      # build has both architectures; :dev's Debug or :shared's Release) into
       # <module>/build/xcode-frameworks/<CONFIGURATION>/<SDK_NAME>, with SKIE's Swift layer compiled in. One phase
       # serves all three platforms, and nothing unused is built. The framework is static, so there is nothing to
       # embed or sign. Gradle's up-to-date checks keep repeat builds cheap. Android is disabled because an Apple build

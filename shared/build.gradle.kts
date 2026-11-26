@@ -85,8 +85,9 @@ kotlin {
 
     // One umbrella framework for every Apple target: several would each embed a Kotlin runtime. This is
     // the Release configuration's PlezyKit, without the development session (the Xcode script phase's
-    // `:shared:embedAndSignAppleFrameworkForXcode`); Debug's is :dev's, with it.
-    listOf(iosArm64(), iosSimulatorArm64(), macosArm64(), tvosArm64(), tvosSimulatorArm64()).forEach { target ->
+    // `:shared:embedAndSignAppleFrameworkForXcode`); Debug's is :dev's, with it. The Mac app is universal, so macOS has
+    // an Intel target too (macosX64, deprecated by Kotlin but still built); iOS and tvOS are arm64 only.
+    listOf(iosArm64(), iosSimulatorArm64(), macosArm64(), macosX64(), tvosArm64(), tvosSimulatorArm64()).forEach { target ->
         target.binaries.framework(listOf(NativeBuildType.RELEASE)) {
             baseName = "PlezyKit"
             isStatic = true
