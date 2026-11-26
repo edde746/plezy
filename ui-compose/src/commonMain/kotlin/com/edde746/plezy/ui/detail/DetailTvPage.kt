@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import com.edde746.plezy.ui.components.ScrollRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
@@ -335,7 +335,7 @@ private fun TvEpisodes(state: MediaDetailUiState, focus: FocusMemory, intents: D
     Column(modifier.fillMaxWidth()) {
         if (state.seasons.isEmpty()) SectionTitle(T.libraries.groupings.episodes, Modifier.padding(horizontal = side).padding(bottom = LocalPlezyDimens.current.shelfHeaderGap))
         shown?.let { TvEpisodeDetails(it, Modifier.padding(horizontal = side).widthIn(max = TextColumnWidth)) }
-        LazyRow(
+        ScrollRow(
             Modifier
                 .fillMaxWidth()
                 .tvRow { shownId?.let { focus.focus(episodeFocusKey(it)) } }

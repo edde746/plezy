@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
+import com.edde746.plezy.ui.components.ScrollRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -175,7 +175,7 @@ fun SearchScreen(app: AppSession, modifier: Modifier = Modifier) {
 @Composable
 internal fun SearchFilters(state: SearchUiState, store: SearchStore, memory: FocusMemory, list: LazyListState, padding: PaddingValues) {
     if (state.filters.isEmpty()) return
-    LazyRow(
+    ScrollRow(
         Modifier.fillMaxWidth().layoutProbe("search.filters", reportsFocus = false),
         contentPadding = padding,
         horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -256,8 +256,10 @@ internal fun RelatedHub(hub: HubUi, menus: Boolean, focus: FocusMemory, intents:
  * Wide windows: the backdrop behind the whole screen, near-black under the details and clearing past them, fading to
  * the page at the bottom. The details in a column on the left (at most [InfoMaxWidth]): the title, the metadata line,
  * the ratings, the actions, the track status, the overview, then the cast, the extras, the related hubs and the
- * information; a show's season chips and episode rows in a column on the right, the backdrop dimmed under them. A
- * movie's details start lower, under the backdrop's picture. While the item loads only the backdrop and the title show.
+ * information; a show's season chips and episode rows in a column on the right (at most [EpisodesMaxWidth], at the
+ * window's end), the backdrop dimmed under them. Where the window leaves room between the two columns, the season chips
+ * reach into it: seasons scrolled away before the selected one show there, not behind an edge in mid-air. A movie's
+ * details start lower, under the backdrop's picture. While the item loads only the backdrop and the title show.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -269,6 +271,8 @@ internal fun WidePage(state: MediaDetailUiState, hero: DetailHeroUi, focus: Focu
     val gap = 48.dp
     val infoWidth = if (series) (usable * 0.4f).coerceIn(340.dp, InfoMaxWidth) else usable.coerceAtMost(InfoMaxWidth)
     val paneWidth = (usable - infoWidth - gap).coerceAtMost(EpisodesMaxWidth)
+    // The room the episodes' width cap leaves between the columns.
+    val lead = usable - infoWidth - gap - paneWidth
     val top = BackButtonSpace
     val detailsTop = if (series) top else (height * 0.3f).coerceAtLeast(top)
     val box = DpSize(infoWidth, WideLogoHeight)
@@ -307,10 +311,11 @@ internal fun WidePage(state: MediaDetailUiState, hero: DetailHeroUi, focus: Focu
                 state,
                 focus,
                 intents,
+                lead,
                 Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = dimens.screenPadding - RowInset, top = 16.dp)
-                    .width(paneWidth + RowInset * 2)
+                    .width(lead + paneWidth + RowInset * 2)
                     .fillMaxHeight(),
             )
         }
@@ -329,21 +334,26 @@ internal fun Modifier.bleed(by: Dp): Modifier = layout { measurable, constraints
 
 /**
  * A show's episodes beside its details (wide windows): the season chips over the selected season's rows, paged as the
- * list's end comes into view. A deep link's episode is scrolled to the middle and focused once.
+ * list's end comes into view. The chips' row reaches [lead] further towards the details than the rows, its first chip
+ * still in line with them. A deep link's episode is scrolled to the middle and focused once.
  */
 @Composable
-private fun EpisodesPane(state: MediaDetailUiState, focus: FocusMemory, intents: DetailIntents, modifier: Modifier) {
+private fun EpisodesPane(state: MediaDetailUiState, focus: FocusMemory, intents: DetailIntents, lead: Dp, modifier: Modifier) {
     val dimens = LocalPlezyDimens.current
     val list = rememberSaveable(state.selectedSeason, saver = LazyListState.Saver) { LazyListState() }
     val episodes = state.episodes ?: return
     InitialDetailFocus(state, list, focus, firstRow = 0)
     Column(modifier) {
         if (state.seasons.isNotEmpty()) {
-            SeasonChips(state, focus, intents.store::selectSeason, intents.openSeasonMenu, nameStart = RowInset, Modifier.padding(bottom = 4.dp))
+            SeasonChips(state, focus, intents.store::selectSeason, intents.openSeasonMenu, nameStart = lead + RowInset, Modifier.padding(bottom = 4.dp))
         } else {
-            SectionTitle(T.libraries.groupings.episodes, Modifier.padding(horizontal = RowInset).padding(bottom = dimens.shelfHeaderGap))
+            SectionTitle(T.libraries.groupings.episodes, Modifier.padding(start = lead).padding(horizontal = RowInset).padding(bottom = dimens.shelfHeaderGap))
         }
-        LazyColumn(Modifier.fillMaxSize().layoutProbe("detail.episodes", reportsFocus = false), state = list, contentPadding = PaddingValues(bottom = dimens.sectionSpacing * 2)) {
+        LazyColumn(
+            Modifier.fillMaxSize().padding(start = lead).layoutProbe("detail.episodes", reportsFocus = false),
+            state = list,
+            contentPadding = PaddingValues(bottom = dimens.sectionSpacing * 2),
+        ) {
             if (episodes.load == SectionLoad.CONTENT) {
                 items(episodes.rows, key = { "ep:${it.id}" }) { row -> EpisodeRow(row, focus, intents, thumbnailWidth = 176.dp) }
                 item(key = "episodes.tail") { EpisodesTail(state, intents) }

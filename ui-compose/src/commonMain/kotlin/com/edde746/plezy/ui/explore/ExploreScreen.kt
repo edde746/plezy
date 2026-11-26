@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
+import com.edde746.plezy.ui.components.ScrollRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -266,7 +266,7 @@ private const val SEARCH_FIELD_KEY = "search"
 private fun FilterRow(state: ExploreUiState, intents: ExploreIntents, memory: FocusMemory, padding: PaddingValues) {
     val tv = LocalAppearance.current.tv
     val active = state.sources.firstOrNull { it.selected }
-    LazyRow(
+    ScrollRow(
         contentPadding = padding,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
