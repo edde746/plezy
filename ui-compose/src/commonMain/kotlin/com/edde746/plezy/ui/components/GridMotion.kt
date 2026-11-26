@@ -21,7 +21,10 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.relocation.bringIntoView
+import androidx.compose.foundation.gestures.ScrollScope
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.sign
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -30,61 +33,95 @@ import androidx.compose.ui.node.LayoutAwareModifierNode
 import kotlinx.coroutines.launch
 
 /**
- * A TV grid's moves as focus goes from row to row, made in a layer. A move scrolls the grid at once, in the frame focus
- * moves in, and shows it where it was through the layer's [offset], which then eases back to rest along the spring the
- * platform scrolls with. The frames of the motion move the layer alone: nothing is laid out, composed or drawn again in
- * them. The scroll stays in progress until the layer is at rest, as a scroll animation's would.
+ * A TV grid's moves as focus goes from row to row, made in a layer. A move eases the layer's [offset] along the spring
+ * the platform scrolls with, over rows already laid out past the grid's bounds, and once the layer is at rest scrolls
+ * the grid there in one frame that shows nothing new (the layer goes back as the grid scrolls). The frames of the
+ * motion move the layer alone: nothing is laid out, composed or drawn again in them. A move asked for while one is
+ * under way (a held key) scrolls the grid to where it shows first. The scroll stays in progress until the grid is at
+ * rest, as a scroll animation's would.
  */
 internal class GridMotion(private val state: LazyGridState) {
-    /** How far (px) the grid shows below where it lies: positive while it moves up into place. */
+    /** How far (px) the grid shows below where it lies: negative while the layer moves it up ahead of the scroll. */
     var offset by mutableFloatStateOf(0f)
         private set
 
-    /** Moves asked for ([ask]) and not scrolled yet: a card rests where it lies less these. */
-    var pending = 0f
-        private set
+    /** Asked for ([ask]) and not begun. */
+    private var asked = 0f
+
+    /** Begun and not scrolled: where the layer is taking the grid ([offset] goes to minus this). */
+    private var target = 0f
+
+    /** Moves not scrolled yet: a card rests where it lies less these. */
+    val ahead: Float get() = asked + target
 
     private var velocity = 0f
     private var moves = 0
 
-    /** Asks for the grid to scroll [distance] px more (content up for a positive one); the next [move] scrolls it. */
+    /** Asks for the grid to move [distance] px more (content up for a positive one); the next [move] makes it. */
     fun ask(distance: Float) {
-        pending += distance
+        asked += distance
     }
 
     /**
-     * Scrolls the grid by the moves asked for, at once, and eases it there from where it shows, at most [reach] px from
-     * rest: a move on top of one still under way (a held key) starts that much nearer. A move that comes before an
-     * earlier one has scrolled takes its distance too.
+     * Moves the grid by what was asked for, the layer first, at most [reach] px ahead of the scroll (a longer move
+     * scrolls the rest at once), then scrolls it there at rest. A move that comes before an earlier one has begun takes
+     * its distance too.
      */
     suspend fun move(reach: Float) {
         val move = ++moves
         val speed = velocity
-        var scrolled = false
+        var begun = false
         try {
             state.scroll {
-                val distance = pending
-                pending = 0f
-                scrolled = true
-                offset = (offset + scrollBy(distance)).coerceIn(-reach, reach)
+                begun = true
+                // A move under way: the grid scrolls to where it shows, and goes on from there.
+                if (offset != 0f) settle()
+                target = limit(target + asked)
+                asked = 0f
+                if (abs(target) > reach) {
+                    val scrolled = scrollBy(target - reach * sign(target))
+                    offset += scrolled
+                    target -= scrolled
+                }
                 try {
-                    animate(offset, 0f, speed, MotionSpring) { value, v ->
+                    animate(offset, -target, speed, MotionSpring) { value, v ->
                         offset = value
                         velocity = v
                     }
+                    velocity = 0f
+                    settle()
                 } finally {
-                    // At rest, or stopped by another scroll (a letter's jump): the grid shows where it lies. A move
-                    // after this one goes on from where this one was.
+                    // Stopped by another scroll (a letter's jump): the grid shows where it lies. A move after this one
+                    // goes on from where this one was.
                     if (move == moves) {
                         offset = 0f
+                        target = 0f
                         velocity = 0f
                     }
                 }
             }
         } finally {
-            // Stopped by another scroll before it scrolled: what it was to scroll isn't coming.
-            if (!scrolled && move == moves) pending = 0f
+            // Stopped by another scroll before it began: what it was to move isn't coming.
+            if (!begun && move == moves) asked = 0f
         }
+    }
+
+    /** Scrolls the grid to where the layer shows it, and the layer back. */
+    private fun ScrollScope.settle() {
+        val scrolled = scrollBy(-offset)
+        offset += scrolled
+        target -= scrolled
+    }
+
+    /** [distance] as far as the grid can scroll: to its first row's top, its last row's foot. */
+    private fun limit(distance: Float): Float {
+        val info = state.layoutInfo
+        val first = info.visibleItemsInfo.firstOrNull()?.takeIf { it.index == 0 }
+        val last = info.visibleItemsInfo.lastOrNull()?.takeIf { it.index == info.totalItemsCount - 1 }
+        val back = first?.let { -it.offset.y.toFloat() - offset } ?: Float.MAX_VALUE
+        val forth = last?.let { (it.offset.y + it.size.height + info.afterContentPadding - info.viewportEndOffset).toFloat() + offset }
+            ?: Float.MAX_VALUE
+        return distance.coerceIn(-back.coerceAtLeast(0f), forth.coerceAtLeast(0f))
     }
 
     private var grid: LayoutCoordinates? = null
@@ -101,8 +138,10 @@ internal class GridMotion(private val state: LazyGridState) {
         val grid = grid?.takeIf { it.isAttached } ?: return true
         if (!item.isAttached) return true
         // Read without observing it: the offset moves the layer, and must not draw the items again.
-        val top = grid.localPositionOf(item, Offset.Zero).y - reach + Snapshot.withoutReadObservation { offset }
-        val row = item.size.height + gap
+        val shift = Snapshot.withoutReadObservation { offset }
+        val top = grid.localPositionOf(item, Offset.Zero).y - reach + shift
+        // A row past the bounds, and as far again as the layer is still to move.
+        val row = item.size.height + gap + abs(target + shift)
         val shown = grid.size.height - 2 * reach
         return top + item.size.height > -row && top < shown + row
     }
@@ -197,7 +236,7 @@ private class GridMotionNode(var motion: GridMotion, var reach: Int, var platfor
         if (!childCoordinates.isAttached) return
         val bounds = boundsProvider() ?: return
         val grid = requireLayoutCoordinates()
-        val rect = Rect(grid.localPositionOf(childCoordinates, bounds.topLeft), bounds.size).translate(0f, -motion.pending)
+        val rect = Rect(grid.localPositionOf(childCoordinates, bounds.topLeft), bounds.size).translate(0f, -motion.ahead)
         val distance = distance(rect)
         if (distance != 0f) {
             if (asked.isEmpty()) {
