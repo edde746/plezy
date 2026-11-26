@@ -770,7 +770,9 @@
     "hexColor": "Шестнадесетичен цвят",
     "alphabetNavigation": "Навигация по азбуката",
     "rowColumnPosition": "Ред ${row} от ${rowCount}, колона ${column} от ${columnCount}",
-    "rowPosition": "Ред ${row} от ${rowCount}"
+    "rowPosition": "Ред ${row} от ${rowCount}",
+    "scrollBack": "Превъртане назад",
+    "scrollForward": "Превъртане напред"
   },
   "tooltips": {
     "shufflePlay": "Разбъркано възпроизвеждане",

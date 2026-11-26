@@ -767,7 +767,9 @@
     "hexColor": "Hex 顏色值",
     "alphabetNavigation": "字母導覽",
     "rowColumnPosition": "第 ${row} 列，共 ${rowCount} 列；第 ${column} 欄，共 ${columnCount} 欄",
-    "rowPosition": "第 ${row} 列，共 ${rowCount} 列"
+    "rowPosition": "第 ${row} 列，共 ${rowCount} 列",
+    "scrollBack": "向後捲動",
+    "scrollForward": "向前捲動"
   },
   "tooltips": {
     "shufflePlay": "隨機播放",

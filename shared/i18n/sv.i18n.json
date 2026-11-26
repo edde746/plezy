@@ -770,7 +770,9 @@
     "hexColor": "Hexfärg",
     "alphabetNavigation": "Alfabetisk navigering",
     "rowColumnPosition": "Rad ${row} av ${rowCount}, kolumn ${column} av ${columnCount}",
-    "rowPosition": "Rad ${row} av ${rowCount}"
+    "rowPosition": "Rad ${row} av ${rowCount}",
+    "scrollBack": "Scrolla bakåt",
+    "scrollForward": "Scrolla framåt"
   },
   "tooltips": {
     "shufflePlay": "Blanda uppspelning",

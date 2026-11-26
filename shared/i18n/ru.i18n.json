@@ -776,7 +776,9 @@
     "hexColor": "Шестнадцатеричный цвет",
     "alphabetNavigation": "Навигация по алфавиту",
     "rowColumnPosition": "Строка ${row} из ${rowCount}, столбец ${column} из ${columnCount}",
-    "rowPosition": "Строка ${row} из ${rowCount}"
+    "rowPosition": "Строка ${row} из ${rowCount}",
+    "scrollBack": "Прокрутить назад",
+    "scrollForward": "Прокрутить вперёд"
   },
   "tooltips": {
     "shufflePlay": "Случайное воспроизведение",

@@ -776,7 +776,9 @@
     "hexColor": "Kolor szesnastkowy",
     "alphabetNavigation": "Nawigacja alfabetyczna",
     "rowColumnPosition": "Wiersz ${row} z ${rowCount}, kolumna ${column} z ${columnCount}",
-    "rowPosition": "Wiersz ${row} z ${rowCount}"
+    "rowPosition": "Wiersz ${row} z ${rowCount}",
+    "scrollBack": "Przewiń wstecz",
+    "scrollForward": "Przewiń do przodu"
   },
   "tooltips": {
     "shufflePlay": "Odtwarzanie losowe",

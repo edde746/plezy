@@ -770,7 +770,9 @@
     "hexColor": "Hexkleur",
     "alphabetNavigation": "Alfabetische navigatie",
     "rowColumnPosition": "Rij ${row} van ${rowCount}, kolom ${column} van ${columnCount}",
-    "rowPosition": "Rij ${row} van ${rowCount}"
+    "rowPosition": "Rij ${row} van ${rowCount}",
+    "scrollBack": "Terugscrollen",
+    "scrollForward": "Vooruitscrollen"
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",

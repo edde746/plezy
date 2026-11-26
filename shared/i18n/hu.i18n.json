@@ -770,7 +770,9 @@
     "hexColor": "Hex színkód",
     "alphabetNavigation": "Ábécé szerinti navigáció",
     "rowColumnPosition": "${row}. sor a(z) ${rowCount} sorból, ${column}. oszlop a(z) ${columnCount} oszlopból",
-    "rowPosition": "${row}. sor a(z) ${rowCount} sorból"
+    "rowPosition": "${row}. sor a(z) ${rowCount} sorból",
+    "scrollBack": "Görgetés vissza",
+    "scrollForward": "Görgetés előre"
   },
   "tooltips": {
     "shufflePlay": "Véletlenszerű lejátszás",

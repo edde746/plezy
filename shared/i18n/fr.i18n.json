@@ -770,7 +770,9 @@
     "hexColor": "Couleur hexadécimale",
     "alphabetNavigation": "Navigation alphabétique",
     "rowColumnPosition": "Ligne ${row} sur ${rowCount}, colonne ${column} sur ${columnCount}",
-    "rowPosition": "Ligne ${row} sur ${rowCount}"
+    "rowPosition": "Ligne ${row} sur ${rowCount}",
+    "scrollBack": "Défiler vers l’arrière",
+    "scrollForward": "Défiler vers l’avant"
   },
   "tooltips": {
     "shufflePlay": "Lecture aléatoire",

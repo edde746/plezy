@@ -770,7 +770,9 @@
     "hexColor": "Colore esadecimale",
     "alphabetNavigation": "Navigazione alfabetica",
     "rowColumnPosition": "Riga ${row} di ${rowCount}, colonna ${column} di ${columnCount}",
-    "rowPosition": "Riga ${row} di ${rowCount}"
+    "rowPosition": "Riga ${row} di ${rowCount}",
+    "scrollBack": "Scorri indietro",
+    "scrollForward": "Scorri avanti"
   },
   "tooltips": {
     "shufflePlay": "Riproduzione casuale",

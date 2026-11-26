@@ -767,7 +767,9 @@
     "hexColor": "16進カラー",
     "alphabetNavigation": "アルファベットナビゲーション",
     "rowColumnPosition": "${rowCount}行中${row}行、${columnCount}列中${column}列",
-    "rowPosition": "${rowCount}行中${row}行"
+    "rowPosition": "${rowCount}行中${row}行",
+    "scrollBack": "前へスクロール",
+    "scrollForward": "次へスクロール"
   },
   "tooltips": {
     "shufflePlay": "シャッフル再生",

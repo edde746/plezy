@@ -770,7 +770,9 @@
     "hexColor": "Hex rangi",
     "alphabetNavigation": "Alifboli navigatsiya",
     "rowColumnPosition": "Qator ${row} / ${rowCount}, ustun ${column} / ${columnCount}",
-    "rowPosition": "Qator ${row} / ${rowCount}"
+    "rowPosition": "Qator ${row} / ${rowCount}",
+    "scrollBack": "Orqaga aylantirish",
+    "scrollForward": "Oldinga aylantirish"
   },
   "tooltips": {
     "shufflePlay": "Aralashtirib ijro etish",
