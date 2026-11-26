@@ -767,7 +767,9 @@
     "hexColor": "十六进制颜色",
     "alphabetNavigation": "字母导航",
     "rowColumnPosition": "第 ${row} 行，共 ${rowCount} 行；第 ${column} 列，共 ${columnCount} 列",
-    "rowPosition": "第 ${row} 行，共 ${rowCount} 行"
+    "rowPosition": "第 ${row} 行，共 ${rowCount} 行",
+    "scrollBack": "向后滚动",
+    "scrollForward": "向前滚动"
   },
   "tooltips": {
     "shufflePlay": "随机播放",

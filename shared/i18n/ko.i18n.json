@@ -767,7 +767,9 @@
     "hexColor": "16진수 색상",
     "alphabetNavigation": "알파벳 탐색",
     "rowColumnPosition": "${rowCount}행 중 ${row}행, ${columnCount}열 중 ${column}열",
-    "rowPosition": "${rowCount}행 중 ${row}행"
+    "rowPosition": "${rowCount}행 중 ${row}행",
+    "scrollBack": "뒤로 스크롤",
+    "scrollForward": "앞으로 스크롤"
   },
   "tooltips": {
     "shufflePlay": "무작위 재생",

@@ -770,7 +770,9 @@
     "hexColor": "Hex rəngi",
     "alphabetNavigation": "Əlifba naviqasiyası",
     "rowColumnPosition": "Sətir ${row} / ${rowCount}, sütun ${column} / ${columnCount}",
-    "rowPosition": "Sətir ${row} / ${rowCount}"
+    "rowPosition": "Sətir ${row} / ${rowCount}",
+    "scrollBack": "Geri sürüşdür",
+    "scrollForward": "İrəli sürüşdür"
   },
   "tooltips": {
     "shufflePlay": "Qarışıq oynat",

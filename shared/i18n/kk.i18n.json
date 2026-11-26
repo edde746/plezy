@@ -770,7 +770,9 @@
     "hexColor": "Hex түсі",
     "alphabetNavigation": "Алфавиттік навигация",
     "rowColumnPosition": "Жол ${row} / ${rowCount}, баған ${column} / ${columnCount}",
-    "rowPosition": "Жол ${row} / ${rowCount}"
+    "rowPosition": "Жол ${row} / ${rowCount}",
+    "scrollBack": "Артқа айналдыру",
+    "scrollForward": "Алға айналдыру"
   },
   "tooltips": {
     "shufflePlay": "Араластырып ойнату",

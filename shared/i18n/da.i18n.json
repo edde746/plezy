@@ -770,7 +770,9 @@
     "hexColor": "Hexfarve",
     "alphabetNavigation": "Alfabetnavigation",
     "rowColumnPosition": "Række ${row} af ${rowCount}, kolonne ${column} af ${columnCount}",
-    "rowPosition": "Række ${row} af ${rowCount}"
+    "rowPosition": "Række ${row} af ${rowCount}",
+    "scrollBack": "Rul tilbage",
+    "scrollForward": "Rul frem"
   },
   "tooltips": {
     "shufflePlay": "Afspil tilfældigt",

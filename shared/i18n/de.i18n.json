@@ -770,7 +770,9 @@
     "hexColor": "Hexadezimalfarbe",
     "alphabetNavigation": "Alphabetische Navigation",
     "rowColumnPosition": "Zeile ${row} von ${rowCount}, Spalte ${column} von ${columnCount}",
-    "rowPosition": "Zeile ${row} von ${rowCount}"
+    "rowPosition": "Zeile ${row} von ${rowCount}",
+    "scrollBack": "Zurückblättern",
+    "scrollForward": "Vorblättern"
   },
   "tooltips": {
     "shufflePlay": "Zufallswiedergabe",

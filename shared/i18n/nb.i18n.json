@@ -770,7 +770,9 @@
     "hexColor": "Heksadesimal farge",
     "alphabetNavigation": "Alfabetisk navigasjon",
     "rowColumnPosition": "Rad ${row} av ${rowCount}, kolonne ${column} av ${columnCount}",
-    "rowPosition": "Rad ${row} av ${rowCount}"
+    "rowPosition": "Rad ${row} av ${rowCount}",
+    "scrollBack": "Rull tilbake",
+    "scrollForward": "Rull fremover"
   },
   "tooltips": {
     "shufflePlay": "Tilfeldig avspilling",
