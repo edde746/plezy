@@ -510,7 +510,9 @@ final class LibraryChoicesTests: PlezyUITestCase {
 
     /// Whether a menu entry shows its check (not its identifier, which says what the app selected): its selected trait
     /// or a check image; on the Mac, whose menu items expose neither, marks drawn in its check column (its leading 20 pt)
-    /// where Release Year, never picked here, has none.
+    /// where Release Year, never picked here, has none. A mark is a pixel of the column in the ink of the entry's title
+    /// (the title's pixel farthest from its backdrop), in which the check is drawn: the menu's material lets what lies
+    /// under it show through, so a pixel merely unlike the column's backdrop also counts the shelves behind the menu.
     private func checked(_ entry: XCUIElement) -> Bool {
         guard entry.exists else { return false }
         if entry.isSelected || entry.images["checkmark"].exists { return true }
@@ -520,29 +522,34 @@ final class LibraryChoicesTests: PlezyUITestCase {
             return false
         }
         let scale = CGFloat(screen.width) / (NSScreen.screens.first?.frame.width ?? CGFloat(screen.width))
-        func marks(_ item: XCUIElement) -> Int {
-            let frame = item.frame
-            let column = CGRect(x: frame.minX * scale, y: frame.minY * scale, width: 20 * scale, height: frame.height * scale).integral
-            guard let crop = screen.cropping(to: column) else { return 0 }
+        func gray(_ rect: CGRect) -> [Int] {
+            let area = CGRect(x: rect.minX * scale, y: rect.minY * scale, width: rect.width * scale, height: rect.height * scale).integral
+            guard let crop = screen.cropping(to: area) else { return [] }
             let width = crop.width, height = crop.height
             var pixels = [UInt8](repeating: 0, count: width * height)
             guard let context = CGContext(
                 data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width,
                 space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue
-            ) else { return 0 }
+            ) else { return [] }
             context.draw(crop, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return pixels.map(Int.init)
+        }
+        func marks(_ item: XCUIElement) -> Int {
+            let frame = item.frame
+            let title = gray(CGRect(x: frame.minX + 20, y: frame.minY, width: min(60, frame.width - 20), height: frame.height))
             var counts = [Int](repeating: 0, count: 256)
-            for pixel in pixels { counts[Int(pixel)] += 1 }
+            for pixel in title { counts[pixel] += 1 }
             let fill = counts.indices.max { counts[$0] < counts[$1] } ?? 0
-            return pixels.reduce(0) { $0 + (abs(Int($1) - fill) > 80 ? 1 : 0) }
+            guard let ink = title.max(by: { abs($0 - fill) < abs($1 - fill) }) else { return 0 }
+            return gray(CGRect(x: frame.minX, y: frame.minY, width: 20, height: frame.height)).filter { abs($0 - ink) <= 40 }.count
         }
         let own = marks(entry), none = marks(reference)
         // The direction checked, whose identifier says so: what a drawn check counts.
         let drawn = app.menuItems.matching(NSPredicate(format: "identifier CONTAINS '.selected'")).firstMatch
         let check = drawn.exists ? marks(drawn) : -1
         print("CHECK COLUMN \(entry.title): \(own) marked pixels, Release Year \(none), the checked direction \(check)")
-        XCTAssertGreaterThan(check, 3 * none + 10, "the check column's marks are read: the checked direction shows its check")
-        return own > 3 * none + 10
+        XCTAssertGreaterThan(check, 3 * none + 5, "the check column's marks are read: the checked direction shows its check")
+        return own > 3 * none + 5
         #else
         return false
         #endif
