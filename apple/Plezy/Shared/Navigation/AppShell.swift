@@ -8,9 +8,8 @@ import PlezyKit
 /// The destinations (`TopLevelDestination`) are the system's tabs. Each has a back stack of its own (`NavigationStacks`),
 /// which its tab shows in a `NavigationStack` and keeps while another tab shows:
 ///
-/// - iPhone: the tab bar, which names the destination: its screen shows no navigation bar (`destinationChrome`). Online
-///   the bar leaves Downloads out (`NavigationTabs.bar`): Home's Downloads chip opens it, its tab in the bar while it
-///   shows.
+/// - iPhone: the tab bar, which names the destination: its screen shows no navigation bar (`destinationChrome`). From
+///   iOS 26 Search is the round button at the bar's trailing end (`searchRole`).
 /// - iPad: the floating tab bar, which opens into a sidebar listing the destinations, then the libraries of Libraries
 ///   (the visible ones, then Hidden libraries) and at its bottom the running profile (`SidebarBarProfile`). With Always
 ///   Keep Sidebar Open the sidebar shows from the start and stays where it fits beside the screen (`keepsSidebarShown`).
@@ -354,7 +353,7 @@ struct AppShell: View {
 
     private func legacyTabs(shell: ShellUiState, screens: [any Route]) -> some View {
         TabView(selection: selectionBinding(shell, screens: screens)) {
-            ForEach(tabbedDestinations(shell), id: \.self) { destination in
+            ForEach(shell.destinations, id: \.self) { destination in
                 tabScreen(destination, shell: shell, screens: screens)
                     .tabItem {
                         Label(destination.label, systemImage: destination.systemImage)
@@ -364,35 +363,24 @@ struct AppShell: View {
             }
         }
     }
-
-    /// The destinations with a tab: every one, but on iPhone the bar's (`NavigationTabs.bar`: no Downloads online) and
-    /// the shown one where the bar leaves it out (Downloads from Home's chip), selected, for as long as it shows: a tab
-    /// view shows nothing for a selection without a tab, and a tab hidden from the bar (`defaultVisibility`) stayed in
-    /// it once picked.
-    private func tabbedDestinations(_ shell: ShellUiState) -> [TopLevelDestination] {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return shell.destinations }
-        let bar = NavigationTabs.shared.bar(visible: shell.destinations)
-        return bar.contains(shell.selected) ? bar : bar + [shell.selected]
-    }
     #endif
 
     #if !os(macOS)
     /// The destinations as the system's tabs, a `Tab` carrying its accessibility identifier to the bar's button
-    /// (`nav.home`). iPad's sidebar adds the libraries, which the bars leave out. iPhone's bar has the tabs
-    /// `tabbedDestinations` says.
+    /// (`nav.home`). iPad's sidebar adds the libraries, which the bars leave out. On iPhone Search is the round button
+    /// apart from the others (`searchRole`).
     @available(iOS 18, *)
     private func tabs(shell: ShellUiState, screens: [any Route]) -> some View {
         // In iPad's sidebar the row the screen on top belongs to is the selected tab: its tab shows the shown stack.
         #if os(iOS)
         let host = sidebarShown ? highlightedTab(shell, screens: screens) : nil
-        let tabbed = tabbedDestinations(shell)
         #else
         let host: ShellTab? = nil
-        let tabbed = shell.destinations
         #endif
+        let searchRole = Self.searchRole
         return TabView(selection: selectionBinding(shell, screens: screens)) {
-            ForEach(tabbed, id: \.self) { destination in
-                Tab(value: ShellTab.destination(destination)) {
+            ForEach(shell.destinations, id: \.self) { destination in
+                Tab(value: ShellTab.destination(destination), role: destination == .search ? searchRole : nil) {
                     tabScreen(destination, shell: shell, screens: screens, host: host, tab: .destination(destination))
                         #if os(iOS)
                         .modifier(TabBarPlacementReader { sidebarShown = $0 == .sidebar })
@@ -439,12 +427,28 @@ struct AppShell: View {
         // The mini-player over the tab bar while music plays.
         .musicMiniPlayerAccessory(music, cast: app.cast)
         .tint(sidebarShown ? Palette.onSurfaceVariant : Palette.primary)
-        // Made anew when its tabs change (online again, Explore turned on, Downloads opened on iPhone): the bar's
-        // buttons for tabs added to a shown tab view carry no accessibility identifiers.
-        .id(tabbed)
+        // Made anew when the destinations change (online again, Explore turned on): the bar's buttons for tabs added
+        // to a shown tab view carry no accessibility identifiers.
+        .id(shell.destinations)
         #endif
         #if os(tvOS)
         .background(TabBarSelect { repick(shell, screens: screens) })
+        #endif
+    }
+
+    /// The role of Search's tab: on iPhone the round button at the tab bar's trailing end, apart from the other tabs.
+    /// iOS 26 draws the search tab so; iOS 27 only the prominent tab, and a search tab only while the system's search
+    /// field docks in the bar as it shows (`tabViewSearchActivation`), a second field beside Search's own. Before iOS 26
+    /// the search tab is a tab like the others. None on iPad, whose sidebar keeps Search in the destinations' order, nor
+    /// on Apple TV.
+    @available(iOS 18, *)
+    private static var searchRole: TabRole? {
+        #if os(iOS)
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return nil }
+        if #available(iOS 27, *) { return .prominent }
+        return .search
+        #else
+        return nil
         #endif
     }
     #endif

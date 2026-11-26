@@ -1360,6 +1360,7 @@
   "navigation": {
     "libraries": "Библиотеки",
     "downloads": "Изтегляния",
+    "downloadsTab": "Изтегляния",
     "liveTv": "TV на живо",
     "explore": "Разгледай"
   },

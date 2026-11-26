@@ -1360,6 +1360,7 @@
   "navigation": {
     "libraries": "Kitaplıklar",
     "downloads": "İndirmeler",
+    "downloadsTab": "İndirmeler",
     "liveTv": "Canlı TV",
     "explore": "Keşfet"
   },

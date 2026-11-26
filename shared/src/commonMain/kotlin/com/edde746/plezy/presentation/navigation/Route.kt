@@ -252,12 +252,12 @@ enum class TopLevelDestination(
     SETTINGS(Route.Settings, onlineOnly = false),
     ;
 
-    /** The destination's name. */
+    /** The destination's name in the bar, rail, sidebar and menus (Downloads' own short form where its word is long). */
     val label: String
         get() = when (this) {
             HOME -> T.common.home
             LIBRARIES -> T.navigation.libraries
-            DOWNLOADS -> T.navigation.downloads
+            DOWNLOADS -> T.navigation.downloadsTab
             EXPLORE -> T.navigation.explore
             SEARCH -> T.common.search
             SETTINGS -> T.common.settings

@@ -1370,6 +1370,7 @@
   "navigation": {
     "libraries": "Библиотеки",
     "downloads": "Загрузки",
+    "downloadsTab": "Загрузки",
     "liveTv": "Прямой эфир",
     "explore": "Обзор"
   },

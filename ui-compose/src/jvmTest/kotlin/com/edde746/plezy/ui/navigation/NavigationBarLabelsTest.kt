@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edde746.plezy.model.FormFactor
-import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.strings.T
 import com.edde746.plezy.ui.adaptive.AdaptiveLayout
@@ -43,6 +42,9 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class NavigationBarLabelsTest {
+    /** A phone's usual destinations: Explore shows only while a catalog source is connected. */
+    private val phone = TopLevelDestination.entries - TopLevelDestination.EXPLORE
+
     /**
      * Show Navigation Bar Labels off: the phone's bar shows its icons alone (each named for accessibility) in a 56 dp
      * bar, which gives the screen the height the labels took; on again, the labels come back.
@@ -114,15 +116,14 @@ class NavigationBarLabelsTest {
                         PlezyTheme {
                             Box(Modifier.size(width.dp, height.dp)) {
                                 AdaptiveLayout(FormFactor.HANDHELD) {
-                                    NavigationScaffold(TopLevelDestination.entries, TopLevelDestination.HOME, onSelect = {}, showNavigation = true, barLabels = true) {
+                                    NavigationScaffold(phone, TopLevelDestination.HOME, onSelect = {}, showNavigation = true, barLabels = true) {
                                         Box(Modifier.fillMaxSize())
                                     }
                                 }
                             }
                         }
                     }
-                    // A phone either way up leaves Downloads to Home.
-                    for (destination in NavigationTabs.bar(TopLevelDestination.entries)) {
+                    for (destination in phone) {
                         val layouts = mutableListOf<TextLayoutResult>()
                         onNode(hasText(destination.label) and SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult), useUnmergedTree = true)
                             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
@@ -183,11 +184,11 @@ class NavigationBarLabelsTest {
                 bar(fontScale) { measurer ->
                     full = MaterialTheme.typography.labelMedium.fontSize.value
                     val style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp)
-                    for (destination in NavigationTabs.bar(TopLevelDestination.entries)) {
+                    for (destination in phone) {
                         reference[destination.label] = measurer.measure(destination.label, style).getBoundingBox(0).width
                     }
                 }
-                val sizes = NavigationTabs.bar(TopLevelDestination.entries).associate { it.label to layoutOf(it.label).getBoundingBox(0).width / reference.getValue(it.label) * 10 }
+                val sizes = phone.associate { it.label to layoutOf(it.label).getBoundingBox(0).width / reference.getValue(it.label) * 10 }
                 val read = sizes.entries.joinToString { (label, size) -> "\"" + label + "\" " + "%.1f".format(size) + " sp" }
                 if (sizes.values.max() - sizes.values.min() > 0.3f) wrong += "at font scale $fontScale: $read"
                 if (fontScale == 1f && sizes.values.max() > full - 0.3f) wrong += "at font scale 1 the labels keep full size: $read"
@@ -206,7 +207,7 @@ class NavigationBarLabelsTest {
                 measure(rememberTextMeasurer())
                 Box(Modifier.size(411.dp, 891.dp)) {
                     AdaptiveLayout(FormFactor.HANDHELD) {
-                        NavigationScaffold(TopLevelDestination.entries, TopLevelDestination.HOME, onSelect = {}, showNavigation = true, barLabels = true) {
+                        NavigationScaffold(phone, TopLevelDestination.HOME, onSelect = {}, showNavigation = true, barLabels = true) {
                             Box(Modifier.fillMaxSize())
                         }
                     }

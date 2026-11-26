@@ -1360,6 +1360,7 @@
   "navigation": {
     "libraries": "Biblioteker",
     "downloads": "Downloads",
+    "downloadsTab": "Downloads",
     "liveTv": "Live TV",
     "explore": "Udforsk"
   },

@@ -212,8 +212,8 @@ final class ShellChromeTests: PlezyUITestCase {
     }
 
     /// The destinations' tabs (the bar's buttons, the Mac's sidebar rows) carry their identifiers and their names
-    /// (VoiceOver reads them) from launch, and again after the shell goes offline (Downloads and Settings alone, iPhone's
-    /// bar showing Downloads then) and comes back online; each picked then shows its screen.
+    /// (VoiceOver reads them) from launch, and again after the shell goes offline (Downloads and Settings alone) and comes
+    /// back online; each picked then shows its screen.
     func testTabsKeepTheirNamesThroughOffline() throws {
         try launch()
         require("home.screen", timeout: 60, "Home")
@@ -236,25 +236,28 @@ final class ShellChromeTests: PlezyUITestCase {
     }
 
     /// Home, Libraries, Downloads, Search and Settings' tabs, each with its identifier and its name; the Mac's sidebar has
-    /// no Libraries row online, its libraries standing for it, and iPhone's bar no Downloads tab online, Home's chip
-    /// opening it.
+    /// no Libraries row online, its libraries standing for it. iPhone's bar holds the five, Search as its search tab: from
+    /// iOS 26 the round button past Settings.
     private func requireTabs(_ when: String) {
-        var tabs = [("nav.home", "Home"), ("nav.search", "Search"), ("nav.settings", "Settings")]
+        var tabs = [("nav.home", "Home"), ("nav.downloads", "Downloads"), ("nav.search", "Search"), ("nav.settings", "Settings")]
         #if os(macOS)
         XCTAssertFalse(element("nav.libraries").exists, "no Libraries row beside the libraries \(when)")
-        tabs.insert(("nav.downloads", "Downloads"), at: 1)
         #else
         tabs.insert(("nav.libraries", "Libraries"), at: 1)
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            tabs.insert(("nav.downloads", "Downloads"), at: 2)
-        } else {
-            XCTAssertFalse(app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch.exists, "no Downloads tab in iPhone's bar \(when)")
-        }
         #endif
         for (id, name) in tabs {
             let tab = require(id, "\(name)'s tab \(when)")
             XCTAssertEqual(self.name(of: tab), name, "\(id) reads as \(name) \(when)")
         }
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            XCTAssertEqual(app.tabBars.buttons.count, 5, "iPhone's bar holds five tabs \(when)")
+            if #available(iOS 26, *) {
+                let search = element("nav.search").frame, settings = element("nav.settings").frame
+                XCTAssertGreaterThan(search.minX, settings.maxX, "Search is the round button past Settings \(when)")
+            }
+        }
+        #endif
     }
 
     /// An artist opened over Home, the sidebar shown (iPad, the Mac): its server's Music library is the highlighted row,

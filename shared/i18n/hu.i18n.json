@@ -1360,6 +1360,7 @@
   "navigation": {
     "libraries": "Könyvtárak",
     "downloads": "Letöltések",
+    "downloadsTab": "Letöltések",
     "liveTv": "Élő TV",
     "explore": "Böngészés"
   },

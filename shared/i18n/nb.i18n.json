@@ -1360,6 +1360,7 @@
   "navigation": {
     "libraries": "Biblioteker",
     "downloads": "Nedlastinger",
+    "downloadsTab": "Nedlastinger",
     "liveTv": "Direkte-TV",
     "explore": "Utforsk"
   },
