@@ -286,7 +286,10 @@ final class ShellChromeTests: PlezyUITestCase {
         for (label, screen) in [("Downloads", "downloads.screen"), ("Settings", "settings.screen")] {
             hit(element("nav.more"))
             let entry = moreEntry(label)
-            if label == "Downloads" { shot("more menu") }
+            if label == "Downloads" {
+                shot("more menu")
+                XCTAssertLessThan(entry.frame.minY, moreEntry("Settings").frame.minY, "Downloads lists above Settings, as in the bar's order")
+            }
             XCTAssertFalse(entry.isSelected, "\(label) isn't checked while it doesn't show")
             entry.tap()
             require(screen, "More's \(label) shows \(screen)")

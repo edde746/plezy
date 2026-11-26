@@ -68,6 +68,8 @@ private struct MoreMenuAnchor: UIViewControllerRepresentable {
         override func loadView() {
             view = UIView()
             button.showsMenuAsPrimaryAction = true
+            // Downloads first, as the bar's order and Android's menu have it: an upward menu would put it last.
+            button.preferredMenuElementOrder = .fixed
             button.isAccessibilityElement = false
             button.onOpen = { [weak button] in button?.runAfterClose { button?.removeFromSuperview() } }
         }
