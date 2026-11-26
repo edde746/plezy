@@ -4,8 +4,8 @@ import PlezyKit
 import GameController
 #endif
 
-/// A titled, horizontally scrolling row of cards (a hub on Home or a library's recommendations, Continue Watching, an
-/// item's related rows).
+/// A titled, horizontally scrolling row of cards (`SideScroll`: a hub on Home or a library's recommendations, Continue
+/// Watching, an item's related rows).
 ///
 /// The row is a focus section: on tvOS (and with a keyboard) moving up or down into it lands on a card of the row, and
 /// left/right move between its cards while the row scrolls to keep the focused one in view. Cards lift outside the
@@ -66,7 +66,7 @@ struct ShelfRow<Data: RandomAccessCollection, ID: Hashable, Action: View, Conten
                 }
             }
             .padding(sides.insets)
-            ScrollView(.horizontal, showsIndicators: false) {
+            SideScroll {
                 LazyHStack(alignment: .top, spacing: dimens.gutter) {
                     ForEach(items, id: id) { item in content(item) }
                     end()

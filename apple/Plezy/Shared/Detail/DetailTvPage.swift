@@ -274,7 +274,7 @@ struct DetailTvPage: View {
                     DetailSectionEmpty(message: T.shared.messages.noEpisodesFound)
                 default:
                     ScrollViewReader { reader in
-                        ScrollView(.horizontal, showsIndicators: false) {
+                        SideScroll {
                             LazyHStack(alignment: .top, spacing: dimens.gutter) {
                                 ForEach(list.rows, id: \.id) { row in
                                     DetailTvEpisodeCard(row: row, store: store, menu: menu, focus: $focus, key: Self.episodePrefix + row.id)
