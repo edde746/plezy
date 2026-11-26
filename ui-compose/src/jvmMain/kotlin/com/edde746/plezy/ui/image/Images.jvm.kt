@@ -4,7 +4,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import coil3.Bitmap
+import coil3.BitmapImage
 import coil3.ComponentRegistry
+import org.jetbrains.skia.ColorAlphaType
 
 internal actual fun Bitmap.toComposeBitmap(): ImageBitmap = asComposeImageBitmap()
 
@@ -28,3 +30,6 @@ internal actual fun argbBitmap(pixels: IntArray, width: Int, height: Int): Bitma
         installPixels(info, bytes, width * 4)
     }
 }
+
+internal actual val coil3.Image.opaque: Boolean
+    get() = (this as? BitmapImage)?.bitmap?.alphaType == ColorAlphaType.OPAQUE

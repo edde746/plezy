@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import coil3.Bitmap
+import coil3.BitmapImage
 import coil3.ComponentRegistry
 
 internal actual fun Bitmap.toComposeBitmap(): ImageBitmap = asImageBitmap()
@@ -22,3 +23,6 @@ internal actual fun ComponentRegistry.Builder.addDecoders() = Unit
 
 internal actual fun argbBitmap(pixels: IntArray, width: Int, height: Int): Bitmap =
     android.graphics.Bitmap.createBitmap(pixels, width, height, android.graphics.Bitmap.Config.ARGB_8888).asImageBitmap().toCoilBitmap()
+
+internal actual val coil3.Image.opaque: Boolean
+    get() = (this as? BitmapImage)?.bitmap?.hasAlpha() == false

@@ -43,6 +43,8 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.edde746.plezy.presentation.libraries.alphaLetterDown
@@ -185,10 +187,13 @@ internal fun AlphaJumpBar(
                 Box(
                     Modifier.size(ALPHA_BAR_WIDTH, slot.dp)
                         // One node per row, named by its letter or its run's ends, as a screen reader and UI automation
-                        // read it; a run's letters each its own action.
-                        .semantics(mergeDescendants = true) {
+                        // read it; a run's letters each its own action. The row carries the text it draws itself, with no
+                        // node for the text inside: an accessibility service walks every node again on each frame the
+                        // grid beside it scrolls.
+                        .clearAndSetSemantics {
                             role = Role.Button
                             selected = isCurrent
+                            text = AnnotatedString(letter ?: RUN_DOT)
                             if (row.size > 1) {
                                 contentDescription = "${row.first()}–${row.last()}"
                                 customActions = row.map { CustomAccessibilityAction(it) { jump(it); true } }

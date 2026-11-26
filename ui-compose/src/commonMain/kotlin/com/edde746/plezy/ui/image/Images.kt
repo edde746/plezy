@@ -91,11 +91,12 @@ fun RemoteImage(
  * every one failed: a card's fallback icon). An image loaded before shows from the start of its request, while the
  * loader looks it up off the main thread ([LoadedImageKeys]): a card composed again shows its picture at once. A loaded
  * image shows at once, without a fade, wherever it came from (the network, the disk or the memory cache), and [blank]
- * goes with it: nothing is drawn under an image once it is in. A load redraws the image without composing it again,
- * unless a [fallback] has to go. [blurred] shows [artwork] blurred past recognition ([StillBlur]); [fallbackArtwork]
- * stays sharp. A [logo] on a light theme is recoloured to read on it ([ToneLogo]). Its first successful load marks
- * `image` to the perf probe ([perfImage]); each gives [onAspect] the image's width over height, and [onResult] whether
- * the artwork it tried loaded.
+ * goes with it: nothing is drawn under an image once it is in. With [blankUnderAlpha] [blank] stays under a loaded image
+ * that has transparency (a card's fill under a logo) and goes only under an opaque one, which must fill the bounds (the
+ * default crop). A load redraws the image without composing it again, unless a [fallback] has to go. [blurred] shows
+ * [artwork] blurred past recognition ([StillBlur]); [fallbackArtwork] stays sharp. A [logo] on a light theme is
+ * recoloured to read on it ([ToneLogo]). Its first successful load marks `image` to the perf probe ([perfImage]); each
+ * gives [onAspect] the image's width over height, and [onResult] whether the artwork it tried loaded.
  */
 @Composable
 fun RemoteImage(
@@ -108,6 +109,7 @@ fun RemoteImage(
     fallbackArtwork: Artwork? = null,
     blurred: Boolean = false,
     logo: LogoRecolour? = null,
+    blankUnderAlpha: Boolean = false,
     onAspect: ((Float) -> Unit)? = null,
     onResult: ((Artwork, Boolean) -> Unit)? = null,
     error: (@Composable () -> Unit)? = null,
@@ -119,7 +121,9 @@ fun RemoteImage(
     val blur = blurred && shown == artwork
     // An image to draw: the result's, or one loaded before that the request starts on.
     var loaded by remember(shown) { mutableStateOf(false) }
-    val under = if (blank.isSpecified) Modifier.drawBehind { if (!loaded) drawRect(blank) } else Modifier
+    // The loaded image is opaque: nothing under it shows.
+    var opaque by remember(shown) { mutableStateOf(false) }
+    val under = if (blank.isSpecified) Modifier.drawBehind { if (!loaded || blankUnderAlpha && !opaque) drawRect(blank) } else Modifier
     Box(modifier.perfImage { loaded }.then(under)) {
         when {
             error != null && gone -> error()
@@ -152,6 +156,7 @@ fun RemoteImage(
                 contentScale = contentScale,
                 onState = {
                     loaded = it is AsyncImagePainter.State.Success || it is AsyncImagePainter.State.Loading && it.painter != null
+                    opaque = it is AsyncImagePainter.State.Success && it.result.image.opaque
                     if (it is AsyncImagePainter.State.Success) {
                         onResult?.invoke(shown, true)
                         if (onAspect != null) {
@@ -193,3 +198,6 @@ internal expect fun ImageBitmap.toCoilBitmap(): Bitmap
 
 /** A Coil bitmap holding straight-alpha `0xAARRGGBB` [pixels], [width] wide. */
 internal expect fun argbBitmap(pixels: IntArray, width: Int, height: Int): Bitmap
+
+/** The image has no transparency: every pixel is opaque. */
+internal expect val coil3.Image.opaque: Boolean

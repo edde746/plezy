@@ -22,8 +22,6 @@ import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isFocused
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -264,7 +262,7 @@ class ExploreScreenTest {
         onNodeWithText(T.common.search).assertIsNotFocused()
         state = uiState(body = ExploreBody.Rows(listOf(shelf())))
         waitForIdle()
-        onAllNodesWithText("Shelf Movie").onFirst().assertExists()
+        onNodeWithContentDescription("Shelf Movie").assertExists()
         onAllNodes(isFocused()).assertCountEquals(1)
         onNodeWithText(T.common.search).assertIsNotFocused()
         onNodeWithText(T.common.refresh).assertIsNotFocused()

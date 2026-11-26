@@ -137,7 +137,10 @@ fun PosterCard(
                     } else {
                         Modifier.focusable()
                     },
-                ),
+                )
+                // The card's own semantics alone, without a node for the image or the labels inside (they add nothing
+                // to it): an accessibility service walks every node again on each frame a grid scrolls.
+                .clearAndSetSemantics {},
             corner,
         )
         if (!caption && !tv) return@Column
@@ -145,16 +148,19 @@ fun PosterCard(
         Spacer(Modifier.height(if (tv) 10.dp else 6.dp))
         val lines = if (largeFontScale()) 2 else 1
         // A TV card without its caption keeps the room, shown while focused.
-        val shown = Modifier.semantics { hideFromAccessibility() }.alpha(if (caption || focused) 1f else 0f)
-        DetailLinkText(
-            item.title,
-            item.titleLink,
-            MaterialTheme.typography.titleSmall.contentDirection().hyphenated(),
-            LocalContentColor.current,
-            shown,
-            maxOf(lines, titleLines),
-        )
-        LinkedLine(item.caption.orEmpty(), item.captionLink, MaterialTheme.typography.bodySmall.hyphenated(), PlezyColors.TextMuted, shown, lines)
+        val shown = Modifier.alpha(if (caption || focused) 1f else 0f)
+        // The text under the artwork is hidden from screen readers: one cleared node, not one per line.
+        Column(Modifier.clearAndSetSemantics {}) {
+            DetailLinkText(
+                item.title,
+                item.titleLink,
+                MaterialTheme.typography.titleSmall.contentDirection().hyphenated(),
+                LocalContentColor.current,
+                shown,
+                maxOf(lines, titleLines),
+            )
+            LinkedLine(item.caption.orEmpty(), item.captionLink, MaterialTheme.typography.bodySmall.hyphenated(), PlezyColors.TextMuted, shown, lines)
+        }
     }
 }
 
@@ -167,7 +173,8 @@ fun PosterCard(
 @Composable
 fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTheme.shapes.medium) {
     val fill = PlezyColors.SurfaceHigh
-    Box(modifier.clip(shape).background(fill)) {
+    // The fill is the image's blank: under an opaque poster it would be drawn for nothing on every frame.
+    Box(modifier.clip(shape)) {
         val primary = item.primaryArtwork
         val retry = item.retryArtwork
         RemoteImage(
@@ -175,6 +182,7 @@ fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTh
             contentDescription = null,
             modifier = Modifier.matchParentSize(),
             blank = fill,
+            blankUnderAlpha = true,
             fallbackArtwork = retry,
             blurred = item.blurred,
             // A primary that failed is remembered, so the next card of it starts on the fallback.
