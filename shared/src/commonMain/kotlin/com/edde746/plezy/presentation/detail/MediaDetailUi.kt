@@ -152,12 +152,17 @@ data class DetailActionsUi(
     val more: Boolean = false,
 )
 
+/**
+ * A season's chip: [watched] once every episode is (the check), else [progress], the watched share of its episodes
+ * (above 0, below 1: the ring), null for a season not started or without episode counts (nothing). Both follow the
+ * watched-indicators setting.
+ */
 data class SeasonTabUi(
     val id: String,
     val title: String,
     val poster: Artwork?,
     val watched: Boolean,
-    val unwatchedCount: Int,
+    val progress: Double?,
 )
 
 /** A season's (or a flattened show's) episode list. */

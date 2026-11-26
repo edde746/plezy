@@ -13,6 +13,9 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
@@ -52,7 +55,8 @@ import kotlin.test.assertEquals
 
 /**
  * What a phone's detail page shows: the download button only online, an episode's still blurred while it would spoil
- * the episode, an episode's download state said to screen readers, and an offline episode's menu on a long press.
+ * the episode, an episode's download state said to screen readers, an offline episode's menu on a long press, and a
+ * season chip's check, ring or nothing as its season is watched, partly watched or not started.
  */
 @OptIn(ExperimentalTestApi::class)
 class DetailPageContentTest {
@@ -97,6 +101,19 @@ class DetailPageContentTest {
     fun `an episode row says its download state to screen readers`() = runComposeUiTest {
         detail(season(hideSpoilers = false, download = EpisodeDownloadUi(DownloadedMediaStatus.COMPLETED, progress = null, queueing = false)))
         onNode(hasText("1. Episode 1") and hasClickAction()).assert(hasContentDescription(T.downloads.notificationComplete))
+    }
+
+    @Test
+    fun `season chips show a check when watched a ring when partly watched and nothing when unwatched`() = runComposeUiTest {
+        detail(DetailFixture.show(tv = false, watched = listOf(3, 1, 0)))
+        fun marks(index: Int) = listOf("check", "progress").filter {
+            onAllNodes(hasTestTag("detail.season.$index.$it"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(listOf(listOf("check"), listOf("progress"), emptyList()), (0..2).map(::marks))
+        fun chip(title: String) = onNode(hasText(title) and hasClickAction())
+        chip("Season 1").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, T.accessibility.mediaCardWatched))
+        chip("Season 2").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, T.accessibility.mediaCardPartiallyWatched(percent = "33")))
+        chip("Season 3").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
     }
 
     @Test

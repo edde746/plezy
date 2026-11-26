@@ -1238,9 +1238,9 @@ final class HomeLibrariesTests: PlezyUITestCase {
 }
 
 /// The test server's watch records for an account, through its Jellyfin API: who played what and when, so Continue
-/// Watching's order is known; and its libraries. Signs in on `server`, a `--dev-server` spec
-/// (`jellyfin=<user>:<password>@<url>`).
-private struct WatchRecords {
+/// Watching's order is known, and how much of a show is watched (`DetailEpisodesTests`); and its libraries. Signs in on
+/// `server`, a `--dev-server` spec (`jellyfin=<user>:<password>@<url>`).
+struct WatchRecords {
     struct Failure: LocalizedError, CustomStringConvertible {
         let description: String
         var errorDescription: String? { description }
