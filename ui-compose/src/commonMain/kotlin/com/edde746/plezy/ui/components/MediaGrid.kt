@@ -23,9 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -84,7 +85,10 @@ fun MediaGrid(
     header: LazyGridScope.() -> Unit = {},
 ) {
     val dimens = LocalPlezyDimens.current
-    val columns by remember(state) { derivedStateOf { state.layoutInfo.maxSpan.coerceAtLeast(1) } }
+    // A plain state set only when the count changes: the items read it, and a read of layoutInfo (or a state derived
+    // from it) would schedule every card's composition on each frame the grid scrolls.
+    var columns by remember(state) { mutableIntStateOf(1) }
+    LaunchedEffect(state) { snapshotFlow { state.layoutInfo.maxSpan.coerceAtLeast(1) }.collect { columns = it } }
     val cardText = rememberCardText()
     LazyVerticalGrid(
         columns = if (list) GridCells.Fixed(1) else mediaGridCells(shape, appearance),
