@@ -10,16 +10,19 @@ final class HeaderRoom {
 #endif
 
 /// Libraries' views, the view menu's options (`LibraryViewMenu`): the selected library's tabs, then Downloads where the
-/// device keeps downloads; `selected` is the one shown, `onSelect` shows another.
+/// device keeps downloads; `selected` is the one shown, `onSelect` shows another. `loading`: the library's tabs are still
+/// to come.
 struct LibraryViews {
     let labels: [String]
     let selected: Int
+    let loading: Bool
     let onSelect: (Int) -> Void
 }
 
 /// Libraries' view menu: a filter capsule naming the view shown (a tab of the library, or Downloads), listing them all
 /// (`libraries.view`, its options `libraries.view.option.<i>`); where the header row gives way, its symbol alone
-/// (`HeaderRank.view`): one symbol whatever the view. Not drawn while there is only one view.
+/// (`HeaderRank.view`): one symbol whatever the view. Not drawn while there is only one view, unless the library's tabs
+/// are still loading: then it holds its place, so the filters after it stay put as the tabs come in.
 struct LibraryViewMenu: View {
     let views: LibraryViews
 
@@ -27,7 +30,7 @@ struct LibraryViewMenu: View {
     @Environment(\.symbolRank) private var symbolRank
 
     var body: some View {
-        if views.labels.count > 1 {
+        if views.labels.count > 1 || views.loading {
             let shown = min(views.selected, views.labels.count - 1)
             FilterMenu(
                 chip: FilterChip(name: T.shared.libraries.title, text: views.labels[shown]),
@@ -163,11 +166,12 @@ struct LibrariesScreen: View {
         }
     }
 
-    /// The view menu's options: the library's tabs while one shows, then Downloads.
+    /// The view menu's options: the library's tabs while one shows, then Downloads. The menu comes with the library's
+    /// name and content, the row filling at once, so it holds no place while they load.
     private func views(_ state: LibrariesUiState) -> LibraryViews {
         let tabs = state.load == .content && state.selected != nil ? state.tabs : []
         let labels = tabs.map(\.label) + (onDownloads != nil ? [LibrarySection.downloads.label] : [])
-        return LibraryViews(labels: labels, selected: tabs.firstIndex(of: state.tab) ?? 0) { index in
+        return LibraryViews(labels: labels, selected: tabs.firstIndex(of: state.tab) ?? 0, loading: false) { index in
             if index < tabs.count {
                 model.store.selectTab(tab: tabs[index])
             } else {

@@ -6,7 +6,7 @@ import XCTest
 ///   empty states (picked from the header row's `downloads.tab` menu), the Movies grouping menu and the Active sync
 ///   rules screen;
 /// - Downloads opened as the app starts signed in to a server, whose libraries the same destination holds: it shows
-///   and answers its menus;
+///   Libraries' view menu from its first frame and answers its menus;
 /// - a movie and a season downloaded from the dev Jellyfin server (`--dev-download`, `PLEZY_JELLYFIN` overriding the
 ///   server's address; `_` stands for a space in its titles) shown completed in Manage's tree, the show opened down to
 ///   its episodes, and in the Movies and TV Shows tabs; then the device offline (the session's `offline` switch: the
@@ -78,10 +78,15 @@ final class DownloadsTests: PlezyUITestCase {
 
     /// Downloads asked for as the app starts signed in to a server: the screen shows and answers its menus, though the
     /// Libraries destination it opens in holds the server's libraries too (the Libraries screen laid out before it
-    /// showed kept the main thread laying its header out, and the app never answered again).
+    /// showed kept the main thread laying its header out, and the app never answered again). Libraries' view menu leads
+    /// the header row from the first frame, before the server's libraries come in, so the tab menu after it stays where
+    /// it first showed: the view menu coming in later moved the tab menu from under a click on it, which opened the view
+    /// menu instead.
     func testOpensOverTheServersLibraries() {
         launchDev(arguments: ["--dev-open", "downloads", "--dev-server", "jellyfin=maestro:maestro@\(server)"])
         opened()
+        require("downloads.tab", "the Downloads tab menu")
+        XCTAssertTrue(element("libraries.view").exists, "Libraries' view menu leads the header row as Downloads shows")
         require("downloads.tree.empty", "Manage's empty tree")
         show("Movies")
         require("downloads.empty", "Movies' empty state")
