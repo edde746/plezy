@@ -9,7 +9,10 @@ import PlezyKit
 /// which its tab shows in a `NavigationStack` and keeps while another tab shows:
 ///
 /// - iPhone: the tab bar, which names the destination: its screen shows no navigation bar (`destinationChrome`). From
-///   iOS 26 Search is the round button at the bar's trailing end (`searchRole`).
+///   iOS 26 Search is the round button at the bar's trailing end (`searchRole`). While the destinations outnumber the
+///   bar's five tabs (Explore shown), Downloads and Settings leave the bar for its More tab, whose pick opens their menu
+///   (`MoreMenu`); the one picked there shows in More's tab, More selected (`moreHeld`). More picked again opens the
+///   menu again, where the shown destination picked again goes back to its root, as a selected tab picked again does.
 /// - iPad: the floating tab bar, which opens into a sidebar listing the destinations, then the libraries of Libraries
 ///   (the visible ones, then Hidden libraries) and at its bottom the running profile (`SidebarBarProfile`). With Always
 ///   Keep Sidebar Open the sidebar shows from the start and stays where it fits beside the screen (`keepsSidebarShown`).
@@ -69,6 +72,8 @@ struct AppShell: View {
     #if os(iOS)
     /// The tabs show as iPad's sidebar (not as a tab bar).
     @State private var sidebarShown = false
+    /// The picks of iPhone's More tab, each of which opens its menu (`MoreMenu`).
+    @State private var moreRequest = 0
     #endif
     #if os(tvOS)
     /// The Now Playing tab is the selected one.
@@ -351,24 +356,54 @@ struct AppShell: View {
         }
     }
 
+    /// iPhone's tab bar before iOS 18: Search a tab like the others, More's menu as from iOS 18 (`moreHeld`).
     private func legacyTabs(shell: ShellUiState, screens: [any Route]) -> some View {
-        TabView(selection: selectionBinding(shell, screens: screens)) {
-            ForEach(shell.destinations, id: \.self) { destination in
+        let held = moreHeld(shell)
+        return TabView(selection: selectionBinding(shell, screens: screens)) {
+            ForEach(shell.destinations.filter { !held.contains($0) }, id: \.self) { destination in
                 tabScreen(destination, shell: shell, screens: screens)
+                    .modifier(moreMenu(held, shell: shell))
                     .tabItem {
                         Label(destination.label, systemImage: destination.systemImage)
                             .accessibilityIdentifier(destination.accessibilityId)
                     }
                     .tag(ShellTab.destination(destination))
             }
+            if let first = held.first {
+                tabScreen(held.contains(shell.selected) ? shell.selected : first, shell: shell, screens: screens, tab: .more)
+                    .modifier(moreMenu(held, shell: shell))
+                    .tabItem {
+                        Label(T.shared.navigation.more, systemImage: "ellipsis")
+                            .accessibilityIdentifier("nav.more")
+                    }
+                    .tag(ShellTab.more)
+            }
         }
     }
+
+    /// More's menu on a tab's screen: the destinations `held` under More, the shown one checked; a pick shows it.
+    private func moreMenu(_ held: [TopLevelDestination], shell: ShellUiState) -> MoreMenu {
+        MoreMenu(destinations: held, shown: shell.selected, request: moreRequest) { app.session.shell.select(destination: $0) }
+    }
     #endif
+
+    /// The destinations iPhone's tab bar leaves to its More tab: Downloads and Settings while the destinations outnumber
+    /// the five tabs UIKit's compact tab bar holds, Search's among them (with Explore shown), which past five makes a
+    /// More list of its own. From iOS 17.4, which opens a menu from code (`MoreMenu`); before it that list holds the
+    /// rest. None on iPad, the Mac and Apple TV.
+    private func moreHeld(_ shell: ShellUiState) -> [TopLevelDestination] {
+        #if os(iOS)
+        guard #available(iOS 17.4, *), UIDevice.current.userInterfaceIdiom == .phone, shell.destinations.count > 5 else { return [] }
+        return shell.destinations.filter { $0 == .downloads || $0 == .settings }
+        #else
+        return []
+        #endif
+    }
 
     #if !os(macOS)
     /// The destinations as the system's tabs, a `Tab` carrying its accessibility identifier to the bar's button
     /// (`nav.home`). iPad's sidebar adds the libraries, which the bars leave out. On iPhone Search is the round button
-    /// apart from the others (`searchRole`).
+    /// apart from the others (`searchRole`), and More holds what the bar leaves to it (`moreHeld`).
     @available(iOS 18, *)
     private func tabs(shell: ShellUiState, screens: [any Route]) -> some View {
         // In iPad's sidebar the row the screen on top belongs to is the selected tab: its tab shows the shown stack.
@@ -378,21 +413,25 @@ struct AppShell: View {
         let host: ShellTab? = nil
         #endif
         let searchRole = Self.searchRole
+        let held = moreHeld(shell)
         return TabView(selection: selectionBinding(shell, screens: screens)) {
-            ForEach(shell.destinations, id: \.self) { destination in
+            ForEach(shell.destinations.filter { !held.contains($0) }, id: \.self) { destination in
                 Tab(value: ShellTab.destination(destination), role: destination == .search ? searchRole : nil) {
-                    tabScreen(destination, shell: shell, screens: screens, host: host, tab: .destination(destination))
-                        #if os(iOS)
-                        .modifier(TabBarPlacementReader { sidebarShown = $0 == .sidebar })
-                        .tabBarIdentifiers(Dictionary(shell.destinations.map { ($0.label, $0.accessibilityId) }) { first, _ in first })
-                        .keepsSidebarShown(app.appearance.state.alwaysKeepSidebarOpen, shown: sidebarShown)
-                        #endif
+                    tabPage(destination, shell: shell, screens: screens, host: host, tab: .destination(destination), held: held)
                 } label: {
                     Label(destination.label, systemImage: destination.systemImage)
                 }
                 .accessibilityIdentifier(destination.accessibilityId)
             }
             #if os(iOS)
+            if let first = held.first {
+                Tab(value: ShellTab.more) {
+                    tabPage(held.contains(shell.selected) ? shell.selected : first, shell: shell, screens: screens, host: host, tab: .more, held: held)
+                } label: {
+                    Label(T.shared.navigation.more, systemImage: "ellipsis")
+                }
+                .accessibilityIdentifier("nav.more")
+            }
             // iPad's sidebar alone: on iPhone the tabs past the bar's five went under a More tab.
             if let libraries, shell.destinations.contains(.libraries), UIDevice.current.userInterfaceIdiom == .pad {
                 librarySections(libraries.state.state, shell: shell, screens: screens, host: host)
@@ -433,6 +472,26 @@ struct AppShell: View {
         #endif
         #if os(tvOS)
         .background(TabBarSelect { repick(shell, screens: screens) })
+        #endif
+    }
+
+    /// A tab's screen (`tabScreen`) with what each tab's carries on iOS: the bar's placement, the bar's buttons'
+    /// identifiers (More's too), the kept sidebar and More's menu (`held`, `moreHeld`).
+    @available(iOS 18, *)
+    private func tabPage(
+        _ destination: TopLevelDestination, shell: ShellUiState, screens: [any Route], host: ShellTab?, tab: ShellTab,
+        held: [TopLevelDestination]
+    ) -> some View {
+        #if os(iOS)
+        var ids = Dictionary(shell.destinations.map { ($0.label, $0.accessibilityId) }) { first, _ in first }
+        if !held.isEmpty { ids[T.shared.navigation.more] = "nav.more" }
+        return tabScreen(destination, shell: shell, screens: screens, host: host, tab: tab)
+            .modifier(TabBarPlacementReader { sidebarShown = $0 == .sidebar })
+            .tabBarIdentifiers(ids)
+            .keepsSidebarShown(app.appearance.state.alwaysKeepSidebarOpen, shown: sidebarShown)
+            .modifier(moreMenu(held, shell: shell))
+        #else
+        return tabScreen(destination, shell: shell, screens: screens, host: host, tab: tab)
         #endif
     }
 
@@ -514,11 +573,12 @@ struct AppShell: View {
         #endif
     }
 
-    /// The chrome's selection: the shown destination, or in a sidebar the row the screen on top belongs to
-    /// (`highlightedTab`), else the library selected in Libraries while it shows. A pick (the selected one too) goes
-    /// through the shell (`ShellStore.select`); a library picks Libraries with it selected. The
-    /// picked tab holds until the shell's state follows (`pickedTab`): handed the old selection meanwhile, Apple TV's tab
-    /// bar switched back and forth and its focus fell into the new tab's screen.
+    /// The chrome's selection: the shown destination (More while it is one More holds, `moreHeld`), or in a sidebar the
+    /// row the screen on top belongs to (`highlightedTab`), else the library selected in Libraries while it shows. A pick
+    /// (the selected one too) goes through the shell (`ShellStore.select`); a library picks Libraries with it selected;
+    /// More opens its menu and leaves the selection as it was. The picked tab holds until the shell's state follows
+    /// (`pickedTab`): handed the old selection meanwhile, Apple TV's tab bar switched back and forth and its focus fell
+    /// into the new tab's screen.
     private func selectionBinding(_ shell: ShellUiState, screens: [any Route]) -> Binding<ShellTab> {
         Binding(
             get: {
@@ -539,6 +599,7 @@ struct AppShell: View {
                 if nowPlayingTab, music.state.state.railItem { return .nowPlaying }
                 if castingTab, app.cast.senderState.state.casting { return .casting }
                 #endif
+                if moreHeld(shell).contains(shell.selected) { return .more }
                 return .destination(shell.selected)
             },
             set: { tab in
@@ -546,12 +607,18 @@ struct AppShell: View {
                 nowPlayingTab = tab == .nowPlaying
                 castingTab = tab == .casting
                 #endif
-                if tab != .nowPlaying, tab != .casting { pickedTab = tab }
+                if tab != .nowPlaying, tab != .casting, tab != .more { pickedTab = tab }
                 switch tab {
                 case .destination(let destination):
                     app.session.shell.select(destination: destination)
                 case .library(let key):
                     app.session.pickLibrary(globalKey: key)
+                case .more:
+                    #if os(iOS)
+                    moreRequest += 1
+                    #else
+                    break
+                    #endif
                 case .nowPlaying, .casting:
                     break
                 }
@@ -641,6 +708,8 @@ struct AppShell: View {
 enum ShellTab: Hashable {
     case destination(TopLevelDestination)
     case library(String)
+    /// iPhone's More tab, which shows the destination its menu picked (`MoreMenu`).
+    case more
     /// Apple TV's Now Playing tab, while music plays.
     case nowPlaying
     /// Apple TV's Casting tab, while this device casts (`CastTabPage`).
