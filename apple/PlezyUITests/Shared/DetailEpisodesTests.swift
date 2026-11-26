@@ -76,14 +76,9 @@ final class DetailEpisodesTests: PlezyUITestCase {
     func testSeasonChipsSayHowMuchIsWatched() throws {
         let records = try WatchRecords.ownAccount(on: Self.server)
         addTeardownBlock { try records.removeAccount() }
-        // Every episode of the show, played or not: on the test server a new account can start with the watch records of
-        // accounts removed before it (Maestro Episode 2 played, as this test leaves it).
         try records.set("Behind the Pattern", seconds: 0, played: true, ago: 120)
         try records.set("Maestro Episode 1", seconds: 0, played: true, ago: 60)
         try records.set("Maestro Episode 2", seconds: 70, ago: 30)
-        for title in ["Maestro Episode 3", "Second Season Opener", "Second Season Finale"] {
-            try records.set(title, seconds: 0, ago: 3600)
-        }
         openMaestroShow(as: records.server)
         let chips = (0..<3).map { element("detail.season.\($0)") }
         let values = { chips.map { $0.value as? String ?? "" } }
