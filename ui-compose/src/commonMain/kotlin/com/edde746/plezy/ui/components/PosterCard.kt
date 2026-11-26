@@ -181,7 +181,7 @@ fun PosterCard(
             CardLabel(
                 listOf(
                     LabelLine(item.title, titleStyle, LocalContentColor.current, maxOf(lines, titleLines)),
-                    LabelLine(captionText, captionStyle, PlezyColors.TextMuted, lines),
+                    LabelLine(captionText, captionStyle, PlezyColors.TextMuted, lines, item.captionLink?.prefix),
                 ),
                 shown,
             )
@@ -255,8 +255,11 @@ private class InViewOnFocusNode :
     }
 }
 
-/** One line of a [CardLabel]: [text] in [style] and [color], at most [lines] lines and as many reserved. */
-private data class LabelLine(val text: String, val style: TextStyle, val color: Color, val lines: Int)
+/**
+ * One line of a [CardLabel]: [text] in [style] and [color], at most [lines] lines and as many reserved; a [prefix] it
+ * starts with (a [CardLink]'s) is laid out as [LinkedLine] lays it: on one line, the rest on one line after it.
+ */
+internal data class LabelLine(val text: String, val style: TextStyle, val color: Color, val lines: Int, val prefix: String? = null)
 
 /**
  * A card's [lines] (its title over its caption) laid out and drawn as a column of [Text]s at its start would (each cut
@@ -265,7 +268,7 @@ private data class LabelLine(val text: String, val style: TextStyle, val color: 
  * Drawn while [shown]; the room stays either way.
  */
 @Composable
-private fun CardLabel(lines: List<LabelLine>, shown: Boolean) {
+internal fun CardLabel(lines: List<LabelLine>, shown: Boolean) {
     Spacer(CardLabelElement(lines, LocalCardText.current ?: rememberCardText(), shown))
 }
 
@@ -308,7 +311,7 @@ private class CardLabelNode(private var lines: List<LabelLine>, private var text
     Modifier.Node(),
     LayoutModifierNode,
     DrawModifierNode {
-    private var laid: List<TextLayoutResult> = emptyList()
+    private var laid: List<LaidLine> = emptyList()
     private var tops = IntArray(0)
 
     fun update(lines: List<LabelLine>, text: CardText, shown: Boolean) {
@@ -324,31 +327,53 @@ private class CardLabelNode(private var lines: List<LabelLine>, private var text
     }
 
     override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult {
-        val width = Constraints(maxWidth = constraints.maxWidth)
-        val results = lines.map { text.measurer.measure(it.text, it.style, TextOverflow.Ellipsis, maxLines = it.lines, constraints = width) }
+        val results = lines.map { lay(it, constraints.maxWidth) }
         val tops = IntArray(lines.size)
         var height = 0
-        lines.forEachIndexed { i, line ->
+        results.forEachIndexed { i, line ->
             tops[i] = height
-            height += maxOf(results[i].size.height, text.reservedHeight(line.style, line.lines))
+            height += line.height
         }
-        if (results != laid) invalidateDraw()
+        if (results.map { it.parts } != laid.map { it.parts }) invalidateDraw()
         laid = results
         this@CardLabelNode.tops = tops
-        val w = constraints.constrainWidth(results.maxOfOrNull { it.size.width } ?: 0)
+        val w = constraints.constrainWidth(results.maxOfOrNull { it.width } ?: 0)
         val h = constraints.constrainHeight(height)
         val placeable = measurable.measure(Constraints.fixed(w, h))
         return layout(w, h) { placeable.place(0, 0) }
     }
 
+    private fun lay(line: LabelLine, maxWidth: Int): LaidLine {
+        val measurer = text.measurer
+        val prefix = line.prefix?.takeIf { line.text.startsWith(it) }
+        if (prefix == null) {
+            val result = measurer.measure(line.text, line.style, TextOverflow.Ellipsis, maxLines = line.lines, constraints = Constraints(maxWidth = maxWidth))
+            return LaidLine(listOf(result), result.size.width, maxOf(result.size.height, text.reservedHeight(line.style, line.lines)))
+        }
+        // As a row of two texts: the prefix, then the rest in the width left.
+        val head = measurer.measure(prefix, line.style, TextOverflow.Ellipsis, maxLines = 1, constraints = Constraints(maxWidth = maxWidth))
+        val left = (maxWidth - head.size.width).coerceAtLeast(0)
+        val rest = measurer.measure(line.text.removePrefix(prefix), line.style, TextOverflow.Ellipsis, maxLines = 1, constraints = Constraints(maxWidth = left))
+        return LaidLine(listOf(head, rest), head.size.width + rest.size.width, maxOf(head.size.height, rest.size.height))
+    }
+
     override fun ContentDrawScope.draw() {
         if (!shown) return
-        laid.forEachIndexed { i, result ->
-            val x = if (layoutDirection == LayoutDirection.Rtl) size.width - result.size.width else 0f
-            drawText(result, color = lines[i].color, topLeft = Offset(x, tops[i].toFloat()))
+        val rtl = layoutDirection == LayoutDirection.Rtl
+        laid.forEachIndexed { i, line ->
+            // From the start edge: the left one, or the right one right to left.
+            var x = if (rtl) size.width else 0f
+            for (part in line.parts) {
+                if (rtl) x -= part.size.width
+                drawText(part, color = lines[i].color, topLeft = Offset(x, tops[i].toFloat()))
+                if (!rtl) x += part.size.width
+            }
         }
     }
 }
+
+/** A laid out [LabelLine]: its texts (a prefix's first) and its room. */
+private class LaidLine(val parts: List<TextLayoutResult>, val width: Int, val height: Int)
 
 /** The reference line [Text] measures its reserved lines with. */
 private const val REFERENCE_LINE = "HHHHHHHHHH"
