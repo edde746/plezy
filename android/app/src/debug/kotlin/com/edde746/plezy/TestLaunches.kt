@@ -54,6 +54,12 @@ internal fun testLaunch(application: PlezyApplication, intent: Intent): TestLaun
 }
 
 /**
+ * Debug builds keep every list's semantics whatever accessibility services are on ([LocalKeepsSemantics]): UI
+ * automation reads the tree but isn't among the services the platform lists. A `perf` launch has the product's.
+ */
+internal fun keepsSemantics(launch: TestLaunch?): Boolean = launch?.perfProbe == null
+
+/**
  * The test extras of a launch intent:
  * - `dev` (strings, `--esa dev --dev,--dev-open,home`): the development options, the arguments the desktop harness
  *   launcher and the Apple apps take, read as theirs are ([DevLaunch.parse]; `am` splits the value at commas, `\,`
@@ -72,7 +78,8 @@ internal fun testLaunch(application: PlezyApplication, intent: Intent): TestLaun
  *   of its answers waits, as over a real network.
  * - `report` (boolean): log a [TestReport] under the `PlezyReport` logcat tag.
  * - `perf` (boolean, `--ez perf true`): log perf marks under the `PlezyPerf` logcat tag ([PerfMarks]): when the
- *   screens first draw their content and when the player's engine loads, each with the last key press's time.
+ *   screens first draw their content and when the player's engine loads, each with the last key press's time. The
+ *   semantics tree is then the product's too ([keepsSemantics]).
  * Any other extra named `dev<Name>` fails the launch, as an unknown development option does.
  */
 internal class LaunchExtras(
