@@ -101,8 +101,10 @@ final class DownloadsTests: PlezyUITestCase {
         if pad {
             let row = require("nav.downloads", timeout: 30, "the sidebar's Downloads row")
             XCTAssertTrue(row.isSelected, "Downloads' row is highlighted")
-            XCTAssertLessThan(element("nav.home").frame.minY, row.frame.minY, "Downloads' row after Home's")
-            XCTAssertLessThan(row.frame.minY, element("nav.search").frame.minY, "Downloads' row before Search's")
+            let home = require("nav.home", timeout: 10, "the sidebar's Home row")
+            let search = require("nav.search", timeout: 10, "the sidebar's Search row")
+            XCTAssertLessThan(home.frame.minY, row.frame.minY, "Downloads' row after Home's")
+            XCTAssertLessThan(row.frame.minY, search.frame.minY, "Downloads' row before Search's")
             // Lets the sidebar's highlight settle before the shot.
             Thread.sleep(forTimeInterval: 1)
             shot("downloads sidebar")
@@ -123,6 +125,10 @@ final class DownloadsTests: PlezyUITestCase {
         }
         #endif
         let chip = require("home.downloads", timeout: 30, "Home's Downloads chip")
+        #if os(iOS)
+        // The chip row scrolls sideways: Downloads comes after the libraries' chips.
+        for _ in 0..<6 where chip.frame.maxX > app.frame.maxX - 16 { element("home.shortcuts").swipeLeft() }
+        #endif
         // Lets Home's rows finish drawing before the shot.
         Thread.sleep(forTimeInterval: 2)
         shot("home with downloads chip")
