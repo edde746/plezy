@@ -194,7 +194,7 @@ struct DetailTvPage: View {
     @ViewBuilder
     private func rails(sides: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: dimens.sectionSpacing) {
-            if state.kind == .show || state.kind == .season {
+            if state.kind == .show {
                 episodesRail(sides: sides)
             }
             if !state.cast.isEmpty {

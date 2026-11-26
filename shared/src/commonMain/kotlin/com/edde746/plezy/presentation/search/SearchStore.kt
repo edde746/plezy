@@ -17,6 +17,7 @@ import com.edde746.plezy.model.rankMediaSearchResults
 import com.edde746.plezy.model.rankPeopleSearchResults
 import com.edde746.plezy.presentation.browse.CardOptions
 import com.edde746.plezy.presentation.browse.MediaCardUi
+import com.edde746.plezy.presentation.browse.seasonRoute
 import com.edde746.plezy.presentation.browse.toCardUi
 import com.edde746.plezy.presentation.metadata.EditedItem
 import com.edde746.plezy.presentation.navigation.Route
@@ -497,10 +498,11 @@ class SearchStore(private val deps: SearchDeps, parentScope: CoroutineScope) {
     }
 }
 
-/** Where selecting [item] goes: a collection's grid, else its detail seeded with [item]. */
+/** Where selecting [item] goes: a collection's grid, a season its show's detail at it, else its detail seeded with [item]. */
 internal fun itemRoute(item: MediaItem, server: ServerId): Route {
     return when (item.kind) {
         MediaKind.COLLECTION -> Route.CollectionDetail(server, item.id)
+        MediaKind.SEASON -> seasonRoute(server, item)
         else -> Route.MediaDetail(server, item.id).seeded(item)
     }
 }

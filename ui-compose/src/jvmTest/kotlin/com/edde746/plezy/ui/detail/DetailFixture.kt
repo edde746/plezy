@@ -51,7 +51,7 @@ import kotlin.time.Duration
  * screen is the detail, over Home. Everything runs at once on the test's thread. The server answers what a detail asks
  * and fails loudly on anything else. [downloads] gives the item a download button and its episodes [episodeDownload],
  * [shuffle] lets a show shuffle, [cards] are the card settings. [offline] opens it from the downloads, which hold the
- * same titles.
+ * same titles. [opened] is the route a press opened it on (default: [item]'s own).
  */
 internal class DetailFixture(
     val item: MediaItem,
@@ -64,8 +64,9 @@ internal class DetailFixture(
     offline: Boolean = false,
     private val episodeDownload: EpisodeDownloadUi? = null,
     private val related: List<MediaHub> = emptyList(),
+    opened: Route.MediaDetail? = null,
 ) {
-    val route = Route.MediaDetail(ServerId(SERVER), item.id, offline = offline)
+    val route = opened ?: Route.MediaDetail(ServerId(SERVER), item.id, offline = offline)
     val plays = mutableListOf<PlayRequest>()
     val navigator = PlezyNavigator(Route.Home).also { it.navigate(route) }
     private val scope = CoroutineScope(Dispatchers.Unconfined)
@@ -114,11 +115,11 @@ internal class DetailFixture(
 
     val intents = detailIntents(route, store, watchlist = null, menu, navigator)
 
-    /** The server: the item with no on-deck episode, its children a page at a time, its extras, its related hubs. */
+    /** The server: the item or one of its children with no on-deck episode, its children a page at a time, its extras, its related hubs. */
     private fun server(): MediaBackend =
         Proxy.newProxyInstance(MediaBackend::class.java.classLoader, arrayOf(MediaBackend::class.java, MediaDeletionPermission::class.java)) { proxy, method, args ->
             when {
-                method.name == "fetchItemWithOnDeck" -> ItemWithOnDeck(item.takeIf { it.id == args[0] }, null)
+                method.name == "fetchItemWithOnDeck" -> ItemWithOnDeck((listOf(item) + children.values.flatten()).firstOrNull { it.id == args[0] }, null)
                 method.name == "fetchChildren" -> children[args[0]].orEmpty()
                 method.name == "fetchChildrenPage" -> children[args[0]].orEmpty().let { LibraryPage(it, it.size) }
                 method.name == "fetchExtras" -> extras
@@ -207,9 +208,14 @@ internal class DetailFixture(
         /**
          * A show of two seasons (or one per entry of [watched]) of [episodes] episodes each, one actor and a long
          * overview, which can shuffle. [watched] gives each season's count of watched episodes; without it the seasons
-         * carry no counts.
+         * carry no counts. [opened] picks the route the detail opens on from the seasons (default: the show's own).
          */
-        fun show(tv: Boolean, episodes: Int = 3, watched: List<Int> = emptyList()): DetailFixture {
+        fun show(
+            tv: Boolean,
+            episodes: Int = 3,
+            watched: List<Int> = emptyList(),
+            opened: ((List<MediaItem>) -> Route.MediaDetail)? = null,
+        ): DetailFixture {
             val seasons = (1..maxOf(2, watched.size)).map { n ->
                 item("s$n", MediaKind.SEASON, "Season $n") {
                     copy(index = n, parentId = "show", leafCount = episodes.takeIf { watched.isNotEmpty() }, viewedLeafCount = watched.getOrNull(n - 1))
@@ -228,6 +234,7 @@ internal class DetailFixture(
                 tv = tv,
                 downloads = true,
                 shuffle = true,
+                opened = opened?.invoke(seasons),
             )
         }
 

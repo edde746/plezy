@@ -100,7 +100,7 @@ fun MediaPlaylist.toCardUi(client: MediaBackend?, shape: CardShape): MediaCardUi
  */
 fun titleLinkOf(item: MediaItem): Route? = when (item.kind) {
     MediaKind.EPISODE -> item.grandparentId?.let { detailRouteOf(item) }
-    MediaKind.SEASON -> item.parentId?.let { detailRouteOf(item) }
+    MediaKind.SEASON -> item.seasonShowId?.let { detailRouteOf(item) }
     MediaKind.MOVIE -> detailRouteOf(item)
     else -> null
 }

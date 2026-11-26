@@ -199,6 +199,12 @@ class MediaDetailStore(
     private val scope = parentScope.childScope()
     private val client: MediaBackend? = deps.client(route.serverId)
 
+    /**
+     * The item this screen shows: the route's, or the show of a season the route names, at that season
+     * ([openSeasonShow]): a season is never a screen of its own.
+     */
+    private var itemId = route.itemId
+    private var initialSeasonId = route.initialSeasonId
     private var item: MediaItem? = null
     /** [item] is still the route's seed, shown while the fetch runs: its tracks wait for the server's item. */
     private var showingSeed = false
@@ -264,7 +270,7 @@ class MediaDetailStore(
                 render()
             }
             else -> {
-                route.seed?.let {
+                route.seed?.takeIf { it.kind != MediaKind.SEASON }?.let {
                     item = it.stamped(client)
                     showingSeed = true
                     render()
@@ -323,11 +329,11 @@ class MediaDetailStore(
             // On [DetailDeps.requests]: the item's library and on-deck episode are asked for as soon as it lands, not once
             // the main thread is free of the frames it draws meanwhile.
             withContext(deps.requests) {
-                client.fetchItemWithOnDeck(route.itemId) { first ->
+                client.fetchItemWithOnDeck(itemId) { first ->
                     landed = first
                     // The item shows as it lands, unless the whole fetch has ended by then.
                     scope.launch {
-                        if (fullyLoaded || itemFailed) return@launch
+                        if (fullyLoaded || itemFailed || first.kind == MediaKind.SEASON) return@launch
                         item = first.stamped(client)
                         showingSeed = false
                         render()
@@ -337,7 +343,7 @@ class MediaDetailStore(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.w(TAG, e) { "detail ${route.itemId} failed to load" }
+            Log.w(TAG, e) { "detail $itemId failed to load" }
             failed = true
             null
         }
@@ -348,6 +354,7 @@ class MediaDetailStore(
             render()
             return
         }
+        if (loaded.kind == MediaKind.SEASON) return openSeasonShow(loaded) { load(client) }
         item = loaded
         showingSeed = false
         placeInLibrary(loaded)
@@ -358,12 +365,6 @@ class MediaDetailStore(
         render()
         when (loaded.kind) {
             MediaKind.SHOW -> loadSeasons(client, loaded)
-            MediaKind.SEASON -> {
-                seasons = listOf(loaded)
-                seasonsLoad = SectionLoad.CONTENT
-                flattened = true
-                loadFirstPage(loaded)
-            }
             else -> seasonsLoad = SectionLoad.CONTENT
         }
         if (failed && fetched == null) {
@@ -393,11 +394,11 @@ class MediaDetailStore(
     /** The item, its seasons and episodes from the downloads, without the server. */
     private suspend fun loadOffline(source: OfflineDetailSource) {
         val loaded = try {
-            source.metadata(route.serverId, route.itemId)
+            source.metadata(route.serverId, itemId)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.w(TAG, e) { "offline detail ${route.itemId} failed" }
+            Log.w(TAG, e) { "offline detail $itemId failed" }
             null
         }
         if (loaded == null) {
@@ -405,6 +406,7 @@ class MediaDetailStore(
             render()
             return
         }
+        if (loaded.kind == MediaKind.SEASON) return openSeasonShow(loaded) { loadOffline(source) }
         item = loaded
         placeInLibrary(loaded)
         fullyLoaded = true
@@ -415,15 +417,9 @@ class MediaDetailStore(
                 flattened = seasons.size <= 1
                 seasonsLoad = if (seasons.isEmpty() && !flattened) SectionLoad.EMPTY else SectionLoad.CONTENT
                 onDeck = bestEffort("offline on deck") { source.onDeck(loaded) }
-                selectedSeason = preferredSeasonIndex(seasons, route.initialSeasonId, onDeckEpisode = onDeck)
+                selectedSeason = preferredSeasonIndex(seasons, initialSeasonId, onDeckEpisode = onDeck)
                 render()
                 loadFirstPage(selectedSeasonItem())
-            }
-            MediaKind.SEASON -> {
-                seasons = listOf(loaded)
-                seasonsLoad = SectionLoad.CONTENT
-                flattened = true
-                loadFirstPage(loaded)
             }
             else -> {
                 seasonsLoad = SectionLoad.CONTENT
@@ -432,11 +428,25 @@ class MediaDetailStore(
         }
     }
 
+    /**
+     * [season] came where the screen's item was asked for (a row that didn't name the season's show, a link to it):
+     * its show loads in its place ([load] again), at that season. Without a show the screen is unavailable.
+     */
+    private suspend fun openSeasonShow(season: MediaItem, load: suspend () -> Unit) {
+        val show = season.seasonShowId
+        if (show == null) {
+            itemFailed = true
+            render()
+            return
+        }
+        itemId = show
+        if (initialSeasonId == null) initialSeasonId = season.id
+        load()
+    }
+
     /** The downloaded episodes of [season] (null: all of the show's), in episode order. */
     private fun offlinePage(source: OfflineDetailSource, season: MediaItem?): LibraryPage<MediaItem> {
-        val owner = item!!
-        val show = if (owner.kind == MediaKind.SEASON) owner.copy(id = owner.parentId ?: owner.id, kind = MediaKind.SHOW) else owner
-        val episodes = source.episodes(show)
+        val episodes = source.episodes(item!!)
             .filter { season == null || it.parentId == season.id || (it.parentId == null && it.parentIndex == season.index) }
             .sortedWith(compareBy({ it.parentIndex ?: 0 }, { it.index ?: 0 }))
         return LibraryPage(episodes, episodes.size, 0)
@@ -472,7 +482,7 @@ class MediaDetailStore(
                 render()
             }
         }
-        if (loaded.kind != MediaKind.SHOW && loaded.kind != MediaKind.SEASON) return
+        if (loaded.kind != MediaKind.SHOW) return
         episodeDownloadsJob?.cancel()
         episodeDownloadsJob = scope.launch { downloads.changes.collect { render() } }
     }
@@ -497,7 +507,7 @@ class MediaDetailStore(
         }
         seasons = children
         seasonsLoad = if (children.isEmpty() && !flattened) SectionLoad.EMPTY else SectionLoad.CONTENT
-        selectedSeason = preferredSeasonIndex(children, route.initialSeasonId, onDeckEpisode = onDeck)
+        selectedSeason = preferredSeasonIndex(children, initialSeasonId, onDeckEpisode = onDeck)
         render()
         val season = selectedSeasonItem()
         if (season != null) loadFirstPage(season) else if (flattened) loadFirstPage(null)
@@ -594,8 +604,8 @@ class MediaDetailStore(
 
     /** Asks for the item's extras and related hubs at once ([DetailDeps.requests]), each empty when its request fails. */
     private fun requestSupplements(client: MediaBackend): Deferred<Pair<List<MediaItem>, List<MediaHub>>> = scope.async(deps.requests) {
-        val extrasLeg = async { bestEffort("extras") { client.fetchExtras(route.itemId) } }
-        val relatedLeg = async { bestEffort("related") { client.fetchRelatedHubs(route.itemId) } }
+        val extrasLeg = async { bestEffort("extras") { client.fetchExtras(itemId) } }
+        val relatedLeg = async { bestEffort("related") { client.fetchRelatedHubs(itemId) } }
         extrasLeg.await().orEmpty() to relatedLeg.await().orEmpty()
     }
 
@@ -620,7 +630,7 @@ class MediaDetailStore(
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        Log.w(TAG, e) { "$what of ${route.itemId} failed" }
+        Log.w(TAG, e) { "$what of $itemId failed" }
         null
     }
 
@@ -660,7 +670,7 @@ class MediaDetailStore(
 
     // Playback.
 
-    /** Plays what Play names: a show's on-deck episode (else its first), a season's first episode, else the item. */
+    /** Plays what Play names: a show's on-deck episode (else its first), else the item. */
     fun play() = launchPlay(fromStart = false)
 
     /** Plays the Play target from its start. */
@@ -713,10 +723,10 @@ class MediaDetailStore(
         allEpisodes().firstOrNull { it.id == episodeId }?.let { deps.play(request(deps.watchState.apply(it))) }
     }
 
-    /** Plays the show or season shuffled; offline it says shuffle needs the server. */
+    /** Plays the show shuffled; offline it says shuffle needs the server. */
     fun shuffle() {
         val owner = item ?: return
-        if (owner.kind != MediaKind.SHOW && owner.kind != MediaKind.SEASON) return
+        if (owner.kind != MediaKind.SHOW) return
         if (offline) return emit(T.mediaMenu.shuffleNotAvailableOffline)
         val launcher = deps.shuffle ?: return
         if (launching != null) return
@@ -782,11 +792,11 @@ class MediaDetailStore(
             deps.play(request(direct, fromStart, showPlay))
             return
         }
-        if (owner.kind != MediaKind.SHOW && owner.kind != MediaKind.SEASON) return
+        if (owner.kind != MediaKind.SHOW) return
         // No episode loaded yet: the default season's first episode.
         scope.launch {
             val episode = try {
-                val season = if (owner.kind == MediaKind.SEASON) owner else defaultPlaybackSeason(seasons)
+                val season = defaultPlaybackSeason(seasons)
                 if (season == null) {
                     if (flattened) fetchPage(client, null, 0).items.firstOrNull() else null.also { emit(T.messages.noSeasonsFound) }
                 } else {
@@ -808,7 +818,6 @@ class MediaDetailStore(
         focusedEpisode()?.let { return it }
         return when (owner.kind) {
             MediaKind.SHOW -> onDeck ?: if (flattened) pagers[FLAT_KEY]?.items?.firstOrNull() else null
-            MediaKind.SEASON -> pagers[owner.id]?.items?.firstOrNull()
             else -> owner
         }?.let(deps.watchState::apply)
     }
@@ -854,7 +863,7 @@ class MediaDetailStore(
     private fun onWatchEvent(event: WatchStateEvent) {
         if (event.serverId != route.serverId || event.changeType == WatchStateChangeType.REMOVED_FROM_CONTINUE_WATCHING) return
         val season = seasons.any { it.id == event.itemId }
-        val ours = event.itemId == route.itemId || route.itemId in event.parentChain || season || allEpisodes().any { it.id == event.itemId }
+        val ours = event.itemId == itemId || itemId in event.parentChain || season || allEpisodes().any { it.id == event.itemId }
         if (!ours) return
         render()
         if (event.changeType == WatchStateChangeType.PROGRESS_UPDATE) {
@@ -865,7 +874,7 @@ class MediaDetailStore(
         // The server's own counts and on-deck move with a mark: fetch them, keeping the seasons and episodes as they are.
         refreshItem()
         when {
-            event.itemId == route.itemId -> Unit
+            event.itemId == itemId -> Unit
             season && item?.kind == MediaKind.SHOW -> refreshSeasonList()
             else -> {
                 patchItem(event.itemId)
@@ -877,7 +886,7 @@ class MediaDetailStore(
 
     private fun onEdited(edit: EditedItem) {
         if (edit.serverId != route.serverId || gone) return
-        if (edit.itemId == route.itemId) refreshItem() else patchItem(edit.itemId)
+        if (edit.itemId == itemId) refreshItem() else patchItem(edit.itemId)
     }
 
     private fun refreshItem() {
@@ -886,7 +895,7 @@ class MediaDetailStore(
         val client = client ?: return
         if (offline) return
         scope.launch {
-            val fresh = bestEffort("refresh") { client.fetchItemWithOnDeck(route.itemId) } ?: return@launch
+            val fresh = bestEffort("refresh") { client.fetchItemWithOnDeck(itemId) } ?: return@launch
             fresh.item?.let { item = it.stamped(client) }
             onDeck = fresh.onDeckEpisode?.stamped(client)
             if (onDeck == null) selectedKey()?.let(pagers::get)?.let { ensureFallbackOnDeck(it.items) }
@@ -947,7 +956,7 @@ class MediaDetailStore(
         reloadJob?.cancel()
         reloadJob = scope.launch {
             val watermark = deps.watchState.observationWatermark
-            val fresh = bestEffort("reload") { client.fetchItemWithOnDeck(route.itemId) } ?: return@launch
+            val fresh = bestEffort("reload") { client.fetchItemWithOnDeck(itemId) } ?: return@launch
             val freshSeasons = if (shown.kind == MediaKind.SHOW && seasons.isNotEmpty()) {
                 bestEffort("seasons") { client.fetchChildren(shown.id).filter { it.kind == MediaKind.SEASON }.map { it.stamped(client, shown) } }
             } else {
@@ -956,7 +965,7 @@ class MediaDetailStore(
             val freshPages = mutableListOf<FreshPages>()
             for ((key, pager) in pagers.toList()) {
                 if (pager.items.isEmpty()) continue
-                val season = if (key == FLAT_KEY) null else seasons.firstOrNull { it.id == key } ?: shown.takeIf { it.id == key } ?: continue
+                val season = if (key == FLAT_KEY) null else seasons.firstOrNull { it.id == key } ?: continue
                 val generation = pager.generation
                 val rows = bestEffort("episodes of $key") {
                     (0 until pager.items.size step AppendPager.PAGE_SIZE).flatMap { start -> fetchPage(client, season, start).items }
@@ -983,7 +992,7 @@ class MediaDetailStore(
     private fun onDeletion(event: DeletionEvent) {
         if (event.serverId != route.serverId || gone) return
         if (event.isDownloadOnly && !offline) return
-        if (event.itemId == route.itemId || route.itemId in event.parentChain) {
+        if (event.itemId == itemId || itemId in event.parentChain) {
             gone = true
             trackProbe?.cancel()
             render()
@@ -1059,12 +1068,8 @@ class MediaDetailStore(
     fun relatedItem(cardId: String): MediaItem? =
         relatedHubs.firstNotNullOfOrNull { hub -> hub.items.firstOrNull { it.globalKey == cardId } }?.takeIf { !offline }?.let(deps.watchState::apply)
 
-    /** The show the screen belongs to (the show itself, or a season's show): its menus offer no Go to series. */
-    fun seriesId(): String? = when (item?.kind) {
-        MediaKind.SHOW -> item?.id
-        MediaKind.SEASON -> item?.parentId
-        else -> null
-    }
+    /** The show the screen is (its menus offer no Go to series); null for anything else. */
+    fun seriesId(): String? = item?.takeIf { it.kind == MediaKind.SHOW }?.id
 
     // Rendering.
 
@@ -1080,14 +1085,13 @@ class MediaDetailStore(
     }
 
     private fun selectedSeasonItem(): MediaItem? = when {
-        item?.kind == MediaKind.SEASON -> item
         flattened && seasons.size == 1 -> seasons[0]
         flattened -> null
         else -> seasons.getOrNull(selectedSeason)
     }
 
     private fun selectedKey(): String? = when (item?.kind) {
-        MediaKind.SHOW, MediaKind.SEASON -> selectedSeasonItem()?.id ?: FLAT_KEY
+        MediaKind.SHOW -> selectedSeasonItem()?.id ?: FLAT_KEY
         else -> null
     }
 
@@ -1131,7 +1135,7 @@ class MediaDetailStore(
         val pager = selectedKey()?.let(pagers::get)
         val episodes = pager?.items?.let(deps.watchState::applyAll).orEmpty()
         val target = playTarget()
-        val hasEpisodes = shown.kind == MediaKind.SHOW || shown.kind == MediaKind.SEASON
+        val hasEpisodes = shown.kind == MediaKind.SHOW
         val episodesSettled = !hasEpisodes || (seasonsLoad != SectionLoad.LOADING && pager?.load != SectionLoad.LOADING)
         scheduleTrackProbe(target)
         val rows = episodes.map { episodeRow(it, options, onDeck?.id) }
@@ -1208,7 +1212,7 @@ class MediaDetailStore(
 
     /** [DetailInitialFocus] for a deep link: the episode once it shows (or paging gave up), else the tab, else row one. */
     private fun initialFocus(tabs: List<SeasonTabUi>, rows: List<EpisodeRowUi>, pager: AppendPager<MediaItem>?): DetailInitialFocus? {
-        if (deps.tv || (route.initialEpisodeId == null && route.initialSeasonId == null) || seasonsLoad == SectionLoad.LOADING) return null
+        if (deps.tv || (route.initialEpisodeId == null && initialSeasonId == null) || seasonsLoad == SectionLoad.LOADING) return null
         route.initialEpisodeId?.let { id ->
             if (rows.any { it.id == id }) return DetailInitialFocus(episodeId = id)
             val settled = pager != null && when (pager.load) {
@@ -1293,7 +1297,7 @@ class MediaDetailStore(
         val episode = shown.kind == MediaKind.EPISODE
         return DetailHeroUi(
             title = shown.displayTitle,
-            episodeTitle = if (episode || shown.kind == MediaKind.SEASON) shown.title else null,
+            episodeTitle = if (episode) shown.title else null,
             logo = art(shown.clearLogoPath, ImageKind.HERO_LOGO),
             backdrops = backdrops(shown),
             poster = art(shown.thumbPath, ImageKind.POSTER),
@@ -1347,7 +1351,7 @@ class MediaDetailStore(
         if (shown.kind == MediaKind.EPISODE && shown.parentIndex != null && shown.index != null) "S${shown.parentIndex} E${shown.index}" else null,
         if (shown.kind == MediaKind.EPISODE) shown.originallyAvailableAt?.let { formatDate(it, DateLength.MEDIUM) } else shown.year?.toString(),
         formatContentRating(shown.contentRating).takeIf { it.isNotEmpty() },
-        shown.durationMs?.takeIf { it > 0 && shown.kind != MediaKind.SHOW && shown.kind != MediaKind.SEASON }?.let(::formatDurationTextual),
+        shown.durationMs?.takeIf { it > 0 && shown.kind != MediaKind.SHOW }?.let(::formatDurationTextual),
     )
 
     private fun infoRows(shown: MediaItem): List<InfoRowUi> {

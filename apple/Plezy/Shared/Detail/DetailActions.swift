@@ -215,7 +215,7 @@ struct DetailActionRow: View {
     private func openMenu(_ level: Level) {
         guard let item = store.menuItem() else { return }
         var extras: [MenuExtra] = []
-        if actions.resume, kind == .show || kind == .season {
+        if actions.resume, kind == .show {
             extras.append(MenuExtra(id: "detail_play_from_beginning", label: T.shared.mediaMenu.playFromBeginning, icon: .replay, leading: true, run: store.playFromStart))
         }
         menu.open(item: item, place: store.menuPlace, extras: extras, playTrailer: actions.trailer ? store.playTrailer : nil, onRow: onRow(level))

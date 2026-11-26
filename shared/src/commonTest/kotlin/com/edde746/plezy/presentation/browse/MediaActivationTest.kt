@@ -7,6 +7,7 @@ import com.edde746.plezy.model.MediaKind
 import com.edde746.plezy.model.ServerId
 import com.edde746.plezy.plex.PlexMappers
 import com.edde746.plezy.presentation.navigation.Route
+import com.edde746.plezy.presentation.search.itemRoute
 import com.edde746.plezy.settings.ContinueWatchingAction
 import com.edde746.plezy.settings.EpisodeAction
 import com.edde746.plezy.strings.T
@@ -107,7 +108,14 @@ class MediaActivationTest {
     }
 
     @Test
-    fun anEpisodeWithoutItsShowOpensItsSeasonAtTheEpisode() {
+    fun aSeasonSearchResultOpensItsShowAtThatSeason() {
+        val season = MediaItem(id = "season", backend = BackendKind.JELLYFIN, kind = MediaKind.SEASON, title = "Season 1", grandparentId = "show", serverId = "server_1")
+        assertEquals(Route.MediaDetail(server, "show", initialSeasonId = "season"), itemRoute(season, server))
+        assertEquals(Route.MediaDetail(server, "show", initialSeasonId = "season"), activationOf(season, false, ContinueWatchingAction.PLAY, EpisodeAction.PLAY).let { (it as ItemActivation.Open).route })
+    }
+
+    @Test
+    fun anEpisodeWithoutItsShowOpensOnItsSeasonAtTheEpisode() {
         val orphan = episode().copy(grandparentId = null)
         assertEquals(Route.MediaDetail(server, "season", initialEpisodeId = "ep"), detailRouteOf(orphan))
     }

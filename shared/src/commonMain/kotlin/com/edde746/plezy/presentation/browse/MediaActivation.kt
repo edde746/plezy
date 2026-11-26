@@ -78,8 +78,10 @@ private fun MediaItem.playlistType(): String? {
 }
 
 /**
- * The detail [item] opens: an episode its show at its season and itself (its season, without a show), a season its
- * show at that season, anything else its own, seeded with [item]. Null for an item of no server.
+ * The detail [item] opens: an episode its show at its season and itself, a season its show at that season, anything
+ * else its own, seeded with [item]. A season is never a screen of its own: one whose row doesn't name its show (and an
+ * episode naming only its season) opens on the season's id, which the detail resolves to its show. Null for an item of
+ * no server.
  */
 fun detailRouteOf(item: MediaItem): Route? {
     val serverId = ServerId.tryParse(item.serverId) ?: return null
@@ -88,10 +90,14 @@ fun detailRouteOf(item: MediaItem): Route? {
     return when {
         item.kind == MediaKind.EPISODE && grandparent != null -> Route.MediaDetail(serverId, grandparent, initialSeasonId = parent, initialEpisodeId = item.id)
         item.kind == MediaKind.EPISODE && parent != null -> Route.MediaDetail(serverId, parent, initialEpisodeId = item.id)
-        item.kind == MediaKind.SEASON && parent != null -> Route.MediaDetail(serverId, parent, initialSeasonId = item.id)
+        item.kind == MediaKind.SEASON -> seasonRoute(serverId, item)
         else -> Route.MediaDetail(serverId, item.id).seeded(item)
     }
 }
+
+/** The detail a [season] on [serverId] opens: its show's, at that season (the season's own id when the row names no show). */
+fun seasonRoute(serverId: ServerId, season: MediaItem): Route.MediaDetail =
+    Route.MediaDetail(serverId, season.seasonShowId ?: season.id, initialSeasonId = season.id)
 
 /**
  * The copy picker's line for each of [copies] (one Continue Watching row standing for the same title in several
