@@ -7,6 +7,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import coil3.Bitmap
 import coil3.BitmapImage
 import coil3.ComponentRegistry
+import coil3.ImageLoader
+import coil3.request.allowHardware
 
 internal actual fun Bitmap.toComposeBitmap(): ImageBitmap = asImageBitmap()
 
@@ -20,6 +22,9 @@ internal actual fun ImageBitmap.toCoilBitmap(): Bitmap {
 
 // Coil's own: Android's ImageDecoder (BitmapFactory before API 29) shrinks a JPEG in the codec and the rest bilinearly.
 internal actual fun ComponentRegistry.Builder.addDecoders() = Unit
+
+// Software bitmaps on the reduced tier: a weak GPU's first draw of a new hardware bitmap costs more than its upload.
+internal actual fun ImageLoader.Builder.tierBitmaps(reduced: Boolean): ImageLoader.Builder = if (reduced) allowHardware(false) else this
 
 internal actual fun argbBitmap(pixels: IntArray, width: Int, height: Int): Bitmap =
     android.graphics.Bitmap.createBitmap(pixels, width, height, android.graphics.Bitmap.Config.ARGB_8888).asImageBitmap().toCoilBitmap()

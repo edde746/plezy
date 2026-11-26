@@ -16,6 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import coil3.Bitmap
 import coil3.ComponentRegistry
+import coil3.ImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
@@ -62,6 +63,9 @@ fun prefetchImage(context: PlatformContext, artwork: Artwork, display: ArtworkDi
 
 /** This platform's decoders, ahead of Coil's own: each image decoded at the size it is drawn, shrunk without aliasing. */
 internal expect fun ComponentRegistry.Builder.addDecoders()
+
+/** The bitmaps this platform decodes into on the [reduced] tier. */
+internal expect fun ImageLoader.Builder.tierBitmaps(reduced: Boolean): ImageLoader.Builder
 
 /** An image from [url] as it is: [RemoteImage] of [Artwork.fixed]. */
 @Composable

@@ -97,6 +97,7 @@ internal fun artworkImageLoader(
         .crossfade(true)
         .interceptorCoroutineContext(Dispatchers.Default)
         .apply { if (reduced) decoderCoroutineContext(reducedDecoding) }
+        .tierBitmaps(reduced)
         .eventListener(
             object : EventListener() {
                 override fun onSuccess(request: ImageRequest, result: SuccessResult) {
