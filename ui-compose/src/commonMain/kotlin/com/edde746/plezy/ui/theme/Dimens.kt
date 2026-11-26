@@ -31,6 +31,8 @@ import com.edde746.plezy.ui.adaptive.WindowLayout
  * @param focusRing the width of the focus ring.
  * @param contentMaxWidth lists and text columns stay this narrow on wide windows, centred
  *   ([com.edde746.plezy.ui.components.contentColumn]).
+ * @param gridPosterMaxWidth on TV, the widest a grid's poster is at the middle density (null elsewhere): TV grids round
+ *   their columns up under a most width ([gridCardMaxWidth]) instead of fitting cards of at least [gridCardWidth].
  */
 @Immutable
 data class PlezyDimens(
@@ -47,6 +49,7 @@ data class PlezyDimens(
     val posterFocusScale: Float,
     val focusRing: Dp,
     val contentMaxWidth: Dp,
+    val gridPosterMaxWidth: Dp? = null,
 ) {
     /** Whether focused elements grow (TV). */
     val focusGrows: Boolean get() = controlFocusScale > 1f
@@ -65,12 +68,23 @@ data class PlezyDimens(
      */
     fun gridCardWidth(shape: CardShape, density: Int): Dp = cardWidth(shape) * (0.8f + 0.4f * densityFactor(density).toFloat())
 
+    /**
+     * On TV, a grid's most column width for [shape] at the library density setting ([density]): [gridPosterMaxWidth]
+     * at the middle setting, from a third narrower to a third wider; a square card as wide as a poster, an episode
+     * thumbnail 1.9 times. Null elsewhere.
+     */
+    fun gridCardMaxWidth(shape: CardShape, density: Int): Dp? = gridPosterMaxWidth?.let { poster ->
+        val width = poster * (2f / 3f + 2f / 3f * densityFactor(density).toFloat())
+        if (shape == CardShape.WIDE) width * 1.9f else width
+    }
+
     companion object {
         fun of(layout: WindowLayout): PlezyDimens = when {
             layout.formFactor == FormFactor.TV -> PlezyDimens(
                 screenPadding = 48.dp, gutter = 16.dp, sectionSpacing = 24.dp, shelfHeaderGap = 6.dp, posterWidth = 150.dp,
                 sectionTitleSize = 22.sp, chipHeight = 40.dp, controlHeight = 48.dp, iconButtonSize = 48.dp,
                 controlFocusScale = 1.05f, posterFocusScale = 1.06f, focusRing = 2.dp, contentMaxWidth = 1100.dp,
+                gridPosterMaxWidth = 105.dp,
             )
             layout.widthClass == WidthClass.COMPACT -> PlezyDimens(
                 screenPadding = 16.dp, gutter = 10.dp, sectionSpacing = 16.dp, shelfHeaderGap = 4.dp, posterWidth = 104.dp,

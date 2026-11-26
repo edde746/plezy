@@ -47,6 +47,9 @@ struct Dimens: Sendable {
     /// Points per unit of the shared layouts sized for a TV of 960 × 540 units (`GuideLayout`, the side rail's
     /// metrics): 2 on an Apple TV, which lays out 1920 × 1080 points; 1 elsewhere.
     var unit: CGFloat = 1
+    /// On TV, the widest a grid's poster is at the middle density (nil elsewhere): TV grids round their columns up under
+    /// a most width instead of fitting columns of at least the card width (`grid`).
+    var gridPosterMaxWidth: CGFloat?
 
     /// The width of a card in a row for `shape`: wide cards are wider so rows keep a similar height.
     func cardWidth(_ shape: CardShape_) -> CGFloat {
@@ -58,8 +61,10 @@ struct Dimens: Sendable {
     }
 
     /// A grid of `shape` cards across `width` points of content: as many columns of about the card width as fit, the
-    /// library density (1–5, 3 the card width itself) scaling that minimum from 0.7 to 1.3 of it, and the cell width
-    /// that fills the width exactly, so the grid starts and ends at the content edges. The gutter follows the grid
+    /// library density (1–5, 3 the card width itself) scaling that minimum from 0.7 to 1.3 of it; on TV as few columns as
+    /// keep each at most `gridPosterMaxWidth` (a square card as wide, an episode thumbnail 1.9 times), the density
+    /// scaling it from 2/3 to 4/3, so a TV screen holds 7 posters or 4 thumbnails across. The cell width fills the width
+    /// exactly, so the grid starts and ends at the content edges. The gutter follows the grid
     /// spacing setting (`GridLayout.spacing`: tight 0, normal 6, spacious 12, square cells at least 8) plus the shared
     /// layout's card padding at both sides (`GridLayout.CARD_PADDING_START`, `_END`), which these cards draw without, so
     /// tight cards still stand apart; the cards' title gap follows it too (`GridSpacing.titleGap`: 2, 4, 6), both in
@@ -70,9 +75,16 @@ struct Dimens: Sendable {
         let layout = GridLayout.shared
         let spacing = layout.spacing(gridSpacing: setting, shape: shape, fullBleed: false, tvScale: 1)
         let gutter = CGFloat(spacing + layout.CARD_PADDING_START + layout.CARD_PADDING_END) * unit
-        let minimum = cardWidth(shape) * (0.7 + 0.15 * CGFloat(min(max(appearance.libraryDensity, 1), 5) - 1))
+        let density = CGFloat(min(max(appearance.libraryDensity, 1), 5) - 1)
         let available = max(width, 0)
-        let columns = max(Int((available + gutter) / (minimum + gutter)), 1)
+        let columns: Int
+        if let poster = gridPosterMaxWidth {
+            let most = poster * (2 + density / 2) / 3 * (shape == .wide ? 1.9 : 1)
+            columns = max(Int((available / (most + gutter)).rounded(.up)), 1)
+        } else {
+            let minimum = cardWidth(shape) * (0.7 + 0.15 * density)
+            columns = max(Int((available + gutter) / (minimum + gutter)), 1)
+        }
         let cell = max((available - CGFloat(columns - 1) * gutter) / CGFloat(columns), 0)
         #if os(tvOS)
         let titleGap = PosterCard.captionGap
@@ -90,13 +102,13 @@ struct Dimens: Sendable {
             // tvOS lays out 1920×1080 points inside an 80 pt safe area at the sides.
             return Dimens(
                 screenPadding: 0, gutter: 40, sectionSpacing: 24, headingGap: 24, focusRoom: 24, posterWidth: 240,
-                contentMaxWidth: 1400, qrSize: 420, pinKey: 110, avatar: 200, unit: 2
+                contentMaxWidth: 1400, qrSize: 420, pinKey: 110, avatar: 200, unit: 2, gridPosterMaxWidth: 240
             )
             #else
             // Force TV mode on iPad or the Mac: the TV's layout inside the window's padding.
             return Dimens(
                 screenPadding: 24, gutter: 16, sectionSpacing: 20, headingGap: 12, focusRoom: 12, posterWidth: 150,
-                contentMaxWidth: 1200, qrSize: 320, pinKey: 80, avatar: 120
+                contentMaxWidth: 1200, qrSize: 320, pinKey: 80, avatar: 120, gridPosterMaxWidth: 120
             )
             #endif
         case .compact:

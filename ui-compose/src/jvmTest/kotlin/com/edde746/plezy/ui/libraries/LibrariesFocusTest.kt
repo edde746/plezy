@@ -293,7 +293,7 @@ class LibrariesFocusTest {
                             tab = tab,
                             focus = focus,
                             total = CARDS.size,
-                            card = { CARDS[it] },
+                            card = CARDS::getOrNull,
                             shape = CardShape.POSTER,
                             appearance = LocalAppearance.current,
                             onMissing = {},
