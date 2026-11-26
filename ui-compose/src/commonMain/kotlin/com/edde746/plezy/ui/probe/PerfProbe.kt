@@ -39,7 +39,8 @@ fun Modifier.perfMark(name: String, detail: String, ready: Boolean): Modifier = 
 /**
  * Marks `image` to the [LocalPerfProbe], if any, at this image's first draw once it has [loaded] (read as it draws),
  * once for as long as the element lives (a lazy list reusing it starts over), with the screen it is on, by the nearest
- * [perfMark] around it: `screen=home` ([HOME_CONTENT_MARK]), else `screen=other`.
+ * [perfMark] around it: `screen=home` ([HOME_CONTENT_MARK]), else `screen=other`; only while that screen's own mark
+ * is still to come, so a screen's later images (a grid's as it scrolls) log nothing in the frames being timed.
  */
 fun Modifier.perfImage(loaded: () -> Boolean): Modifier = this then PerfImageElement(loaded)
 
@@ -59,6 +60,9 @@ private class PerfMarkNode(var name: String, private var detail: String, private
 
     /** The detail marked last under [name]; null before the first mark. */
     private var marked: String? = null
+
+    /** Its first mark is still to come. */
+    val pending: Boolean get() = marked == null
 
     override val traverseKey: Any get() = PerfMarkKey
 
@@ -136,11 +140,9 @@ private class PerfImageNode(var loaded: () -> Boolean) :
         val probe = probe ?: return
         if (!marked && loaded()) {
             marked = true
-            val screen = when ((findNearestAncestor(PerfMarkKey) as PerfMarkNode?)?.name) {
-                HOME_CONTENT_MARK -> "home"
-                else -> "other"
-            }
-            probe.mark("image", "screen=$screen")
+            val screen = findNearestAncestor(PerfMarkKey) as PerfMarkNode?
+            if (screen != null && !screen.pending) return
+            probe.mark("image", "screen=${if (screen?.name == HOME_CONTENT_MARK) "home" else "other"}")
         }
     }
 }

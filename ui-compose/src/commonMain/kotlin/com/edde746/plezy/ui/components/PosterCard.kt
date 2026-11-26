@@ -20,8 +20,9 @@ import com.edde746.plezy.ui.focus.isFocusVisible
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.focus.FocusEventModifierNode
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.relocation.bringIntoView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -130,9 +130,7 @@ fun PosterCard(
     val tv = dimens.focusGrows
     var focused by remember { mutableStateOf(false) }
     val state = listOfNotNull(item.cardState(), position).joinToString(", ").ifEmpty { null }
-    val inView = remember { BringIntoViewRequester() }
-    val scope = rememberCoroutineScope()
-    Column(modifier.width(width).bringIntoViewRequester(inView).onFocusChanged { if (it.hasFocus) scope.launch { inView.bringIntoView() } }) {
+    Column(modifier.width(width).then(InViewOnFocusElement)) {
         CardArtwork(
             item,
             Modifier
@@ -236,6 +234,24 @@ fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTh
             count != null -> Badge(count, Modifier.align(Alignment.TopEnd).padding(6.dp).clearAndSetSemantics {}, emphasised = true)
         }
         item.progress?.let { ArtworkProgress(it.toFloat(), Modifier.matchParentSize()) }
+    }
+}
+
+/** Brings the card, its labels too, into view as focus comes into it: one node, without a coroutine scope a card. */
+private data object InViewOnFocusElement : ModifierNodeElement<InViewOnFocusNode>() {
+    override fun create() = InViewOnFocusNode()
+
+    override fun update(node: InViewOnFocusNode) = Unit
+}
+
+private class InViewOnFocusNode :
+    Modifier.Node(),
+    FocusEventModifierNode {
+    private var focused = false
+
+    override fun onFocusEvent(focusState: FocusState) {
+        if (focusState.hasFocus && !focused) coroutineScope.launch { bringIntoView() }
+        focused = focusState.hasFocus
     }
 }
 
