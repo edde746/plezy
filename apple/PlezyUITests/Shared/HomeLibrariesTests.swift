@@ -42,13 +42,16 @@ final class HomeLibrariesTests: PlezyUITestCase {
         // Lets the shelves' artwork load before the shot; nothing signals it.
         sleep(3)
         shot("home shelves")
-        // Down from Continue Watching reaches the shortcuts, Up goes back; Up again reaches the tab bar.
+        // Down from Continue Watching reaches the shortcuts' first chip (Live TV, else the first library), Up goes
+        // back; Up again reaches the tab bar.
         XCUIRemote.shared.press(.down)
-        if !waitUntil(3, { focused(prefix: "home.refresh") }) { fail("Down from Continue Watching doesn't land on the first shortcut") }
+        let firstChip = element("home.liveTv").exists ? "home.liveTv" : "home.library.0"
+        if !waitUntil(3, { focused(prefix: firstChip) }) { fail("Down from Continue Watching doesn't land on the first shortcut") }
         shot("home shortcuts")
+        requireShortcutOrder()
         // VoiceOver says what each of Home's buttons does, its cards' and chips'.
         requireSpokenNames(in: element("home.screen"), "Home")
-        // A chip per library after Home's own, which Right reaches as it does the others.
+        // A chip per library, which Right reaches as it does the other chips.
         let library = require("home.library.0", "the first library's chip")
         requireServerLibrary(library.label)
         for _ in 0..<12 where !focused(prefix: "home.library.0") {
@@ -60,7 +63,7 @@ final class HomeLibrariesTests: PlezyUITestCase {
         // Lets the chip's focus lift finish before the shot.
         sleep(1)
         shot("home library chip")
-        for _ in 0..<12 where !focused(prefix: "home.refresh") {
+        for _ in 0..<12 where !focused(prefix: firstChip) {
             XCUIRemote.shared.press(.left)
             // Paces the presses so the focus engine doesn't coalesce them.
             usleep(350_000)
@@ -80,6 +83,7 @@ final class HomeLibrariesTests: PlezyUITestCase {
         // Lets the shelves' artwork load before the shot; nothing signals it.
         sleep(4)
         shot("home")
+        requireShortcutOrder()
         #endif
         openViewAll()
         XCTAssertTrue(anyCard.firstMatch.exists(within: 20), "the hub detail's items")
@@ -253,6 +257,23 @@ final class HomeLibrariesTests: PlezyUITestCase {
         }
         XCTAssertNotNil(places["the chip row"], "the chip row showed")
         if !moves.isEmpty { XCTFail("moved as Home loaded: \(moves.joined(separator: "; "))") }
+    }
+
+    /// Home's chips run left to right as Live TV, the libraries, Watch Together, Downloads, Server Tasks, Refresh (Apple
+    /// TV) and the profile menu, of those that show.
+    private func requireShortcutOrder() {
+        let order = ["home.liveTv", "home.library", "home.watchTogether", "home.downloads", "home.serverTasks", "home.refresh", "home.userMenu"]
+        let chips = element("home.shortcuts").descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'home.'")).allElementsBoundByIndex
+            .filter { $0.exists }
+            .sorted { $0.frame.minX < $1.frame.minX }
+        var seen: [String] = []
+        for chip in chips {
+            let name = chip.identifier.hasPrefix("home.library.") ? "home.library" : chip.identifier
+            if order.contains(name), seen.last != name { seen.append(name) }
+        }
+        XCTAssertTrue(seen.contains("home.watchTogether"), "Watch Together's chip in the row: \(seen)")
+        XCTAssertEqual(seen, order.filter(seen.contains), "Home's chips in order")
     }
 
     /// The frames of Home's places in `snapshot`: the chip row, its Watch Together chip, Continue Watching's row (its
@@ -434,9 +455,9 @@ final class HomeLibrariesTests: PlezyUITestCase {
     }
 
     #if !os(tvOS)
-    /// Home's shortcuts, chips under Continue Watching as on Apple TV: Watch Together before Downloads, then a
-    /// chip per library where no sidebar lists the libraries (iPhone), on iPhone the profile menu last; nothing
-    /// in a bar (no ⋯). Where the sidebar lists them (iPad, the Mac) Home has no library chips, its own chips stay.
+    /// Home's shortcuts, chips under Continue Watching as on Apple TV: Live TV, then a chip per library where no sidebar
+    /// lists the libraries (iPhone), then Watch Together before Downloads, on iPhone the profile menu last; nothing in a
+    /// bar (no ⋯). Where the sidebar lists them (iPad, the Mac) Home has no library chips, its own chips stay.
     /// ⌘R reloads Home; a library's chip opens it in Libraries; Settings is its tab.
     func testHomeShortcuts() throws {
         #if os(iOS)
@@ -477,9 +498,10 @@ final class HomeLibrariesTests: PlezyUITestCase {
             XCTAssertTrue(watch.exists(within: 10), "Home's own chips after ⌘R")
             XCTAssertEqual(libraries.count, 0, "no library chips after ⌘R")
         } else {
-            // The libraries' chips after Home's own, each named for a library of the server.
+            // The libraries' chips before Home's own, each named for a library of the server.
             let library = require("home.library.0", "the first library's chip")
-            XCTAssertLessThan((downloads.exists ? downloads : watch).frame.minX, library.frame.minX, "the libraries after Home's own chips")
+            XCTAssertLessThan(library.frame.minX, watch.frame.minX, "the libraries before Home's own chips")
+            requireShortcutOrder()
             let name = library.label
             requireServerLibrary(name)
             let lastLibrary = libraries.element(boundBy: max(libraries.count - 1, 0))
