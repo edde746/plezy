@@ -72,6 +72,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -715,7 +717,9 @@ private fun TvSideNavigation(
     // Read while drawing: the fade redraws the column without composing it again.
     val opacity = animateFloatAsState(if (open) 1f else 0f, tween(effectMillis(180)), label = "tvNavBackground")
     val background = PlezyColors.Background
-    Row(Modifier.fillMaxHeight().zIndex(1f)) {
+    // In a texture of its own (the avatar's focus growth stays inside its padding): Android redraws the whole window on
+    // each frame the screen beside it scrolls, and the column is then one cached draw.
+    Row(Modifier.fillMaxHeight().zIndex(1f).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
         Column(
             Modifier
                 .layout { measurable, constraints ->

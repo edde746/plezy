@@ -21,6 +21,7 @@ import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -84,6 +85,7 @@ fun MediaGrid(
 ) {
     val dimens = LocalPlezyDimens.current
     val columns by remember(state) { derivedStateOf { state.layoutInfo.maxSpan.coerceAtLeast(1) } }
+    val cardText = rememberCardText()
     LazyVerticalGrid(
         columns = if (list) GridCells.Fixed(1) else mediaGridCells(shape, appearance),
         state = state,
@@ -109,15 +111,18 @@ fun MediaGrid(
                     density = appearance.libraryDensity,
                     onLongClick = onLongClick?.let { { it(item) } },
                 )
-                else -> PosterCard(
-                    item,
-                    onClick = { onClick(item) },
-                    modifier = cardModifier(index, item).fillMaxWidth(),
-                    shape = shape,
-                    onLongClick = onLongClick?.let { { it(item) } },
-                    position = position(index, count, columns),
-                    titleLines = GridLayout.titleLines(appearance.libraryDensity),
-                )
+                // One text measurer for every card's labels, and their reserved line heights measured once.
+                else -> CompositionLocalProvider(LocalCardText provides cardText) {
+                    PosterCard(
+                        item,
+                        onClick = { onClick(item) },
+                        modifier = cardModifier(index, item).fillMaxWidth(),
+                        shape = shape,
+                        onLongClick = onLongClick?.let { { it(item) } },
+                        position = position(index, count, columns),
+                        titleLines = GridLayout.titleLines(appearance.libraryDensity),
+                    )
+                }
             }
         }
         if (loadingMore || moreError != null) {
