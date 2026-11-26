@@ -99,8 +99,9 @@ private fun DownloadsSection(app: AppSession, picker: Boolean, onLibrary: () -> 
 }
 
 /**
- * The offline screen a downloaded [item] opens on: a movie's, show's or season's detail, a collection's own screen (its
- * downloaded titles); null for what plays or opens elsewhere (albums, episodes, tracks).
+ * The offline screen a downloaded [item] opens on: a movie's or show's detail (a season's, which the detail opens as its
+ * show at that season), a collection's own screen (its downloaded titles); null for what plays or opens elsewhere
+ * (albums, episodes, tracks).
  */
 internal fun downloadedScreen(item: MediaItem): Route? {
     val serverId = { ServerId(checkNotNull(item.serverId) { "download without a server" }) }

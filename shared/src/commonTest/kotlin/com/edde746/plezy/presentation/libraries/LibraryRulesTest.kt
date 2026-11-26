@@ -206,6 +206,19 @@ class DetailRouteTest {
     }
 
     @Test
+    fun aSeasonCardOpensItsShowWithThatSeasonSelected() {
+        val plex = mediaItem("season", MediaKind.SEASON, backend = BackendKind.PLEX).copy(parentId = "show")
+        assertEquals(Route.MediaDetail(ServerId("s1"), "show", initialSeasonId = "season"), detailRouteFor(plex))
+        // Jellyfin and Emby name the show as the series; the parent may be another folder.
+        val jellyfin = mediaItem("season", MediaKind.SEASON).copy(parentId = "folder", grandparentId = "show")
+        assertEquals(Route.MediaDetail(ServerId("s1"), "show", initialSeasonId = "season"), detailRouteFor(jellyfin))
+        // A row naming no show opens on the season, which the detail resolves to its show.
+        val bare = mediaItem("season", MediaKind.SEASON)
+        assertEquals(Route.MediaDetail(ServerId("s1"), "season", initialSeasonId = "season"), detailRouteFor(bare))
+        assertNull((detailRouteFor(plex) as Route.MediaDetail).seed)
+    }
+
+    @Test
     fun aCollectionOpensItsOwnScreenAndAMovieItsDetail() {
         assertEquals(Route.CollectionDetail(ServerId("s1"), "c"), detailRouteFor(mediaItem("c", MediaKind.COLLECTION)))
         assertEquals(Route.MediaDetail(ServerId("s1"), "m"), detailRouteFor(mediaItem("m")))

@@ -339,6 +339,9 @@ data class MediaItem(
     val isTrack: Boolean get() = kind == MediaKind.TRACK
     val isVideoContent: Boolean get() = kind == MediaKind.MOVIE || kind == MediaKind.SHOW || kind == MediaKind.SEASON || kind == MediaKind.EPISODE
 
+    /** A season's show (Jellyfin and Emby name it the series, Plex the season's parent); null for anything else. */
+    val seasonShowId: String? get() = if (kind == MediaKind.SEASON) grandparentId ?: parentId else null
+
     /** Unwatched episodes hide spoilers, in-progress ones included. */
     val shouldHideSpoiler: Boolean get() = kind == MediaKind.EPISODE && !isWatched
 

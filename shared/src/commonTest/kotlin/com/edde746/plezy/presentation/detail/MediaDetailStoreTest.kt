@@ -1004,16 +1004,68 @@ class MediaDetailStoreTest {
     fun `a downloaded episode shows its resume progress`() = runTest {
         val halfway = episodes(s1, 1).single().copy(durationMs = 40 * 60_000, viewOffsetMs = 20 * 60_000)
         offlineSource = object : OfflineDetailSource {
-            override suspend fun metadata(serverId: ServerId, itemId: String) = s1
-            override fun seasons(show: MediaItem) = emptyList<MediaItem>()
+            override suspend fun metadata(serverId: ServerId, itemId: String) = show
+            override fun seasons(show: MediaItem) = listOf(s1)
             override fun episodes(show: MediaItem) = listOf(halfway)
             override suspend fun onDeck(show: MediaItem) = null
             override fun artwork(serverId: ServerId, path: String?) = null
             override suspend fun downloadedVersion(item: MediaItem) = null
         }
-        val store = store("s1", offline = true)
+        val store = store("show", offline = true)
         runCurrent()
         assertEquals(0.5, store.state.value.episodes!!.rows.single().progress)
+    }
+
+    @Test
+    fun `a route naming a season opens its show with that season selected`() = runTest {
+        scriptShow()
+        val fetched = mutableListOf<String>()
+        backend.detail = { id, ready ->
+            fetched += id
+            val found = if (id == "s2") s2 else show
+            ready?.invoke(found)
+            ItemWithOnDeck(found, null)
+        }
+        val store = store("s2", seed = s2)
+        runCurrent()
+        val state = store.state.value
+        assertEquals(MediaKind.SHOW, state.kind)
+        assertEquals("show", state.hero!!.title)
+        assertEquals(1, state.selectedSeason)
+        assertEquals(listOf("s2e1", "s2e2", "s2e3"), state.episodes!!.rows.map { it.id })
+        assertEquals(listOf("s2", "show"), fetched)
+        assertEquals("show", store.seriesId())
+    }
+
+    @Test
+    fun `an episode naming only its season opens the show at that season and episode`() = runTest {
+        scriptShow()
+        backend.detail = { id, _ -> ItemWithOnDeck(if (id == "s2") s2 else show, null) }
+        val store = store("s2", episodeId = "s2e2")
+        runCurrent()
+        val state = store.state.value
+        assertEquals(MediaKind.SHOW, state.kind)
+        assertEquals(1, state.selectedSeason)
+        assertEquals("s2e2", state.initialFocus?.episodeId)
+    }
+
+    @Test
+    fun `a downloaded season opens its downloaded show at that season`() = runTest {
+        val rows = episodes(s1, 1) + episodes(s2, 2)
+        offlineSource = object : OfflineDetailSource {
+            override suspend fun metadata(serverId: ServerId, itemId: String) = if (itemId == "s2") s2 else show
+            override fun seasons(show: MediaItem) = listOf(s1, s2)
+            override fun episodes(show: MediaItem) = rows
+            override suspend fun onDeck(show: MediaItem) = null
+            override fun artwork(serverId: ServerId, path: String?) = null
+            override suspend fun downloadedVersion(item: MediaItem) = null
+        }
+        val store = store("s2", offline = true)
+        runCurrent()
+        val state = store.state.value
+        assertEquals(MediaKind.SHOW, state.kind)
+        assertEquals(1, state.selectedSeason)
+        assertEquals(listOf("s2e1", "s2e2"), state.episodes!!.rows.map { it.id })
     }
 
     @Test

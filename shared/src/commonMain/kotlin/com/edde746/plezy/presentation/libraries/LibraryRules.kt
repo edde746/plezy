@@ -8,6 +8,7 @@ import com.edde746.plezy.model.MediaLibrary
 import com.edde746.plezy.model.ServerId
 import com.edde746.plezy.model.ducetCompare
 import com.edde746.plezy.model.groupLibrariesByFirstAppearance
+import com.edde746.plezy.presentation.browse.detailRouteOf
 import com.edde746.plezy.presentation.navigation.Route
 import com.edde746.plezy.strings.T
 
@@ -279,8 +280,9 @@ fun initialBrowseFetchSize(backend: BackendKind, visibleRows: Int, columns: Int)
 }
 
 /**
- * The screen a tap on [item] opens: an episode its show, at its season and on it; a collection its own screen; a music
- * artist or album its music screen; anything else its detail, seeded with [item]. Null for an item without a server.
+ * The screen a tap on [item] opens: an episode its show, at its season and on it; a season its show at that season
+ * ([detailRouteOf]); a collection its own screen; a music artist or album its music screen; anything else its detail,
+ * seeded with [item]. Null for an item without a server.
  */
 fun detailRouteFor(item: MediaItem): Route? {
     val serverId = ServerId.tryParse(item.serverId) ?: return null
@@ -288,6 +290,7 @@ fun detailRouteFor(item: MediaItem): Route? {
         MediaKind.COLLECTION -> Route.CollectionDetail(serverId, item.id)
         MediaKind.ARTIST -> Route.MusicArtist(serverId.value, item.id)
         MediaKind.ALBUM -> Route.MusicAlbum(serverId.value, item.id)
+        MediaKind.SEASON -> detailRouteOf(item)
         MediaKind.EPISODE -> {
             val show = item.grandparentId ?: return Route.MediaDetail(serverId, item.id).seeded(item)
             Route.MediaDetail(serverId, show, initialSeasonId = item.parentId, initialEpisodeId = item.id)

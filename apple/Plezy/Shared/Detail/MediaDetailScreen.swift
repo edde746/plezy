@@ -186,7 +186,7 @@ private struct DetailParts {
     let navigate: (any Route) -> Void
     let focus: FocusState<String?>.Binding
 
-    var hasEpisodes: Bool { state.kind == .show || state.kind == .season }
+    var hasEpisodes: Bool { state.kind == .show }
 
     /// The headline, under the poster where the item has no backdrop.
     func headline(centred: Bool, logoWidth: CGFloat) -> some View {
@@ -462,7 +462,7 @@ struct DetailTitleBar: View {
 
 /// Wide windows: the backdrop behind the whole window, dark at the leading edge and the bottom. The details in a
 /// column at the leading edge (at most `DetailMetrics.infoMaxWidth`) with the shelves and the information under them;
-/// a show's or season's episodes in a column beside them, the backdrop dimmed under them. A movie's details start
+/// a show's episodes in a column beside them, the backdrop dimmed under them. A movie's details start
 /// lower, under the backdrop's picture. On the Mac each column is a focus section, and once the details' title has
 /// scrolled under the toolbar (`top` tall), a bar with it fades in over the page (`titleBand`). While the item loads
 /// (`itemLoading`) only the backdrop and the title show.
