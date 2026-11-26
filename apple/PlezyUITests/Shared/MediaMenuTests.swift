@@ -1,3 +1,6 @@
+#if os(macOS)
+import AppKit
+#endif
 import XCTest
 
 /// Items' menus and a playlist's screen against the server `PLEZY_DEV_SERVER` names (`--dev-server`'s
@@ -27,11 +30,9 @@ final class MediaMenuTests: PlezyUITestCase {
         let id = card.identifier
         shot("home")
 
-        openMenu(on: card)
-        let watched = element("menu.unwatch").exists(within: 10)
-        let first = watched ? "menu.unwatch" : "menu.watch"
-        let second = watched ? "menu.watch" : "menu.unwatch"
-        require(first, "the menu of \(title)")
+        // The menu offers one mark or the other.
+        let first = openMenu(on: card, showing: ["menu.unwatch", "menu.watch"], "the menu of \(title)")
+        let second = first == "menu.unwatch" ? "menu.watch" : "menu.unwatch"
         #if os(iOS)
         XCTAssertTrue(element("menu.title").exists, "the menu names what it acts on")
         #elseif os(tvOS)
@@ -43,15 +44,13 @@ final class MediaMenuTests: PlezyUITestCase {
         require("menu.message", timeout: 15, "the mark's message")
         shot("marked")
 
-        openMenu(on: hittable(id) ?? card)
-        require(second, "the reopened menu of \(title) offering the other mark")
+        openMenu(on: hittable(id) ?? card, showing: [second], "the reopened menu of \(title) offering the other mark")
         XCTAssertFalse(element(first).exists, "the reopened menu still offers \(first)")
         shot("menu after the mark")
         activate(element(second))
         require("menu.message", timeout: 15, "the second mark's message")
 
-        openMenu(on: hittable(id) ?? card)
-        require(first, "the menu of \(title) back where it started")
+        openMenu(on: hittable(id) ?? card, showing: [first], "the menu of \(title) back where it started")
         shot("menu after the round trip")
         dismissMenu()
         XCTAssertFalse(element(first).exists(within: 1) && element(first).isHittable, "the menu closes")
@@ -183,8 +182,8 @@ final class MediaMenuTests: PlezyUITestCase {
         #endif
         // The open menu hides the card from accessibility on the Mac: its name first.
         let title = card.label
-        openMenu(on: card)
-        activate(require("menu.fileinfo", timeout: 10, "the menu of \(title)"))
+        openMenu(on: card, showing: ["menu.fileinfo"], timeout: 10, "the menu of \(title)")
+        activate(element("menu.fileinfo"))
         require("menu.fileInfo", timeout: 20, "the file info sheet")
         let path = require("menu.fileInfo.path.0.0", timeout: 20, "the file's path")
         // Lets the sheet's presentation finish before the screenshot.
@@ -232,8 +231,7 @@ final class MediaMenuTests: PlezyUITestCase {
         let card = try catalogCard()
         // Read now: on Apple TV the card is the focused one, which the menu takes focus from.
         let title = card.label
-        openMenu(on: card)
-        require("menu.edit_metadata", timeout: 10, "Edit... in the menu of \(title)")
+        openMenu(on: card, showing: ["menu.edit_metadata"], timeout: 10, "Edit... in the menu of \(title)")
         require("menu.quick_tag", "Quick Tag... in the menu")
         require("menu.show_link", "Show link in the menu")
         shot("menu with edits")
@@ -248,8 +246,8 @@ final class MediaMenuTests: PlezyUITestCase {
         launchDev(arguments: ["--dev-server", try server()])
         require("home.screen", timeout: 60, "after the launch")
         let card = try catalogCard()
-        openMenu(on: card)
-        activate(require("menu.quick_tag", timeout: 10, "Quick Tag... in the menu"))
+        openMenu(on: card, showing: ["menu.quick_tag"], timeout: 10, "Quick Tag... in the menu")
+        activate(element("menu.quick_tag"))
         let field = require("metadata.tags.field", timeout: 30, "the tag sheet's field")
         #if os(tvOS)
         XCTAssertTrue(field.wait(for: \.hasFocus, toEqual: true, timeout: 5), "the field has focus as the sheet opens")
@@ -306,8 +304,7 @@ final class MediaMenuTests: PlezyUITestCase {
         let restingWidth = row.frame.width
         #endif
 
-        openMenu(on: row)
-        require("menu.fileinfo", "the row's item menu")
+        openMenu(on: row, showing: ["menu.fileinfo"], "the row's item menu")
         shotOfMenu("playlist row menu")
         requireLengthClear("with the row's menu open")
         dismissMenu()
@@ -480,19 +477,36 @@ final class MediaMenuTests: PlezyUITestCase {
     }
     #endif
 
-    private func openMenu(on target: XCUIElement) {
+    /// Opens `target`'s menu and waits for one of `entries` in it, failing with `what` where none shows within `timeout`;
+    /// the one that shows. On the Mac, where a crash alert came up meanwhile and closed the menu, the menu opens again
+    /// (`reopenMenuClosedByAlert`).
+    @discardableResult
+    private func openMenu(on target: XCUIElement, showing entries: [String], timeout: TimeInterval = 20, _ what: String) -> String {
         #if os(macOS)
-        // The card's own frame, not its hittability: the right-click catcher over it hides its activation point.
-        target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).rightClick()
+        menuTarget = target
+        alertsBeforeMenu = Self.crashAlertsClosed
+        rightClick(target)
         #elseif os(tvOS)
         XCUIRemote.shared.press(.select, forDuration: 1.2)
         #else
         target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).press(forDuration: 1.0)
         #endif
+        var shown: String?
+        let shows = { shown = entries.first { self.element($0).exists }; return shown != nil }
+        _ = waitUntil(timeout, shows)
+        #if os(macOS)
+        if shown == nil, reopenMenuClosedByAlert() { _ = waitUntil(timeout, shows) }
+        #endif
+        guard let shown else {
+            fail("\(what): no \(entries.joined(separator: " or ")) after \(Int(timeout)) s")
+            return entries[0]
+        }
+        return shown
     }
 
     private func activate(_ target: XCUIElement) {
         #if os(macOS)
+        if !target.exists, reopenMenuClosedByAlert() { _ = target.exists(within: 5) }
         target.click()
         #elseif os(tvOS)
         for _ in 0..<16 where !entryHasFocus(target) {
@@ -505,6 +519,44 @@ final class MediaMenuTests: PlezyUITestCase {
         target.tap()
         #endif
     }
+
+    #if os(macOS)
+    /// What the last menu opened from (`openMenu`), and the crash alerts closed before it opened (`crashAlertsClosed`).
+    private var menuTarget: XCUIElement?
+    private var alertsBeforeMenu = 0
+
+    /// Right-clicks `target` in its own frame, not at its hittability: the right-click catcher over a card hides its
+    /// activation point.
+    private func rightClick(_ target: XCUIElement) {
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).rightClick()
+    }
+
+    /// Opens the last menu (`menuTarget`) again where a crash alert (another run's crashed app, `closeCrashAlerts`) came
+    /// up since it opened, now or closed already by the monitor (`closeCrashAlertsMidTest`). The alert took the front
+    /// from the app, which closes the menu, or, where the menu opened just as the alert came, leaves it on the screen but
+    /// out of the app's accessibility tree, where Escape closes it first. Once per alert; whether it did.
+    @discardableResult
+    private func reopenMenuClosedByAlert() -> Bool {
+        Self.closeCrashAlertsMidTest()
+        guard let target = menuTarget, Self.crashAlertsClosed > alertsBeforeMenu else { return false }
+        alertsBeforeMenu = Self.crashAlertsClosed
+        if menuOnScreen { app.typeKey(.escape, modifierFlags: []) }
+        rightClick(target)
+        return true
+    }
+
+    /// Whether the app shows a menu (a window at the menus' level), in its accessibility tree or not. Escape goes to an
+    /// open menu, never to the screen under it.
+    private var menuOnScreen: Bool {
+        let pids = NSRunningApplication.runningApplications(withBundleIdentifier: "com.edde746.plezy.dev").map(\.processIdentifier)
+        let level = Int(CGWindowLevelForKey(.popUpMenuWindow))
+        let windows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        return windows.contains { window in
+            guard let owner = window[kCGWindowOwnerPID as String] as? pid_t else { return false }
+            return pids.contains(owner) && window[kCGWindowLayer as String] as? Int == level
+        }
+    }
+    #endif
 
     private func dismissMenu() {
         #if os(macOS)

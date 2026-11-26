@@ -20,6 +20,27 @@ class PlezyUITestCase: XCTestCase {
         super.setUp()
         MainActor.assumeIsolated { XCUIDevice.shared.orientation = .portrait }
     }
+    #elseif os(macOS)
+    /// The crash alerts closed as they came up during the running test (`closeCrashAlertsMidTest`).
+    private(set) static var crashAlertsClosed = 0
+
+    /// Closes a crash alert that comes up during the test before the test's next action (`closeCrashAlertsMidTest`):
+    /// XCUITest asks its interruption monitors when another app's alert is up as it acts, on the main thread.
+    nonisolated override func setUp() {
+        super.setUp()
+        MainActor.assumeIsolated { Self.crashAlertsClosed = 0 }
+        addUIInterruptionMonitor(withDescription: "a crash alert") { _ in MainActor.assumeIsolated { Self.closeCrashAlertsMidTest() } }
+    }
+
+    /// Closes the crash alerts on the screen (`closeCrashAlerts`), counting them in `crashAlertsClosed`, and gives the
+    /// app under test the front back; whether one was up.
+    @discardableResult
+    static func closeCrashAlertsMidTest() -> Bool {
+        guard closeCrashAlerts() else { return false }
+        crashAlertsClosed += 1
+        XCUIApplication().activate()
+        return true
+    }
     #endif
 
     /// Puts back the test server's watch state of the items the class's launches played (`WatchStateRestore`).
@@ -160,14 +181,27 @@ class PlezyUITestCase: XCTestCase {
     #endif
 
     #if os(macOS)
-    /// Closes the "quit unexpectedly" alerts on the Mac's screen: one that a crashed simulator app (another run's) or
-    /// an earlier launch left would cover the window, taking the test's clicks and showing in its screenshots.
+    /// Closes the "quit unexpectedly" alerts on the Mac's screen, and whether one showed. One that a crashed simulator
+    /// app (another run's) or an earlier launch left, or that comes up during a test, covers the window, takes the test's
+    /// clicks and shows in its screenshots; it also takes the front from the app, which closes an open menu.
     /// UserNotificationCenter shows a simulator app's, Problem Reporter a Mac app's; launchd starts either again for
     /// the next alert.
-    private static func closeCrashAlerts() {
-        for id in ["com.apple.UserNotificationCenter", "com.apple.ProblemReporter"] {
-            NSRunningApplication.runningApplications(withBundleIdentifier: id).forEach { $0.forceTerminate() }
-        }
+    @discardableResult
+    static func closeCrashAlerts() -> Bool {
+        let alerts = ["com.apple.UserNotificationCenter", "com.apple.ProblemReporter"]
+            .flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0) }
+        let pids = Set(alerts.map(\.processIdentifier))
+        let showing = !pids.isDisjoint(with: onScreenWindowOwners())
+        alerts.forEach { $0.forceTerminate() }
+        // Off the screen before the test goes on, so the front goes back to the app.
+        if showing { _ = waitUntil(5) { pids.isDisjoint(with: onScreenWindowOwners()) } }
+        return showing
+    }
+
+    /// The processes with a window on the screen.
+    private static func onScreenWindowOwners() -> Set<pid_t> {
+        let windows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        return Set(windows.compactMap { $0[kCGWindowOwnerPID as String] as? pid_t })
     }
 
     /// The window's frame at every launch: the app's size (1280×720, the scene's `defaultSize`) in the middle of the main
@@ -580,13 +614,18 @@ class PlezyUITestCase: XCTestCase {
         }
     }
 
-    /// Fails the test with `message`, keeping a screenshot and the app's element tree for the run's report.
+    /// Fails the test with `message`, keeping a screenshot and the app's element tree for the run's report. On the Mac
+    /// the message counts the crash alerts closed during the test (`crashAlertsClosed`): each took the front from the
+    /// app as it came up.
     func fail(_ message: String, file: StaticString = #filePath, line: UInt = #line) {
         let tree = XCTAttachment(string: app.debugDescription)
         tree.name = "element tree"
         tree.lifetime = .keepAlways
         add(tree)
         shot("failure")
+        #if os(macOS)
+        let message = Self.crashAlertsClosed == 0 ? message : "\(message) (crash alerts of other apps closed during the test: \(Self.crashAlertsClosed))"
+        #endif
         XCTFail(message, file: file, line: line)
     }
 }
