@@ -25,9 +25,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Android TV's Watch Next row (WatchNext): the TV provider takes this app's rows only with it on some boxes. -->
     <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
-    <!-- The Watch Next posters' read grants don't survive a reboot: they are granted again at boot
-         (WatchNextGrantReceiver). -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- The audio output's settings (passthrough, the audio focus of playback) and moving the app's task to the front. -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.REORDER_TASKS" />
@@ -54,11 +51,6 @@
         </intent>
         <intent>
             <action android:name="android.support.customtabs.action.CustomTabsService" />
-        </intent>
-        <!-- Every launcher, which reads the Watch Next posters through a read grant each (ShelfArtwork). -->
-        <intent>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.HOME" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -477,22 +469,14 @@
                 <action android:name="android.media.tv.action.WATCH_NEXT_PROGRAM_BROWSABLE_DISABLED" />
             </intent-filter>
         </receiver>
-        <!-- The Watch Next posters the app downloaded (ShelfArtwork): not exported, read by the launchers only through
-             a grant per poster. -->
+        <!-- The Watch Next posters the app downloaded (ShelfArtwork), read-only, to every app that may read the TV
+             provider's rows that carry their URIs: a launcher that isn't the home app (Projectivy) has no grant
+             to read them by. -->
         <provider
             android:name=".watchnext.ShelfArtworkProvider"
             android:authorities="${applicationId}.systemshelf.artwork"
-            android:exported="false"
-            android:grantUriPermissions="true" />
-        <!-- Grants the launchers the Watch Next posters again after a reboot or an update (WatchNext.grantAgain). -->
-        <receiver
-            android:name=".watchnext.WatchNextGrantReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
+            android:exported="true"
+            android:readPermission="com.android.providers.tv.permission.READ_EPG_DATA" />
         <!-- Sentry starts only while crash reports are on (AndroidCrashReports), never by itself at launch: its two
              start-up providers go. -->
         <provider

@@ -34,10 +34,9 @@ import java.util.concurrent.atomic.AtomicReference
  * this app's preferences. A row opens [PlezyActivity] with `plezy://play?content_id=…` (an explicit intent: the test
  * builds' manifest has no link filters).
  *
- * Posters: the app downloads them ([ShelfArtwork]) and the rows point at its own copies, which the launchers read
- * through per-URI grants; a row whose poster fails keeps the one it had. After a write the grants of posters no row uses
- * any more are taken back and their files deleted. Grants don't survive a reboot or an update, so
- * [WatchNextGrantReceiver] grants the rows' posters again then.
+ * Posters: the app downloads them ([ShelfArtwork]) and the rows point at its own copies, which the launchers read from
+ * [ShelfArtworkProvider]; a row whose poster fails keeps the one it had. After a write the files of posters no row uses
+ * any more are deleted.
  *
  * The provider's work runs on one background thread; publishes that pile up while it works collapse into the latest.
  */
@@ -80,17 +79,6 @@ internal class WatchNext private constructor(context: Context) : HomeScreen {
         }
     }
 
-    /** Grants the launchers read access to the rows' posters again (after a reboot or an update dropped the grants). */
-    fun grantAgain(done: () -> Unit) {
-        executor.execute {
-            try {
-                rows()?.mapNotNull { it.program.posterUri }?.let(posters::grant)
-            } finally {
-                done()
-            }
-        }
-    }
-
     private fun stale(shelf: HomeScreenShelf): Boolean {
         // Every committed shelf was published, so the newest published generation covers the committed one.
         val stale = shelf.generation < publishedGeneration.get() || (shelf.generation == committedGeneration && shelf.ownerId != committedOwner)
@@ -122,7 +110,6 @@ internal class WatchNext private constructor(context: Context) : HomeScreen {
         val shown = rows.filter { it.id !in deleted }.map { updated[it.id] ?: it.program } + plan.insert
         val shownPosters = shown.mapNotNullTo(HashSet()) { it.posterUri }
         if (stale(shelf)) return
-        if (!posters.grant(shownPosters)) Log.w(TAG) { "A Watch Next poster reached no launcher" }
 
         val operations = ArrayList<ContentProviderOperation>()
         plan.delete.forEach { operations += ContentProviderOperation.newDelete(programUri(it)).build() }
@@ -139,7 +126,6 @@ internal class WatchNext private constructor(context: Context) : HomeScreen {
             Log.e(TAG) { "Writing the Watch Next rows failed: ${e::class.simpleName}" }
             return
         }
-        posters.revoke(previousPosters.values.filterNotNull().filter { it !in shownPosters })
         posters.prune(shownPosters)
     }
 

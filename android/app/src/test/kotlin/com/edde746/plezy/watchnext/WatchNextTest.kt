@@ -79,7 +79,8 @@ class WatchNextTest {
             val start = System.nanoTime()
             watchNext.publish(HomeScreenShelf(null, 2, "Continue Watching", emptyList()))
             val written = CountDownLatch(1)
-            watchNext.grantAgain { written.countDown() }
+            // Runs on the Watch Next thread after the clear: no row has this id.
+            watchNext.removedByUser(-1) { written.countDown() }
             assertTrue(written.await(30, TimeUnit.SECONDS))
             val millis = (System.nanoTime() - start) / 1_000_000
 

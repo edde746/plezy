@@ -2,11 +2,8 @@ package com.edde746.plezy.watchnext
 
 import android.content.ContentResolver
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import com.edde746.plezy.log.Log
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -19,9 +16,8 @@ import java.security.MessageDigest
 /**
  * The Watch Next posters, which the app downloads itself: the poster URLs carry the media server's address and token,
  * which never reach a launcher. Each poster is a file under the cache, `system_shelf_artwork/<sha256(owner)>/<sha256(owner
- * \0 source)>.art`, served read-only by [ShelfArtworkProvider] as `content://<authority>/art/<owner key>/<key>.art` and
- * readable by a launcher only through a per-URI read grant ([grant]: to every app with a home screen, not only the
- * default one, as Fire OS and a box with several launchers have).
+ * \0 source)>.art`, served read-only by [ShelfArtworkProvider] as `content://<authority>/art/<owner key>/<key>.art` to
+ * every app that may read the TV provider's rows, which carry those URIs (a launcher that isn't the home app included).
  *
  * A download ([fetch]) takes http(s) only, each image within its timeouts and the whole publish within one deadline and
  * byte budget ([Budget]); it keeps an image only if its bytes are a whole PNG, JPEG, GIF or WebP ([imageFormatOf]) of
@@ -79,30 +75,6 @@ internal class ShelfArtwork(private val context: Context) {
         }
     }
 
-    /** Grants every app with a home screen read access to each of [uris]; false when a poster reached no launcher. */
-    fun grant(uris: Collection<String>): Boolean {
-        val launchers = homePackages()
-        var allReached = true
-        for (uri in uris) {
-            var reached = false
-            for (pkg in launchers) {
-                try {
-                    context.grantUriPermission(pkg, Uri.parse(uri), Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    reached = true
-                } catch (e: SecurityException) {
-                    Log.w(TAG) { "$pkg refused a Watch Next poster grant" }
-                }
-            }
-            if (!reached) allReached = false
-        }
-        return allReached
-    }
-
-    /** Takes back the launchers' read access to [uris]. */
-    fun revoke(uris: Collection<String>) {
-        for (uri in uris) context.revokeUriPermission(Uri.parse(uri), Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-
     /** The poster file [uri] names, confined to the artwork folder; null for any other URI. */
     fun file(uri: Uri): File? {
         if (uri.scheme != ContentResolver.SCHEME_CONTENT || uri.authority != authority) return null
@@ -113,19 +85,6 @@ internal class ShelfArtwork(private val context: Context) {
 
     private fun uri(ownerKey: String, key: String): Uri = Uri.Builder()
         .scheme(ContentResolver.SCHEME_CONTENT).authority(authority).appendPath("art").appendPath(ownerKey).appendPath("$key$SUFFIX").build()
-
-    /** Every package with a home screen activity (all of them, not only the default launcher). */
-    private fun homePackages(): Set<String> {
-        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val flags = PackageManager.MATCH_ALL
-        val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.queryIntentActivities(home, PackageManager.ResolveInfoFlags.of(flags.toLong()))
-        } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.queryIntentActivities(home, flags)
-        }
-        return activities.mapNotNullTo(HashSet()) { it.activityInfo?.packageName }
-    }
 
     private fun download(source: String, budget: Budget): ByteArray? {
         if (!source.startsWith("http://") && !source.startsWith("https://")) {
