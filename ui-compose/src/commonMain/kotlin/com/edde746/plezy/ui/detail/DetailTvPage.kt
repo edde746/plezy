@@ -5,7 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.BringIntoViewSpec
+import com.edde746.plezy.ui.focus.StaysPut
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -272,12 +272,6 @@ private const val HERO_STOP = "hero"
 /** Room at the top for the title's name once the page has moved off the title block, and where its line starts. */
 private val SmallTitleSpace = 56.dp
 private val SmallTitleTop = 20.dp
-
-/** The page's own scrolling for focus: none, as the page moves by its stops. */
-@OptIn(ExperimentalFoundationApi::class)
-private object StaysPut : BringIntoViewSpec {
-    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = 0f
-}
 
 /** Gives the hero back to the item once focus is in this section. */
 private fun Modifier.heroBack(intents: DetailIntents): Modifier = onFocusChanged { if (it.hasFocus) intents.store.focusEpisode(null) }

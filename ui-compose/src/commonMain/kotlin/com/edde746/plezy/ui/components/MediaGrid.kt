@@ -32,6 +32,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import com.edde746.plezy.ui.focus.StaysPut
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,8 +68,10 @@ import kotlin.math.ceil
  * [header] goes above the cards; under them, while [loadingMore] the loading indicator, or with [moreError] the error
  * with Retry ([onRetryMore]) ([MoreFooter]). [onNearEnd] comes as the last cards come into view, once for each [count].
  * [cardModifier] goes on each card or row (given its index); [onClick] and [onLongClick] are its press and long press.
- * After each move the posters of the two rows past the last shown cell are fetched at the cells' size.
+ * After each move the posters of the two rows past the last shown cell are fetched at the cells' size. With
+ * [layerMotion] (a TV's library) focus moves the grid through a layer ([GridMotion]), as the platform would scroll it.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MediaGrid(
     count: Int,
@@ -82,6 +90,7 @@ fun MediaGrid(
     loadingMore: Boolean = false,
     moreError: String? = null,
     onRetryMore: () -> Unit = {},
+    layerMotion: Boolean = false,
     header: LazyGridScope.() -> Unit = {},
 ) {
     val dimens = LocalPlezyDimens.current
@@ -90,47 +99,63 @@ fun MediaGrid(
     var columns by remember(state) { mutableIntStateOf(1) }
     LaunchedEffect(state) { snapshotFlow { state.layoutInfo.maxSpan.coerceAtLeast(1) }.collect { columns = it } }
     val cardText = rememberCardText()
-    LazyVerticalGrid(
-        columns = if (list) GridCells.Fixed(1) else mediaGridCells(shape, appearance),
-        state = state,
-        contentPadding = padding,
-        horizontalArrangement = Arrangement.spacedBy(dimens.gutter),
-        verticalArrangement = Arrangement.spacedBy(if (list) GroupGap else dimens.gutter),
-        modifier = modifier.fillMaxSize().semanticsForReaders(),
-    ) {
-        header()
-        items(
-            count,
-            key = { index -> card(index)?.let { "${it.id}$CELL$index" } ?: "$SLOT$index" },
-            contentType = { index -> if (card(index) == null) BLANK else CARD },
-        ) { index ->
-            val item = card(index)
-            when {
-                item == null -> if (list) Box(Modifier.fillMaxWidth().height(rowArtworkWidth(shape) / shape.aspectRatio + RowInset * 2)) else BlankCard(shape, Modifier.fillMaxWidth())
-                list -> MediaRow(
-                    item,
-                    onClick = { onClick(item) },
-                    modifier = cardModifier(index, item),
-                    shape = shape,
-                    density = appearance.libraryDensity,
-                    onLongClick = onLongClick?.let { { it(item) } },
+    val platformScroll = LocalBringIntoViewSpec.current
+    val motion = if (layerMotion && !list) remember(state) { GridMotion(state) } else null
+    val reach = if (motion != null) gridMotionReach() else 0
+    val reachDp = with(LocalDensity.current) { reach.toDp() }
+    val direction = LocalLayoutDirection.current
+    CompositionLocalProvider(LocalBringIntoViewSpec provides if (motion != null) StaysPut else platformScroll) {
+        LazyVerticalGrid(
+            columns = if (list) GridCells.Fixed(1) else mediaGridCells(shape, appearance),
+            state = state,
+            contentPadding = if (motion == null) {
+                padding
+            } else {
+                PaddingValues(
+                    start = padding.calculateStartPadding(direction),
+                    top = padding.calculateTopPadding() + reachDp,
+                    end = padding.calculateEndPadding(direction),
+                    bottom = padding.calculateBottomPadding() + reachDp,
                 )
-                // One text measurer for every card's labels, and their reserved line heights measured once.
-                else -> CompositionLocalProvider(LocalCardText provides cardText) {
-                    PosterCard(
+            },
+            horizontalArrangement = Arrangement.spacedBy(dimens.gutter),
+            verticalArrangement = Arrangement.spacedBy(if (list) GroupGap else dimens.gutter),
+            modifier = modifier.fillMaxSize().then(if (motion != null) Modifier.gridMotion(motion, reach, platformScroll) else Modifier).semanticsForReaders(),
+        ) {
+            header()
+            items(
+                count,
+                key = { index -> card(index)?.let { "${it.id}$CELL$index" } ?: "$SLOT$index" },
+                contentType = { index -> if (card(index) == null) BLANK else CARD },
+            ) { index ->
+                val item = card(index)
+                when {
+                    item == null -> if (list) Box(Modifier.fillMaxWidth().height(rowArtworkWidth(shape) / shape.aspectRatio + RowInset * 2)) else BlankCard(shape, Modifier.fillMaxWidth())
+                    list -> MediaRow(
                         item,
                         onClick = { onClick(item) },
-                        modifier = cardModifier(index, item).fillMaxWidth(),
+                        modifier = cardModifier(index, item),
                         shape = shape,
+                        density = appearance.libraryDensity,
                         onLongClick = onLongClick?.let { { it(item) } },
-                        position = position(index, count, columns),
-                        titleLines = GridLayout.titleLines(appearance.libraryDensity),
                     )
+                    // One text measurer for every card's labels, and their reserved line heights measured once.
+                    else -> CompositionLocalProvider(LocalCardText provides cardText) {
+                        PosterCard(
+                            item,
+                            onClick = { onClick(item) },
+                            modifier = cardModifier(index, item).fillMaxWidth(),
+                            shape = shape,
+                            onLongClick = onLongClick?.let { { it(item) } },
+                            position = position(index, count, columns),
+                            titleLines = GridLayout.titleLines(appearance.libraryDensity),
+                        )
+                    }
                 }
             }
-        }
-        if (loadingMore || moreError != null) {
-            item(key = "more", span = { GridItemSpan(maxLineSpan) }, contentType = MORE) { MoreFooter(moreError, onRetryMore) }
+            if (loadingMore || moreError != null) {
+                item(key = "more", span = { GridItemSpan(maxLineSpan) }, contentType = MORE) { MoreFooter(moreError, onRetryMore) }
+            }
         }
     }
     val missing by rememberUpdatedState(onMissing)

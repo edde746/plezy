@@ -21,3 +21,8 @@ internal class StayInViewSpec(private val platform: BringIntoViewSpec, private v
         else -> platform.calculateScrollDistance(offset - before, size, containerSize - before - after)
     }
 }
+
+/** Scrolling for focus that never moves: for a list moved by other means (its stops, a layer). */
+internal object StaysPut : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = 0f
+}
