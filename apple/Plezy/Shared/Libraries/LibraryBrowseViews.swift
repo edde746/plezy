@@ -187,9 +187,8 @@ struct LibraryPagedGrid: View {
     /// The newest jump once its animation ran: scrolled to exactly.
     @State private var settled: GridJump?
     #if os(tvOS)
-    /// The cell focus was last on, by its index and its item's id: coming back to the grid (Menu from the screen a card
-    /// opened) puts focus back there, whether or not the system has restored it yet when the grid's first focus runs.
-    @State private var lastFocus: (index: Int, id: String)?
+    /// The card a press opened a screen from, by its index and its item's id: back on top, focus goes back there.
+    @State private var openedFrom: (index: Int, id: String)?
     #endif
     #if os(iOS)
     /// Holds the screen at its full refresh rate while the grid moves.
@@ -251,18 +250,23 @@ struct LibraryPagedGrid: View {
         // Down from the header row lands on the grid.
         .shelfFocusSection()
         #if os(tvOS)
-        // Focus enters on the first item once it loads, unless a controller's shoulder button put it on the view menu; back
-        // from a screen a card opened, on that card if it is still there.
+        // Focus enters on the first item once it loads, unless a controller's shoulder button put it on the view menu.
         .task(id: "\(card(0) != nil)|\(claimsFocus)|\(active)|\(tabBarHoldsFocus)") {
             guard !list, claimsFocus, active, !tabBarHoldsFocus, let first = card(0) else { return }
-            let back = lastFocus.flatMap { last in card(last.index)?.id == last.id ? last.id : nil }
-            await FocusRestore.restore($cellFocus, to: back ?? first.id, hold: 1)
+            await FocusRestore.restore($cellFocus, to: first.id, hold: 1)
+        }
+        // Back from the screen a card opened, focus goes back onto that card while it is still in its place, wherever the
+        // focus engine put it first (it can lose the card and land on the grid's first), unless the user moves it.
+        .task(id: app.backStack.last is RouteLibraries) {
+            guard app.backStack.last is RouteLibraries, let back = openedFrom else { return }
+            openedFrom = nil
+            guard card(back.index)?.id == back.id else { return }
+            await FocusRestore.restore($cellFocus, to: back.id, hold: 1, replacing: true)
         }
         .onChange(of: focusRequest) {
             if let first = shown.indices.min(), let item = card(first) { cellFocus = item.id }
         }
         .onChange(of: cellFocus) { old, new in
-            if let new, let index = shown.indices.first(where: { card($0)?.id == new }) { lastFocus = (index, new) }
             if old != nil, new != nil { onMove() }
         }
         #endif
@@ -287,7 +291,7 @@ struct LibraryPagedGrid: View {
                     } else {
                         PosterCard(
                             card: item, shape: shape, width: layout.cell, caption: caption,
-                            focus: CardFocus(binding: $cellFocus, key: item.id), onOpen: { onOpen(item) }, onMenu: { onMenu(item) }
+                            focus: CardFocus(binding: $cellFocus, key: item.id), onOpen: { open(item, at: index) }, onMenu: { onMenu(item) }
                         )
                     }
                 } else {
@@ -318,6 +322,14 @@ struct LibraryPagedGrid: View {
             }
             .onDisappear { shown.indices.remove(index) }
         }
+    }
+
+    /// Opens `item`'s screen from its cell at `index`; on Apple TV focus goes back onto it once Libraries is on top again.
+    private func open(_ item: MediaCardUi, at index: Int) {
+        #if os(tvOS)
+        openedFrom = (index, item.id)
+        #endif
+        onOpen(item)
     }
 
     /// The artwork from the first visible item to two rows past the visible ones, at the cell's size: of the loaded items
