@@ -1,6 +1,9 @@
 package com.edde746.plezy.ui.components
 
-import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.TargetBasedAnimation
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.getVelocityFromNanos
+import kotlinx.coroutines.CoroutineStart
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -65,7 +68,7 @@ internal class GridMotion(private val state: LazyGridState) {
     /**
      * Moves the grid by what was asked for, the layer first, at most [reach] px ahead of the scroll (a longer move
      * scrolls the rest at once), then scrolls it there at rest. A move that comes before an earlier one has begun takes
-     * its distance too.
+     * its distance too. Its first step shows in the frame it is asked in.
      */
     suspend fun move(reach: Float) {
         val move = ++moves
@@ -84,9 +87,18 @@ internal class GridMotion(private val state: LazyGridState) {
                     target -= scrolled
                 }
                 try {
-                    animate(offset, -target, speed, MotionSpring) { value, v ->
-                        offset = value
-                        velocity = v
+                    // A frame's step in at once, as a scroll animation's first frame shows one, then a frame's more
+                    // each frame after.
+                    val motion = TargetBasedAnimation(MotionSpring, Float.VectorConverter, offset, -target, speed)
+                    var time = FIRST_STEP_NANOS
+                    var first = -1L
+                    while (true) {
+                        offset = motion.getValueFromNanos(time)
+                        velocity = motion.getVelocityFromNanos(time)
+                        if (motion.isFinishedFromNanos(time)) break
+                        val now = withFrameNanos { it }
+                        if (first < 0) first = now
+                        time = now - first + 2 * FIRST_STEP_NANOS
                     }
                     velocity = 0f
                     settle()
@@ -173,6 +185,9 @@ private val VisibleRows = GenericShape { size, _ -> addRect(Rect(-size.width, 0f
 
 /** The spring the platform scrolls into view with. */
 private val MotionSpring = spring<Float>()
+
+/** How far into its spring a move's first frame shows it: a frame at 60 Hz. */
+private const val FIRST_STEP_NANOS = 16_666_667L
 
 /**
  * Draws this item of a grid [motion] moves only while it shows, or lies within a row (its own height and [gap] px) of
@@ -265,6 +280,7 @@ private class GridMotionNode(var motion: GridMotion, var reach: Int, var platfor
         val distance = distance(rect)
         if (distance == 0f) return
         motion.ask(distance)
-        coroutineScope.launch { motion.move(reach.toFloat()) }
+        // At once: the first step shows in this frame.
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { motion.move(reach.toFloat()) }
     }
 }
