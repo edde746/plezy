@@ -7,7 +7,8 @@ import XCTest
 
 /// Choices on Libraries' header and View all's sort, against the server `PLEZY_DEV_SERVER` names: Browse's header
 /// controls drawn as a symbol alone draw it in their middle, in one row of equal gaps, heights and centres (iPhone,
-/// iPad, the Mac); the Filters sheet's Cancel drops its edits, Apply and a swipe down commit them (iPhone, iPad); View
+/// iPad, the Mac), and give way in order as the row narrows (the Mac's window, iPad's text size); the Filters sheet's
+/// Cancel drops its edits, Apply and a swipe down commit them (iPhone, iPad); View
 /// all's sort offers Clear, Ascending and Descending once an order is set, and another field keeps the direction.
 final class LibraryChoicesTests: PlezyUITestCase {
     private var steps: LibrarySteps { LibrarySteps(test: self) }
@@ -295,6 +296,45 @@ final class LibraryChoicesTests: PlezyUITestCase {
         }
         shot("ax3 more menu")
         steps.dismissMenu()
+    }
+    #endif
+
+    #if os(iOS)
+    /// iPad's one-line header row at larger text sizes gives way in order, one form at a time: a filter shows its symbol
+    /// alone (a circle) only once every one ranked ahead of it does (the sort, the view, Filters, then the type); at the
+    /// largest size the sort shows its symbol alone; and the row settles, its controls where they were a second later,
+    /// also after another library opens.
+    func testIpadHeaderGivesWayInOrderAtLargeText() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad's one-line header row") }
+        let order = ["libraries.sort", "libraries.view", "libraries.filters", "libraries.grouping"]
+        let sizes = ["UICTContentSizeCategoryAccessibilityM", "UICTContentSizeCategoryAccessibilityXXXL"]
+        for size in sizes {
+            launchDev(arguments: [
+                "--dev-server", try steps.libraryServer(), "--dev-open", "libraries", "-UIPreferredContentSizeCategoryName", size,
+            ])
+            continueAfterFailure = true
+            require("libraries.screen", timeout: 60, "Libraries")
+            for library in ["Codec Samples", "Movies"] {
+                steps.pickLibrary(library)
+                require("libraries.grid", timeout: 30, "the Browse grid")
+                let frames = { (order + ["libraries.library"]).map { self.element($0).frame } }
+                let before = frames()
+                sleep(1)
+                let after = frames()
+                shot("header \(library) \(size.dropFirst("UICTContentSizeCategory".count))")
+                XCTAssertEqual(before, after, "the row settles on \(library) at \(size)")
+                let round = after.prefix(order.count).map { abs($0.width - $0.height) <= 1 }
+                let state = zip(order, zip(round, after)).map { "\($0) \($1.0 ? "symbol" : "whole") \(Int($1.1.width))" }
+                    .joined(separator: ", ")
+                for (index, alone) in round.enumerated() where alone {
+                    XCTAssertTrue(round[..<index].allSatisfy { $0 }, "\(order[index]) shows its symbol alone before those ahead of it: \(state)")
+                }
+                if size == sizes.last {
+                    XCTAssertTrue(round[0], "the sort shows its symbol alone at \(size): \(state)")
+                }
+            }
+            app.terminate()
+        }
     }
     #endif
 

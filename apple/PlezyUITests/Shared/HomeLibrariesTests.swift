@@ -14,7 +14,7 @@ import UIKit
 /// Mac's sidebar moves it to its hidden group), then showing it again (the server's state unchanged). On Apple TV focus
 /// enters Home and Libraries on their content.
 /// Continue Watching takes the server's latest as Home shows again, focus following its card on Apple TV.
-/// Shuffle on the Music library plays its tracks shuffled.
+/// Shuffle on the Music library plays its tracks shuffled. On iPad a library picked in the sidebar shows at once.
 final class HomeLibrariesTests: PlezyUITestCase {
     private func server() throws -> String {
         try XCTUnwrap(
@@ -853,6 +853,43 @@ final class HomeLibrariesTests: PlezyUITestCase {
         sleep(3)
         shot("libraries list")
     }
+
+    #if os(iOS)
+    /// iPad, its sidebar shown: each library picked there shows Libraries on it, the app answering again within 3 s of
+    /// the pick. Laying the header row out in every one of its forms at once kept the main thread 4 to 8 s each time
+    /// (iOS 27.0).
+    func testSidebarLibrariesOpenAtOnce() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad's sidebar") }
+        XCUIDevice.shared.orientation = .landscapeLeft
+        try launch("home")
+        require("home.screen", timeout: 60, "Home")
+        func row(_ title: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(identifier: "nav.library.\(title)").firstMatch
+        }
+        if !row("Movies").exists(within: 5) {
+            let toggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'sidebar'")).firstMatch
+            XCTAssertTrue(toggle.exists(within: 5), "the tab bar's sidebar button")
+            toggle.tap()
+        }
+        var times: [String] = []
+        var slowest: TimeInterval = 0
+        for title in ["Movies", "Shows", "Codec Samples", "Movies", "Shows"] {
+            let entry = row(title)
+            XCTAssertTrue(entry.exists(within: 15), "\(title) in the sidebar")
+            let picked = Date()
+            entry.tap()
+            let shown = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == 'libraries.library' AND label == %@", title)).firstMatch
+            XCTAssertTrue(shown.exists(within: 30), "Libraries on \(title)")
+            let took = Date().timeIntervalSince(picked)
+            times.append("\(title) \(String(format: "%.1f", took)) s")
+            slowest = max(slowest, took)
+        }
+        shot("sidebar library")
+        print("SIDEBAR PICKS " + times.joined(separator: ", "))
+        XCTAssertLessThan(slowest, 3, "the app answered a pick in the sidebar after: \(times.joined(separator: ", "))")
+    }
+    #endif
 
     #if os(tvOS)
     /// Menu from deep in the grid, from the grid after a letter of the alphabet index filtered it, and once Select on
