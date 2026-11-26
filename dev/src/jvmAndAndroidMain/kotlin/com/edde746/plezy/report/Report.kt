@@ -21,6 +21,7 @@ object Report {
     fun name(route: Route): String = when (route) {
         Route.Home -> "home"
         Route.Libraries -> "libraries"
+        Route.Downloads -> "downloads"
         Route.LiveTv -> "liveTv"
         is Route.LiveTvShowSchedule -> "liveTvShowSchedule"
         Route.Explore -> "explore"

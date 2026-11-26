@@ -50,9 +50,6 @@ final class AppModel {
     /// A one-off message for the screen on top, from a sheet that closed itself (Seerr's "Request submitted", an error
     /// when the permission went); the stack shows it (`RouteStack`) and clears it.
     var notice: MenuMessage?
-    /// The section Libraries shows (`LibrariesSections`): over the downloads the sidebar highlights Libraries itself,
-    /// not the library the libraries' section has selected.
-    var librariesSection = LibrarySection.library
     /// Casting: this device as a sender (the picker, the bar, the controls) and as a receiver (the pairing question).
     let cast: CastModel
     /// Opens a route on the navigator: the shell's `openRoute`. Made once, so every card reading it isn't made anew

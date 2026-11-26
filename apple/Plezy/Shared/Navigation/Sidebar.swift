@@ -5,9 +5,9 @@ import PlezyKit
 /// The sidebar (the Mac; iPad before iOS 18): the destinations, then Libraries' libraries (the visible ones, under their
 /// servers' names where the list groups them by server (`railSections`), then a collapsed Hidden libraries group, which
 /// a click on its title opens or closes as one on its chevron does; a library shows Libraries with it selected), and at
-/// its bottom the offline or refused-account line and the running profile (`ProfileHeader`). Online the libraries stand
-/// for Libraries, which has no row of its own (its downloads are Home's Downloads chip and Libraries' view menu);
-/// offline, where Libraries shows the downloads alone, its row shows. The selected row is the one the screen on top
+/// its bottom the offline or refused-account line and the running profile (`ProfileHeader`). The libraries stand for
+/// Libraries, which has no row of its own; Downloads has its row among the destinations where the device keeps them,
+/// offline beside Settings alone. The selected row is the one the screen on top
 /// belongs to (`AppShell.selectionBinding`); a click on it picks it again (its stack back to its root, or out to it
 /// from a screen pushed elsewhere). On the Mac the rows are buttons, the selected one drawn as the list's selection is,
 /// and the list has no selection of its own: the split view takes a change of its sidebar list's selection as a
@@ -155,9 +155,9 @@ struct Sidebar: View {
         #endif
     }
 
-    /// The destinations' rows: Libraries' only offline, where no library stands for it.
+    /// The destinations' rows: Libraries' only where no libraries stand for it (no libraries' store).
     private var rows: [TopLevelDestination] {
-        guard libraries != nil, !app.shell.state.offline else { return destinations }
+        guard libraries != nil else { return destinations }
         return destinations.filter { $0 != .libraries }
     }
 

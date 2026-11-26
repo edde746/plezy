@@ -470,7 +470,7 @@ final class MacInputTests: PlezyUITestCase {
         return cards.firstMatch
     }
 
-    /// The selected library's tabs, as the view menu lists them (Downloads, a section, aside).
+    /// The selected library's tabs, as the view menu lists them.
     private func viewMenuTabs() -> [String] {
         let menu = element("libraries.view")
         if !menu.exists(within: 60) { fail("Libraries shows no view menu") }
@@ -481,7 +481,6 @@ final class MacInputTests: PlezyUITestCase {
         _ = options.firstMatch.exists(within: 10)
         let labels = (0..<options.count).compactMap { try? options.element(boundBy: $0).snapshot() }
             .map { $0.title.isEmpty ? $0.label : $0.title }
-            .filter { $0 != "Downloads" }
         app.typeKey(.escape, modifierFlags: [])
         _ = waitUntil(5) { !options.firstMatch.exists }
         return labels

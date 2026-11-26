@@ -8,7 +8,9 @@ import PlezyKit
 /// The destinations (`TopLevelDestination`) are the system's tabs. Each has a back stack of its own (`NavigationStacks`),
 /// which its tab shows in a `NavigationStack` and keeps while another tab shows:
 ///
-/// - iPhone: the tab bar, which names the destination: its screen shows no navigation bar (`destinationChrome`).
+/// - iPhone: the tab bar, which names the destination: its screen shows no navigation bar (`destinationChrome`). Online
+///   the bar leaves Downloads out (`NavigationTabs.bar`): Home's Downloads chip opens it, its tab in the bar while it
+///   shows.
 /// - iPad: the floating tab bar, which opens into a sidebar listing the destinations, then the libraries of Libraries
 ///   (the visible ones, then Hidden libraries) and at its bottom the running profile (`SidebarBarProfile`). With Always
 ///   Keep Sidebar Open the sidebar shows from the start and stays where it fits beside the screen (`keepsSidebarShown`).
@@ -352,7 +354,7 @@ struct AppShell: View {
 
     private func legacyTabs(shell: ShellUiState, screens: [any Route]) -> some View {
         TabView(selection: selectionBinding(shell, screens: screens)) {
-            ForEach(shell.destinations, id: \.self) { destination in
+            ForEach(tabbedDestinations(shell), id: \.self) { destination in
                 tabScreen(destination, shell: shell, screens: screens)
                     .tabItem {
                         Label(destination.label, systemImage: destination.systemImage)
@@ -362,21 +364,34 @@ struct AppShell: View {
             }
         }
     }
+
+    /// The destinations with a tab: every one, but on iPhone the bar's (`NavigationTabs.bar`: no Downloads online) and
+    /// the shown one where the bar leaves it out (Downloads from Home's chip), selected, for as long as it shows: a tab
+    /// view shows nothing for a selection without a tab, and a tab hidden from the bar (`defaultVisibility`) stayed in
+    /// it once picked.
+    private func tabbedDestinations(_ shell: ShellUiState) -> [TopLevelDestination] {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return shell.destinations }
+        let bar = NavigationTabs.shared.bar(visible: shell.destinations)
+        return bar.contains(shell.selected) ? bar : bar + [shell.selected]
+    }
     #endif
 
     #if !os(macOS)
     /// The destinations as the system's tabs, a `Tab` carrying its accessibility identifier to the bar's button
-    /// (`nav.home`). iPad's sidebar adds the libraries, which the bars leave out.
+    /// (`nav.home`). iPad's sidebar adds the libraries, which the bars leave out. iPhone's bar has the tabs
+    /// `tabbedDestinations` says.
     @available(iOS 18, *)
     private func tabs(shell: ShellUiState, screens: [any Route]) -> some View {
         // In iPad's sidebar the row the screen on top belongs to is the selected tab: its tab shows the shown stack.
         #if os(iOS)
         let host = sidebarShown ? highlightedTab(shell, screens: screens) : nil
+        let tabbed = tabbedDestinations(shell)
         #else
         let host: ShellTab? = nil
+        let tabbed = shell.destinations
         #endif
         return TabView(selection: selectionBinding(shell, screens: screens)) {
-            ForEach(shell.destinations, id: \.self) { destination in
+            ForEach(tabbed, id: \.self) { destination in
                 Tab(value: ShellTab.destination(destination)) {
                     tabScreen(destination, shell: shell, screens: screens, host: host, tab: .destination(destination))
                         #if os(iOS)
@@ -424,9 +439,9 @@ struct AppShell: View {
         // The mini-player over the tab bar while music plays.
         .musicMiniPlayerAccessory(music, cast: app.cast)
         .tint(sidebarShown ? Palette.onSurfaceVariant : Palette.primary)
-        // Made anew when the destinations change (online again, Explore turned on): the bar's buttons for tabs added
-        // to a shown tab view carry no accessibility identifiers.
-        .id(shell.destinations)
+        // Made anew when its tabs change (online again, Explore turned on, Downloads opened on iPhone): the bar's
+        // buttons for tabs added to a shown tab view carry no accessibility identifiers.
+        .id(tabbed)
         #endif
         #if os(tvOS)
         .background(TabBarSelect { repick(shell, screens: screens) })
@@ -496,9 +511,8 @@ struct AppShell: View {
     }
 
     /// The chrome's selection: the shown destination, or in a sidebar the row the screen on top belongs to
-    /// (`highlightedTab`), else the library shown in Libraries (none over its downloads: Libraries' own row, which the
-    /// Mac's sidebar shows only offline). A pick (the selected one too) goes through the shell (`ShellStore.select`); a
-    /// library picks Libraries with it selected. The
+    /// (`highlightedTab`), else the library selected in Libraries while it shows. A pick (the selected one too) goes
+    /// through the shell (`ShellStore.select`); a library picks Libraries with it selected. The
     /// picked tab holds until the shell's state follows (`pickedTab`): handed the old selection meanwhile, Apple TV's tab
     /// bar switched back and forth and its focus fell into the new tab's screen.
     private func selectionBinding(_ shell: ShellUiState, screens: [any Route]) -> Binding<ShellTab> {
@@ -513,7 +527,7 @@ struct AppShell: View {
                 let sidebar = false
                 #endif
                 if sidebar, let highlighted = highlightedTab(shell, screens: screens) { return highlighted }
-                if sidebar, shell.selected == .libraries, app.librariesSection != .downloads,
+                if sidebar, shell.selected == .libraries,
                    let key = libraries?.state.state.selected?.globalKey {
                     return .library(key)
                 }
@@ -558,7 +572,7 @@ struct AppShell: View {
                shown: shell.destinations,
                libraries: libraries?.state.state.libraries ?? [],
                placed: app.stacks.state.libraries,
-               selected: app.librariesSection == .downloads ? nil : libraries?.state.state.selected
+               selected: libraries?.state.state.selected
            ) {
             return .library(library.globalKey)
         }
@@ -793,6 +807,7 @@ extension TopLevelDestination {
         switch self {
         case .home: "house"
         case .libraries: "books.vertical"
+        case .downloads: "arrow.down.circle"
         case .explore: "safari"
         case .search: "magnifyingglass"
         case .settings: "gearshape"

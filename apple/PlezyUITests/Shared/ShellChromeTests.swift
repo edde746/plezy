@@ -212,8 +212,8 @@ final class ShellChromeTests: PlezyUITestCase {
     }
 
     /// The destinations' tabs (the bar's buttons, the Mac's sidebar rows) carry their identifiers and their names
-    /// (VoiceOver reads them) from launch, and again after the shell goes offline (fewer destinations; on the Mac
-    /// Libraries' row, which the libraries stand for online) and comes back online; each picked then shows its screen.
+    /// (VoiceOver reads them) from launch, and again after the shell goes offline (Downloads and Settings alone, iPhone's
+    /// bar showing Downloads then) and comes back online; each picked then shows its screen.
     func testTabsKeepTheirNamesThroughOffline() throws {
         try launch()
         require("home.screen", timeout: 60, "Home")
@@ -222,10 +222,9 @@ final class ShellChromeTests: PlezyUITestCase {
         require("offline.reconnect", timeout: 30, "the offline line")
         let settings = require("nav.settings", timeout: 20, "Settings' tab while offline")
         XCTAssertEqual(name(of: settings), "Settings", "Settings' tab keeps its name while offline")
-        #if os(macOS)
-        let libraries = require("nav.libraries", timeout: 20, "Libraries' row while offline")
-        XCTAssertEqual(name(of: libraries), "Libraries", "Libraries' row reads as Libraries while offline")
-        #endif
+        let downloads = require("nav.downloads", timeout: 20, "Downloads' tab while offline")
+        XCTAssertEqual(name(of: downloads), "Downloads", "Downloads' tab reads as Downloads while offline")
+        XCTAssertFalse(element("nav.libraries").exists, "no Libraries tab while offline")
         changeDevSetting("offline=false")
         if !element("offline.reconnect").waitForNonExistence(timeout: 30) { fail("the shell doesn't come back online") }
         requireTabs("back online")
@@ -236,14 +235,21 @@ final class ShellChromeTests: PlezyUITestCase {
         shot("tabs back online")
     }
 
-    /// Home, Libraries, Search and Settings' tabs, each with its identifier and its name; the Mac's sidebar has no
-    /// Libraries row online, its libraries standing for it.
+    /// Home, Libraries, Downloads, Search and Settings' tabs, each with its identifier and its name; the Mac's sidebar has
+    /// no Libraries row online, its libraries standing for it, and iPhone's bar no Downloads tab online, Home's chip
+    /// opening it.
     private func requireTabs(_ when: String) {
         var tabs = [("nav.home", "Home"), ("nav.search", "Search"), ("nav.settings", "Settings")]
         #if os(macOS)
         XCTAssertFalse(element("nav.libraries").exists, "no Libraries row beside the libraries \(when)")
+        tabs.insert(("nav.downloads", "Downloads"), at: 1)
         #else
         tabs.insert(("nav.libraries", "Libraries"), at: 1)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            tabs.insert(("nav.downloads", "Downloads"), at: 2)
+        } else {
+            XCTAssertFalse(app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch.exists, "no Downloads tab in iPhone's bar \(when)")
+        }
         #endif
         for (id, name) in tabs {
             let tab = require(id, "\(name)'s tab \(when)")
@@ -315,8 +321,8 @@ final class ShellChromeTests: PlezyUITestCase {
         shot("movie over home highlights movies")
     }
 
-    /// Libraries showing its downloads, the sidebar shown (iPad, the Mac): no library's row is highlighted, not even the
-    /// one its libraries' section has selected; iPad highlights Libraries' own row, which the Mac's sidebar doesn't have.
+    /// Downloads shown, the sidebar shown (iPad, the Mac): its own row is highlighted, no library's, not even the one
+    /// Libraries has selected.
     func testDownloadsHighlightNoLibrary() throws {
         #if os(iOS)
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "the iPhone's tab bar has no library rows")
@@ -332,11 +338,7 @@ final class ShellChromeTests: PlezyUITestCase {
         let rows = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'nav.library.'")).allElementsBoundByIndex
         let highlighted = rows.map(\.identifier).filter(selected)
         XCTAssertEqual(highlighted, [], "a library's row is highlighted over the downloads")
-        #if os(macOS)
-        XCTAssertFalse(element("nav.libraries").exists, "no Libraries row beside the libraries")
-        #else
-        XCTAssertTrue(selected("nav.libraries"), "Libraries' row is highlighted over the downloads")
-        #endif
+        XCTAssertTrue(selected("nav.downloads"), "Downloads' row is highlighted over the downloads")
         shot("downloads highlight no library")
     }
 

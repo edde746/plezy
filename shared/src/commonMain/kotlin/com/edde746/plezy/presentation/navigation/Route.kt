@@ -24,8 +24,11 @@ sealed interface Route {
     /** Home: Continue Watching and the servers' hubs. */
     data object Home : Route
 
-    /** Libraries: the servers' libraries and their items, and this device's downloads ([LibrarySection]). */
+    /** Libraries: the servers' libraries and their items. */
     data object Libraries : Route
+
+    /** Downloads: what this device keeps for offline viewing (never on the Apple TV, which keeps no files). */
+    data object Downloads : Route
 
     /** Live TV: the servers' channels and guide, pushed over Home from its Live TV shortcut. */
     data object LiveTv : Route
@@ -234,16 +237,16 @@ data class BackStackLayout(val screens: List<Route>, val sheet: Route?, val over
 
 /**
  * A top-level destination of the navigation bar, rail or sidebar, in display order. Each UI picks its own icon.
- * [NavigationTabs] says which show. Live TV is a screen pushed over Home ([Startup.LIVE_TV]) and the downloads a section
- * of Libraries ([LibrarySection.DOWNLOADS]).
+ * [NavigationTabs] says which show. Live TV is a screen pushed over Home ([Startup.LIVE_TV]).
  */
 enum class TopLevelDestination(
     val route: Route,
-    /** Shown only while online: offline, only Libraries (on its downloads) and Settings show. */
+    /** Shown only while online: offline, only Downloads and Settings show. */
     val onlineOnly: Boolean,
 ) {
     HOME(Route.Home, onlineOnly = true),
-    LIBRARIES(Route.Libraries, onlineOnly = false),
+    LIBRARIES(Route.Libraries, onlineOnly = true),
+    DOWNLOADS(Route.Downloads, onlineOnly = false),
     EXPLORE(Route.Explore, onlineOnly = true),
     SEARCH(Route.Search, onlineOnly = true),
     SETTINGS(Route.Settings, onlineOnly = false),
@@ -254,6 +257,7 @@ enum class TopLevelDestination(
         get() = when (this) {
             HOME -> T.common.home
             LIBRARIES -> T.navigation.libraries
+            DOWNLOADS -> T.navigation.downloads
             EXPLORE -> T.navigation.explore
             SEARCH -> T.common.search
             SETTINGS -> T.common.settings
@@ -311,16 +315,19 @@ enum class TopLevelDestination(
 
         /**
          * The destination [route] belongs to: a destination itself; a server's titles, people, collections, playlists
-         * and music, their editors and the downloads' sync rules, Libraries; Live TV and Home's View all, Home; the
-         * catalog's titles, people, rows and search, Explore; profiles, connections, services and settings pages, Settings.
+         * and music and their editors, Libraries; the downloads' offline titles and collections and their sync rules,
+         * Downloads; Live TV and Home's View all, Home; the catalog's titles, people, rows and search, Explore;
+         * profiles, connections, services and settings pages, Settings.
          * Null for a screen of no destination (sign-in, a required profile pick, the players, Watch Together, a sheet),
          * which leaves the highlight to the screen under it.
          */
         fun owner(route: Route): TopLevelDestination? = when (route) {
             Route.Home, Route.LiveTv, is Route.LiveTvShowSchedule, is Route.HubDetail -> HOME
-            Route.Libraries, Route.SyncRules, is Route.MediaDetail, is Route.Person, is Route.CollectionDetail,
-            is Route.PlaylistDetail, is Route.MusicArtist, is Route.MusicAlbum, is Route.MusicPlaylist,
-            is Route.MetadataEdit, is Route.PlexMatch,
+            Route.Downloads, Route.SyncRules -> DOWNLOADS
+            is Route.MediaDetail -> if (route.offline) DOWNLOADS else LIBRARIES
+            is Route.CollectionDetail -> if (route.offline) DOWNLOADS else LIBRARIES
+            Route.Libraries, is Route.Person, is Route.PlaylistDetail, is Route.MusicArtist, is Route.MusicAlbum,
+            is Route.MusicPlaylist, is Route.MetadataEdit, is Route.PlexMatch,
             -> LIBRARIES
             Route.Explore, is Route.CatalogDetail, is Route.CatalogSearch, is Route.ExploreRow, is Route.SeerrPerson -> EXPLORE
             Route.Search -> SEARCH
@@ -334,32 +341,14 @@ enum class TopLevelDestination(
     }
 }
 
-/**
- * The sections of Libraries: the servers' libraries, and what this device keeps for offline viewing (never on the Apple
- * TV, which keeps no files). Offline, Libraries shows only the downloads.
- */
-enum class LibrarySection {
-    LIBRARY,
-    DOWNLOADS,
-}
-
-/**
- * Where the app opens: [destination] at its root, with [screen] over it (Live TV over Home), Libraries on [section].
- */
-data class Startup(val destination: TopLevelDestination, val screen: Route? = null, val section: LibrarySection? = null) {
-    /** Its name in the startup choice: Live TV's, the downloads', else the destination's. */
+/** Where the app opens: [destination] at its root, with [screen] over it (Live TV over Home). */
+data class Startup(val destination: TopLevelDestination, val screen: Route? = null) {
+    /** Its name in the startup choice: Live TV's, else the destination's. */
     val label: String
-        get() = when {
-            screen == Route.LiveTv -> T.navigation.liveTv
-            section == LibrarySection.DOWNLOADS -> T.navigation.downloads
-            else -> destination.label
-        }
+        get() = if (screen == Route.LiveTv) T.navigation.liveTv else destination.label
 
     companion object {
         /** Live TV, pushed over Home. */
         val LIVE_TV = Startup(TopLevelDestination.HOME, screen = Route.LiveTv)
-
-        /** The downloads, Libraries' section. */
-        val DOWNLOADS = Startup(TopLevelDestination.LIBRARIES, section = LibrarySection.DOWNLOADS)
     }
 }

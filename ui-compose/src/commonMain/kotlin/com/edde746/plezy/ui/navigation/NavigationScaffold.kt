@@ -108,6 +108,7 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.presentation.probeName
 import com.edde746.plezy.ui.adaptive.LocalWindowLayout
@@ -170,6 +171,10 @@ private val ScrimFade = 24.dp
  * `nav.<destination>` (`nav.home`) for the harness, and the screen's place beside them `nav.content`. Overlays never
  * give focus back to the navigation ([LocalOverlayOpeners]).
  *
+ * A phone held either way up (a handheld window under 600 dp across, the keyboard's room counted in) shows the
+ * destinations [NavigationTabs.bar] keeps, in its bar as in its rail: Downloads only offline, Home's shortcut opening
+ * it otherwise. A bar shows those in any window.
+ *
  * The rail and the TV column are drawn over the window's start edge with no background of their own (the TV column has
  * one while open): the frame's background is under them, or a screen's backdrop, which runs under them to the window's
  * edge ([NavigationBackdrop]). Left from the screen's start enters the TV column on the destination it left from, else
@@ -208,7 +213,14 @@ fun NavigationScaffold(
     // The content keeps one call site whatever the layout, so neither hiding the chrome (entering the player) nor a
     // change of layout (a phone turned to landscape, a window resized across a width class) recreates the screens.
     val show = showNavigation && destinations.isNotEmpty()
-    val kind = LocalWindowLayout.current.navigation
+    val layout = LocalWindowLayout.current
+    val kind = layout.navigation
+    val window = LocalWindowSize.current
+    val keyboard = with(LocalDensity.current) { LocalKeyboardHeight.current().toDp() }
+    val phone by remember(window, keyboard, layout.formFactor) {
+        derivedStateOf { layout.formFactor == FormFactor.HANDHELD && minOf(window.value.width, window.value.height + keyboard) < 600.dp }
+    }
+    val items = if (kind == NavigationKind.BAR || phone) NavigationTabs.bar(destinations) else destinations
     val screenPadding = LocalPlezyDimens.current.screenPadding
     val start = when {
         !show -> 0.dp
@@ -289,14 +301,14 @@ fun NavigationScaffold(
             }
             bottomAccessory()
             // The keyboard covers the bar, as it does the screen's foot: the screen keeps the room above the keyboard.
-            if (show && kind == NavigationKind.BAR && LocalKeyboardHeight.current() == 0) BottomBar(destinations, selected, libraryKind, onSelect, barLabels, Modifier)
+            if (show && kind == NavigationKind.BAR && keyboard == 0.dp) BottomBar(items, selected, libraryKind, onSelect, barLabels, Modifier)
         }
         if (side != null) {
             // Focus that sat on the navigation as an overlay opened goes to the screen as it closes.
             CompositionLocalProvider(LocalOverlayOpeners provides false) {
                 when (kind) {
-                    NavigationKind.RAIL -> Rail(destinations, selected, libraryKind, onSelect, railExtra, footer, nav, barLabels)
-                    NavigationKind.TV_SIDE -> TvSideNavigation(destinations, selected, libraryKind, onSelect, railExtra, footer, nav)
+                    NavigationKind.RAIL -> Rail(items, selected, libraryKind, onSelect, railExtra, footer, nav, barLabels)
+                    NavigationKind.TV_SIDE -> TvSideNavigation(items, selected, libraryKind, onSelect, railExtra, footer, nav)
                     NavigationKind.BAR -> Unit
                 }
             }
@@ -839,6 +851,7 @@ private fun TvItem(
 internal fun TopLevelDestination.icon(libraryKind: MediaKind?): ImageVector = when (this) {
     TopLevelDestination.HOME -> PlezyIcons.Home
     TopLevelDestination.LIBRARIES -> libraryKind?.let(::libraryIcon) ?: PlezyIcons.VideoLibrary
+    TopLevelDestination.DOWNLOADS -> PlezyIcons.Download
     TopLevelDestination.EXPLORE -> PlezyIcons.Explore
     TopLevelDestination.SEARCH -> PlezyIcons.Search
     TopLevelDestination.SETTINGS -> PlezyIcons.Settings

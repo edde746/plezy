@@ -108,7 +108,7 @@ final class TvInputTests: PlezyUITestCase {
         )).firstMatch
     }
 
-    /// The selected library's tabs, as the view menu lists them (Downloads, a section, aside).
+    /// The selected library's tabs, as the view menu lists them.
     private func viewMenuTabs() -> [String] {
         if !element("libraries.view").exists(within: 60) { fail("Libraries shows no view menu") }
         // Lets the screen's first focus land before the menu opens.
@@ -116,7 +116,7 @@ final class TvInputTests: PlezyUITestCase {
         LibrarySteps(test: self).openFilterMenu("libraries.view")
         let options = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'libraries.view.option.'"))
         _ = options.firstMatch.exists(within: 10)
-        let labels = (0..<options.count).compactMap { try? options.element(boundBy: $0).snapshot().label }.filter { $0 != "Downloads" }
+        let labels = (0..<options.count).compactMap { try? options.element(boundBy: $0).snapshot().label }
         press(.menu)
         _ = waitUntil(5) { !options.firstMatch.exists }
         return labels

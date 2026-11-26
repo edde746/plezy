@@ -208,7 +208,7 @@ internal fun itemKey(id: String) = "item/$id"
 
 /**
  * Libraries: one header row ([HeaderScaffold]), the screen's only title, over the selected tab. The row starts with the
- * library chip (it picks a library or, where the device keeps downloads, the Downloads section: [onDownloads]), then
+ * library chip (it picks a library), then
  * the tabs; on Browse its filters, sort and grouping. Where they don't fit side by side (phones) the tabs are one
  * dropdown chip naming the shown tab, Browse's filters and sort one Library options chip (filled while filters narrow
  * the grid) on phones, then the grouping's icon chip; the chips turn to their icons before the library's name gives
@@ -219,7 +219,7 @@ internal fun itemKey(id: String) = "item/$id"
  * tab's first row to its chip. Touch places no focus. On phones and tablets the tabs swipe sideways.
  */
 @Composable
-fun LibrariesScreen(app: AppSession, onDownloads: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun LibrariesScreen(app: AppSession, modifier: Modifier = Modifier) {
     val store = remember(app) { app.libraries() } ?: return
     val state by store.state.collectAsState()
     val appearance = LocalAppearance.current
@@ -249,7 +249,7 @@ fun LibrariesScreen(app: AppSession, onDownloads: (() -> Unit)?, modifier: Modif
         tab = state.tab,
         focus = focus,
         onTab = onTab,
-        picker = { icon -> LibraryPicker(state, downloads = false, onLibrary = store::selectLibrary, onDownloads = onDownloads, icon = icon) },
+        picker = { icon -> LibraryPicker(state, onLibrary = store::selectLibrary, icon = icon) },
         options = browseOptions(state, store, chrome, chrome.phone) { sheet = it },
         name = state.selected?.title ?: T.libraries.title,
         onShuffle = if (state.canShuffle) store::shuffle else null,

@@ -5,19 +5,26 @@ import com.edde746.plezy.settings.StartupSection
 /** Which top-level destinations show, and where the app starts. */
 object NavigationTabs {
     /**
-     * The destinations the chrome shows, in display order: offline only Libraries (its downloads) and Settings, and on
-     * the Apple TV, which keeps no files, only Settings; Explore only while a catalog source is connected and the
+     * The destinations the chrome shows, in display order: Downloads only on a device that keeps them ([downloads]; never
+     * the Apple TV), and offline only Downloads and Settings; Explore only while a catalog source is connected and the
      * Explore tab is on ([hasExplore]).
      */
-    fun visible(offline: Boolean, hasExplore: Boolean, appleTv: Boolean): List<TopLevelDestination> =
+    fun visible(offline: Boolean, hasExplore: Boolean, downloads: Boolean): List<TopLevelDestination> =
         TopLevelDestination.entries.filter {
             when {
                 offline && it.onlineOnly -> false
-                offline && appleTv && it == TopLevelDestination.LIBRARIES -> false
+                it == TopLevelDestination.DOWNLOADS -> downloads
                 it == TopLevelDestination.EXPLORE -> hasExplore
                 else -> true
             }
         }
+
+    /**
+     * The destinations a phone's bottom bar shows of [visible]: Downloads only while Libraries doesn't show (offline),
+     * Home's Downloads shortcut opening it otherwise. The sidebars, rails and TV columns show every visible one.
+     */
+    fun bar(visible: List<TopLevelDestination>): List<TopLevelDestination> =
+        if (TopLevelDestination.LIBRARIES in visible) visible - TopLevelDestination.DOWNLOADS else visible
 
     /** The destination to start on among [visible]: the [preferred] one while it shows, otherwise the first. */
     fun startup(visible: List<TopLevelDestination>, preferred: TopLevelDestination?): TopLevelDestination =

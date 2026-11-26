@@ -2,9 +2,9 @@
 import SwiftUI
 import PlezyKit
 
-/// Downloads (iPhone, iPad, the Mac; Apple TV keeps no files and shows no Downloads), Libraries' Downloads view, over
-/// the session's `DownloadsStore`: the screen's header row (`screenHeader`) of filters, Libraries' view menu
-/// (`LibraryViewMenu`, while online), what shows (Manage, TV Shows, Movies, Music) and on a content tab its grouping,
+/// Downloads (iPhone, iPad, the Mac; Apple TV keeps no files and shows no Downloads), its own destination, over the
+/// session's `DownloadsStore`: the screen's header row (`screenHeader`) of its title, what shows (Manage, TV Shows,
+/// Movies, Music) and on a content tab its grouping,
 /// sort (the field picked again turns its direction around; Clear) and Filters (a form: `DownloadsFiltersSheet`); its
 /// actions Retry failed (while a download failed) and Sync rules, titled. Then the selected tab: Manage's tree, a list
 /// whose rows' actions are in their ⋯, their context menu and on iOS their swipes (`DownloadTreeView`), or the
@@ -12,26 +12,27 @@ import PlezyKit
 /// press or right click for their menu), albums with their tracks, or tracks; the empty state, with Reset filters while
 /// filters hide everything. A movie, show or season opens its detail from the downloads, a collection folder its offline
 /// collection screen; an episode plays.
-/// Feedback shows as a toast. A controller's shoulder buttons step what shows.
+/// Feedback shows as a toast. A controller's shoulder buttons step what shows. The Downloads tab picked again while it
+/// shows brings the shown list back to its top (`scrollToTopRequests`).
 ///
-/// Accessibility identifiers: `downloads.screen`, `downloads.tab` (what shows, its options `downloads.tab.option.<i>`),
+/// Accessibility identifiers: `downloads.screen`, `downloads.title`, `downloads.tab` (what shows, its options
+/// `downloads.tab.option.<i>`),
 /// `downloads.grouping`, `downloads.sort`, `downloads.filters`, `downloads.retryFailed`, `downloads.syncRules`,
 /// `downloads.items`, the cards `card.<global key>`, `downloads.album.<key>`, `downloads.track.<key>`,
 /// `downloads.empty`, `downloads.message`.
 struct DownloadsScreen: View {
     let app: AppModel
-    /// Libraries' views, Downloads among them; nil offline, where Downloads is all there is.
-    let views: LibraryViews?
 
     @State private var store: DownloadsStore?
     @State private var observer: StoreObserver<DownloadsUiState>?
     @State private var filtering = false
     /// The open tab's options' state, for its filters in the header row.
     @State private var options: StoreObserver<DownloadsOptionsState>?
+    /// The times the Downloads tab was picked again while it showed (`PlezyNavigator.reselected`).
+    @State private var reselections = 0
 
-    init(app: AppModel, views: LibraryViews?) {
+    init(app: AppModel) {
         self.app = app
-        self.views = views
         let store = app.session.downloadsStore()
         _store = State(initialValue: store)
         _observer = State(initialValue: store.map { StoreObserver($0.state) })
@@ -84,13 +85,21 @@ struct DownloadsScreen: View {
                 await made.observe()
             }
             .task { await observer.observe() }
+            .environment(\.scrollToTopRequests, reselections)
+            .task {
+                for await destination in app.navigator.reselected where destination == .downloads { reselections += 1 }
+            }
         }
     }
 
-    /// The view menu, what shows, and a content tab's grouping, sort and filters.
+    /// The screen's title, what shows, and a content tab's grouping, sort and filters.
     @ViewBuilder
     private func filters(store: DownloadsStore, state: DownloadsUiState) -> some View {
-        if let views { LibraryViewMenu(views: views) }
+        Text(state.title)
+            .font(.title3.weight(.semibold))
+            .lineLimit(1)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("downloads.title")
         let tabs = DownloadsTab.allCases
         FilterMenu(
             chip: FilterChip(name: state.title, text: state.selected.label),

@@ -81,8 +81,8 @@ import com.edde746.plezy.presentation.browse.LoadState
 import com.edde746.plezy.presentation.browse.MediaCardUi
 import com.edde746.plezy.presentation.home.HomeUiState
 import com.edde746.plezy.presentation.home.LibraryShortcutUi
-import com.edde746.plezy.presentation.navigation.LibrarySection
 import com.edde746.plezy.presentation.navigation.Route
+import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.strings.T
 import com.edde746.plezy.ui.adaptive.LocalWindowLayout
 import com.edde746.plezy.ui.adaptive.NavigationKind
@@ -511,7 +511,7 @@ private fun HomeShortcuts(
                 PlezyChip(
                     T.navigation.downloads,
                     false,
-                    { app.shell.openLibrary(LibrarySection.DOWNLOADS) },
+                    { app.shell.openAtRoot(TopLevelDestination.DOWNLOADS) },
                     Modifier.rememberFocus(memory, shortcutKey("downloads")).layoutProbe("home.downloads"),
                     leadingIcon = PlezyIcons.Download,
                 )

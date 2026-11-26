@@ -163,7 +163,8 @@ final class LibraryOptionsTests: PlezyUITestCase {
             }
             XCTAssertTrue(waitUntil(30) { element("libraries.grid").exists }, "\(library): the first type shows the grid again")
             let labels = viewLabels()
-            for (index, label) in labels.enumerated() where label != "Downloads" {
+            XCTAssertFalse(labels.contains("Downloads"), "\(library): the view menu lists no Downloads, a destination of its own")
+            for (index, label) in labels.enumerated() {
                 pickOption("libraries.view", index)
                 XCTAssertTrue(waitUntil(10) { viewShown(label) }, "\(library): the view menu shows \(label)")
                 requireHeader("\(library) on \(label)", type: label == "Browse")

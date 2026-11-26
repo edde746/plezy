@@ -57,10 +57,11 @@ enum class ShellBack {
  * thread only; [close] when the app goes.
  *
  * - Start: [NavigationTabs.startup] with the [preferred] start (the startup section setting); offline the first
- *   destination that shows (Libraries, on its downloads). A preferred Explore that doesn't show yet, or Live TV before a
- *   server has it, starts on the first destination and opens once it shows, unless the user picked a destination first.
+ *   destination that shows (Downloads, where the device keeps them). A preferred Explore that doesn't show yet, or Live
+ *   TV before a server has it, starts on the first destination and opens once it shows, unless the user picked a
+ *   destination first.
  * - Going offline remembers the destination shown and, when it no longer shows, switches to the first that shows
- *   (Libraries). Coming back online returns to the remembered one when the switch was automatic; picking a destination
+ *   (Downloads). Coming back online returns to the remembered one when the switch was automatic; picking a destination
  *   while offline cancels that. A destination that stops showing (Explore gone) gives way to the first; Live TV gone
  *   leaves Home's stack.
  * - [select] ignores a destination that doesn't show.
@@ -72,6 +73,8 @@ class ShellStore(
     private val availability: StateFlow<ShellAvailability>,
     preferred: Startup?,
     private val appleTv: Boolean,
+    /** The device keeps downloads: Downloads shows ([NavigationTabs.visible]). */
+    private val downloads: Boolean,
     parentScope: CoroutineScope,
 ) {
     private val scope = parentScope.childScope()
@@ -151,12 +154,16 @@ class ShellStore(
         open(Startup.LIVE_TV)
     }
 
-    /** Opens Libraries on [section] (Home's Downloads shortcut, a remote's Downloads tab); ignored while it doesn't show. */
-    fun openLibrary(section: LibrarySection) {
-        if (TopLevelDestination.LIBRARIES !in visible) return
+    /**
+     * Opens [destination] at its root (Home's Downloads shortcut, a library opened from an item); ignored while it
+     * doesn't show.
+     */
+    fun openAtRoot(destination: TopLevelDestination) {
+        if (destination !in visible) return
         pending = null
         if (offline) autoSwitched = false
-        open(Startup(TopLevelDestination.LIBRARIES, section = section))
+        disarmExit()
+        navigator.select(destination)
     }
 
     /** Back, from the chrome's or the system's back ([ShellBack] says what it did). */
@@ -231,11 +238,7 @@ class ShellStore(
 
     private fun open(start: Startup) {
         disarmExit()
-        when {
-            start.section != null -> navigator.openLibrary(start.section)
-            start.screen != null -> navigator.select(start.destination, start.screen)
-            else -> show(start.destination)
-        }
+        if (start.screen != null) navigator.select(start.destination, start.screen) else show(start.destination)
     }
 
     private fun show(destination: TopLevelDestination) {
@@ -249,7 +252,7 @@ class ShellStore(
     }
 
     private fun visibleFor(availability: ShellAvailability) =
-        NavigationTabs.visible(availability.offline, availability.hasExplore, appleTv)
+        NavigationTabs.visible(availability.offline, availability.hasExplore, downloads)
 
     private fun build() = ShellUiState(
         destinations = visible,

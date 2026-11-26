@@ -128,31 +128,25 @@ internal fun LibrarySheets(sheet: LibrarySheet, store: LibrariesScreenStore, onD
 }
 
 /**
- * The library chip, first in the filter row: the selected library's name (or Downloads, [downloads]) with its kind's
- * icon where [icon]. It opens the visible libraries under their servers' headers as the setting says, the selected one
- * checked, then Downloads where the device keeps them ([onDownloads]), as a menu ([SectionedItemMenu]). Harness names:
- * the chip `libraries.picker`, its entries `libraries.pick.<title>` and `libraries.pick.downloads`.
+ * The library chip, first in the filter row: the selected library's name with its kind's icon where [icon]. It opens the
+ * visible libraries under their servers' headers as the setting says, the selected one checked, as a menu
+ * ([SectionedItemMenu]). Harness names: the chip `libraries.picker`, its entries `libraries.pick.<title>`.
  */
 @Composable
 internal fun LibraryPicker(
     state: LibrariesUiState,
-    downloads: Boolean,
     onLibrary: (String) -> Unit,
-    onDownloads: (() -> Unit)?,
     icon: Boolean = true,
 ) {
-    val selected = state.selected.takeIf { !downloads }
-    if (state.entries.isEmpty() && onDownloads == null) return
+    val selected = state.selected
+    if (state.entries.isEmpty()) return
     var open by remember { mutableStateOf(false) }
     Box {
         PlezyChip(
-            when {
-                downloads -> T.navigation.downloads
-                else -> selected?.title ?: T.libraries.title
-            },
+            selected?.title ?: T.libraries.title,
             selected = false,
             onClick = { open = true },
-            leadingIcon = (if (downloads) PlezyIcons.Download else selected?.let { libraryIcon(it.kind) }).takeIf { icon },
+            leadingIcon = selected?.let { libraryIcon(it.kind) }.takeIf { icon },
             dropdown = true,
             contentLabel = selected != null,
             modifier = Modifier.layoutProbe("libraries.picker"),
@@ -181,9 +175,6 @@ internal fun LibraryPicker(
                 }
             }
             flush()
-            if (onDownloads != null) {
-                add(ItemMenuSection(null, listOf(ItemMenuEntry(T.navigation.downloads, probe = "downloads", selected = downloads, icon = PlezyIcons.Download, onClick = onDownloads))))
-            }
         }
         SectionedItemMenu(open, onDismiss = { open = false }, sections = sections, probe = "libraries.pick", title = T.libraries.selectLibrary)
     }

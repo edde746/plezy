@@ -6,8 +6,8 @@ import PlezyKit
 /// Compose's order: Live TV (pushed over Home) where a server has it, a chip per visible library in the libraries' order
 /// where no sidebar lists them (iPhone, an iPad window of compact width, Apple TV; `libraries`: its kind's symbol, as
 /// the sidebar has it, its title and, beside a namesake on another server, its server's name; it opens the library in
-/// Libraries, `onOpenLibrary`), Watch Together (with the room's participant count), Downloads (Libraries' Downloads
-/// section) where the device keeps them, Server Tasks where they show, Refresh on Apple TV (iPhone and iPad pull to
+/// Libraries, `onOpenLibrary`), Watch Together (with the room's participant count), Downloads (the Downloads
+/// destination) where the device keeps them, Server Tasks where they show, Refresh on Apple TV (iPhone and iPad pull to
 /// refresh, and ⌘R refreshes wherever Home shows, `HomeView`), and the profile menu (`HomeUserMenu`) on iPhone and Apple
 /// TV (iPad and the Mac have it at the sidebar's foot). One line of chips (`ShortcutChip`) from the shelves' leading
 /// edge, scrolling sideways; on Apple TV a focus section that lands on its first chip (`firstKey`: Live TV, else the
@@ -75,7 +75,7 @@ struct HomeShortcuts: View {
                 .shortcutFocus(focus, Self.watchTogetherKey)
                 if app.session.downloads != nil {
                     ShortcutChip(title: T.shared.navigation.downloads, systemImage: "arrow.down.circle", id: "home.downloads") {
-                        app.session.shell.openLibrary(section: .downloads)
+                        app.session.shell.openAtRoot(destination: .downloads)
                     }
                 }
                 ServerTasksButton(app: app)

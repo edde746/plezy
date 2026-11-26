@@ -175,7 +175,6 @@ fun DownloadsScreen(
     onOpen: (MediaItem) -> Unit,
     modifier: Modifier = Modifier,
     onPlayTracks: (tracks: List<MediaItem>, index: Int, album: Boolean) -> Unit = { _, _, _ -> },
-    leading: @Composable () -> Unit = {},
 ) {
     val state by store.state.collectAsState()
     val actions = remember(store) {
@@ -200,14 +199,14 @@ fun DownloadsScreen(
             messageShown = store::messageShown,
         )
     }
-    DownloadsContentView(state, store::card, store::artworkOf, { tab -> store.options[tab] }, actions, modifier, leading)
+    DownloadsContentView(state, store::card, store::artworkOf, { tab -> store.options[tab] }, actions, modifier)
 }
 
 /**
- * The Downloads section: one header row as Libraries' ([HeaderScaffold]; [leading]: the library chip that switches
- * back to a library), the tabs (Manage, TV Shows, Movies, Music) as chips and, on a titles tab, its sort and filters and
- * its grouping (an icon alone) as dropdown chips where they all fit; else (always on phones) the tabs and the options
- * are one dropdown chip each, fitted to the row. The row ends in its actions (Retry failed while a download failed,
+ * The Downloads page: one header row as Libraries' ([HeaderScaffold]): the page's title, the tabs (Manage, TV Shows,
+ * Movies, Music) as chips and, on a titles tab, its sort and filters and its grouping (an icon alone) as dropdown chips
+ * where they all fit; else (always on phones) the title, then the tabs and the options as one dropdown chip each,
+ * fitted to the row. The row ends in its actions (Retry failed while a download failed,
  * Active sync rules). Then Android's background-download banner, then the selected tab: Manage's tree, or the
  * downloaded titles as the grid or list of the user's view setting, their libraries, collection folders, albums or
  * tracks, the empty state.
@@ -220,7 +219,6 @@ fun DownloadsContentView(
     optionsOf: (DownloadsTab) -> DownloadsTabOptions?,
     actions: DownloadsScreenActions,
     modifier: Modifier = Modifier,
-    leading: @Composable () -> Unit = {},
 ) {
     var optionsPage by remember { mutableStateOf<OptionsPage?>(null) }
     val tabState = state.tab
@@ -253,7 +251,7 @@ fun DownloadsContentView(
     Box(modifier.fillMaxSize()) {
         HeaderScaffold(
             filters = { padding, measuring ->
-                TabChips(state.selected, actions.select, memory, Modifier.padding(padding), measuring, leading) {
+                TabChips(state.selected, actions.select, memory, Modifier.padding(padding), measuring, { Title(state.title) }) {
                     if (tabState != null) {
                         val tabOptions = optionsOf(tabState.tab)
                         val choices = OptionsChoices(tabOptions?.sortOptions.orEmpty(), tabOptions?.filterDefinitions.orEmpty(), state.libraryFilterValues)
@@ -263,7 +261,7 @@ fun DownloadsContentView(
             },
             fitted = { padding ->
                 FittingRow(Modifier.padding(padding).focusGroup()) {
-                    leading()
+                    Title(state.title)
                     MenuChip(
                         FilterChip(state.title, state.selected.label),
                         choices = DownloadsTab.entries.map { MenuChoice(it.label, it == state.selected) },
@@ -323,6 +321,12 @@ private fun BarActions(state: DownloadsUiState, actions: DownloadsScreenActions,
 }
 
 private fun tabFocusKey(tab: DownloadsTab) = "tab/${tab.name}"
+
+/** The page's title, first in its header row. */
+@Composable
+private fun Title(title: String) {
+    Text(title, Modifier.layoutProbe("downloads.title"), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+}
 
 /**
  * The tabs as chips after [leading], [trailing] after them; [measuring]: composed to be measured only, so the chips
