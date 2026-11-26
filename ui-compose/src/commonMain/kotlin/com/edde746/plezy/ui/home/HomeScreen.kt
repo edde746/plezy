@@ -460,13 +460,11 @@ private class BackdropArtwork(private val background: Color, private val rtl: Bo
 }
 
 /**
- * Home's shortcuts ([ShortcutRow]): Refresh on TV (a pull refreshes on touch, Ctrl+R everywhere), Live TV while a
- * server has it (pushed over Home), Watch Together (its participant count), the downloads (Libraries' section) where
- * the device keeps them, a chip per visible library ([libraryChips]), Server Tasks (off phones and tablets) and, on a
- * phone's bar layout, the user menu. Each chip is part of Home's focus [memory], so coming back from the screen one
- * opened finds focus on it. The row shows whole, once [settled] ([HomeUiState.shortcutsSettled], at most
- * [SHORTCUTS_WAIT_MS] after Home opens), its height kept until then: chips arriving one by one (Live TV before the
- * others, the libraries) would push the row's chips along.
+ * Home's shortcuts ([ShortcutRow]) in [homeShortcutOrder]'s order. Each chip is part of Home's focus [memory], so coming
+ * back from the screen one opened finds focus on it; Up or Down into the row lands on Live TV, else the first library,
+ * else Watch Together. The row shows whole, once [settled] ([HomeUiState.shortcutsSettled], at most [SHORTCUTS_WAIT_MS]
+ * after Home opens), its height kept until then: chips arriving one by one (Live TV before the others, the libraries)
+ * would push the row's chips along.
  * Harness names: `home.refresh`, `home.liveTv`, `home.watchTogether`, `home.downloads`, `home.serverTasks`,
  * `home.userMenu`, `home.library.<index>`.
  */
@@ -492,24 +490,24 @@ private fun HomeShortcuts(
         return
     }
     val first = when {
-        layout.formFactor == FormFactor.TV -> "refresh"
         shell.liveTv -> "liveTv"
+        libraries.isNotEmpty() -> "library:${libraries.first().globalKey}"
         else -> "watchTogether"
     }
+    val order = homeShortcutOrder(
+        tv = layout.formFactor == FormFactor.TV,
+        liveTv = shell.liveTv,
+        downloads = app.downloads != null,
+        bar = layout.navigation == NavigationKind.BAR,
+    )
     ShortcutRow(memory, shortcutKey(first), below, modifier) {
-        if (layout.formFactor == FormFactor.TV) {
-            item(key = "refresh") {
-                PlezyChip(T.common.refresh, false, actions.refresh, Modifier.rememberFocus(memory, shortcutKey("refresh")).layoutProbe("home.refresh"), leadingIcon = PlezyIcons.Refresh)
-            }
-        }
-        if (shell.liveTv) {
-            item(key = "liveTv") {
+        for (shortcut in order) when (shortcut) {
+            HomeShortcut.LIVE_TV -> item(key = "liveTv") {
                 PlezyChip(T.navigation.liveTv, false, app.shell::openLiveTv, Modifier.rememberFocus(memory, shortcutKey("liveTv")).layoutProbe("home.liveTv"), leadingIcon = PlezyIcons.LiveTv)
             }
-        }
-        item(key = "watchTogether") { WatchTogetherShortcut(app, Modifier.rememberFocus(memory, shortcutKey("watchTogether"))) }
-        if (app.downloads != null) {
-            item(key = "downloads") {
+            HomeShortcut.LIBRARIES -> libraryChips(libraries, memory, actions.openLibrary)
+            HomeShortcut.WATCH_TOGETHER -> item(key = "watchTogether") { WatchTogetherShortcut(app, Modifier.rememberFocus(memory, shortcutKey("watchTogether"))) }
+            HomeShortcut.DOWNLOADS -> item(key = "downloads") {
                 PlezyChip(
                     T.navigation.downloads,
                     false,
@@ -518,12 +516,32 @@ private fun HomeShortcuts(
                     leadingIcon = PlezyIcons.Download,
                 )
             }
+            HomeShortcut.SERVER_TASKS -> item(key = "serverTasks") { ServerTasksAction(app, Modifier.rememberFocus(memory, shortcutKey("serverTasks"))) }
+            HomeShortcut.REFRESH -> item(key = "refresh") {
+                PlezyChip(T.common.refresh, false, actions.refresh, Modifier.rememberFocus(memory, shortcutKey("refresh")).layoutProbe("home.refresh"), leadingIcon = PlezyIcons.Refresh)
+            }
+            HomeShortcut.USER_MENU -> item(key = "userMenu") { UserMenuAction(app, Modifier.rememberFocus(memory, shortcutKey("userMenu"))) }
         }
-        libraryChips(libraries, memory, actions.openLibrary)
-        item(key = "serverTasks") { ServerTasksAction(app, Modifier.rememberFocus(memory, shortcutKey("serverTasks"))) }
-        // The bar has no profile button: the user menu ends the line.
-        if (layout.navigation == NavigationKind.BAR) item(key = "userMenu") { UserMenuAction(app, Modifier.rememberFocus(memory, shortcutKey("userMenu"))) }
     }
+}
+
+/** A place in Home's shortcut row; [LIBRARIES] stands for a chip per visible library. */
+internal enum class HomeShortcut { LIVE_TV, LIBRARIES, WATCH_TOGETHER, DOWNLOADS, SERVER_TASKS, REFRESH, USER_MENU }
+
+/**
+ * Home's shortcut row, in order: Live TV while a server has it (pushed over Home), the libraries, Watch Together (its
+ * participant count), the downloads (Libraries' section) where the device keeps them ([downloads]), Server Tasks (which
+ * shows off phones and tablets), Refresh on [tv] (a pull refreshes on touch, Ctrl+R everywhere) and, on a phone's [bar]
+ * layout, which has no profile button, the user menu.
+ */
+internal fun homeShortcutOrder(tv: Boolean, liveTv: Boolean, downloads: Boolean, bar: Boolean): List<HomeShortcut> = buildList {
+    if (liveTv) add(HomeShortcut.LIVE_TV)
+    add(HomeShortcut.LIBRARIES)
+    add(HomeShortcut.WATCH_TOGETHER)
+    if (downloads) add(HomeShortcut.DOWNLOADS)
+    add(HomeShortcut.SERVER_TASKS)
+    if (tv) add(HomeShortcut.REFRESH)
+    if (bar) add(HomeShortcut.USER_MENU)
 }
 
 /**

@@ -161,28 +161,29 @@ class HomeFocusTest {
         key(Key.DirectionUp)
         onNodeWithText(LIVE_TV).assertIsFocused()
         key(Key.DirectionRight)
-        onNodeWithText(DOWNLOADS).assertIsFocused()
+        onNodeWithText("Movies · Server A").assertIsFocused()
         key(Key.DirectionDown)
         onNode(card("Alpha")).assertIsFocused()
     }
 
     /**
-     * The libraries follow the shortcuts in the state's order, a namesake's server named after its title, and the user
-     * menu still ends the row; Right from the last shortcut reaches the first library, and a click opens one.
+     * The libraries follow Live TV in the state's order, a namesake's server named after its title, then Home's other
+     * shortcuts, and the user menu still ends the row; a click on a library opens it.
      */
     @Test
-    fun theLibrariesFollowTheShortcutsAndOpenOnClick() = runComposeUiTest {
+    fun theLibrariesFollowLiveTvAndOpenOnClick() = runComposeUiTest {
         home()
         onNode(card("Alpha")).assertIsFocused()
         key(Key.DirectionUp)
-        key(Key.DirectionRight)
-        onNodeWithText(DOWNLOADS).assertIsFocused()
+        onNodeWithText(LIVE_TV).assertIsFocused()
         key(Key.DirectionRight)
         onNodeWithText("Movies · Server A").assertIsFocused()
         key(Key.DirectionRight)
         onNodeWithText("Shows").assertIsFocused()
         key(Key.DirectionRight)
         onNodeWithText("Movies · Server B").assertIsFocused()
+        key(Key.DirectionRight)
+        onNodeWithText(DOWNLOADS).assertIsFocused()
         key(Key.DirectionRight)
         onNodeWithText(USER_MENU).assertIsFocused()
         onNodeWithText("Movies · Server B").performClick()
@@ -437,8 +438,8 @@ class HomeFocusTest {
                 ) { memory, below, modifier ->
                     ShortcutRow(memory, shortcutKey("liveTv"), below, modifier) {
                         item { PlezyChip(LIVE_TV, false, {}, Modifier.rememberFocus(memory, shortcutKey("liveTv"))) }
-                        item { PlezyChip(DOWNLOADS, false, {}, Modifier.rememberFocus(memory, shortcutKey("downloads"))) }
                         libraryChips(LIBRARIES, memory) { opened += it }
+                        item { PlezyChip(DOWNLOADS, false, {}, Modifier.rememberFocus(memory, shortcutKey("downloads"))) }
                         item { PlezyChip(USER_MENU, false, {}, Modifier.rememberFocus(memory, shortcutKey("userMenu"))) }
                     }
                 }

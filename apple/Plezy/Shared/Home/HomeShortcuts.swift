@@ -3,15 +3,16 @@ import PlezyKit
 
 /// Home's shortcuts on every Apple platform: under Continue Watching (at the top without
 /// it) and above the hubs, in every state of Home (loading, failed, empty), so Home's actions are always reachable. In
-/// Compose's order: Refresh on Apple TV (iPhone and iPad pull to refresh, and ⌘R refreshes wherever Home shows,
-/// `HomeView`), Live TV (pushed over Home) where a server has it, Watch Together (with the room's participant count),
-/// Downloads (Libraries' Downloads section) where the device keeps them, Server Tasks where they show, a chip per
-/// visible library in the libraries' order where no sidebar lists them (iPhone, an iPad window of compact width, Apple
-/// TV; `libraries`: its kind's symbol, as the sidebar has it, its title and, beside a namesake on another server, its
-/// server's name; it opens the library in Libraries, `onOpenLibrary`), and the profile menu (`HomeUserMenu`) on iPhone
-/// and Apple TV (iPad and the Mac have it at the sidebar's foot). One line of chips (`ShortcutChip`) from the shelves'
-/// leading edge, scrolling sideways; on Apple TV a focus section that lands on its first chip, so Down from Continue
-/// Watching and Up from the shelf under it reach it. The row shows whole, once `settled` (`HomeUiState.shortcutsSettled`,
+/// Compose's order: Live TV (pushed over Home) where a server has it, a chip per visible library in the libraries' order
+/// where no sidebar lists them (iPhone, an iPad window of compact width, Apple TV; `libraries`: its kind's symbol, as
+/// the sidebar has it, its title and, beside a namesake on another server, its server's name; it opens the library in
+/// Libraries, `onOpenLibrary`), Watch Together (with the room's participant count), Downloads (Libraries' Downloads
+/// section) where the device keeps them, Server Tasks where they show, Refresh on Apple TV (iPhone and iPad pull to
+/// refresh, and ⌘R refreshes wherever Home shows, `HomeView`), and the profile menu (`HomeUserMenu`) on iPhone and Apple
+/// TV (iPad and the Mac have it at the sidebar's foot). One line of chips (`ShortcutChip`) from the shelves' leading
+/// edge, scrolling sideways; on Apple TV a focus section that lands on its first chip (`firstKey`: Live TV, else the
+/// first library, else Watch Together), so Down from Continue Watching and Up from the shelf under it reach it. The row
+/// shows whole, once `settled` (`HomeUiState.shortcutsSettled`,
 /// at most `wait` after Home opens), its place kept meanwhile and nothing in it shown, focused or read: chips arriving
 /// one by one (Live TV before the others, the libraries) would push the row's chips along. Accessibility identifiers
 /// `home.shortcuts` (the row), each chip's `home.<action>` and the libraries' `home.library.<i>`.
@@ -49,14 +50,20 @@ struct HomeShortcuts: View {
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: formFactor == .tv ? 16 : 8) {
-                #if os(tvOS)
-                ShortcutChip(title: T.shared.common.refresh, systemImage: "arrow.clockwise", id: "home.refresh", action: onRefresh)
-                    .focused(focus, equals: Self.firstKey)
-                #endif
                 if app.shell.state.liveTv {
                     ShortcutChip(title: T.shared.navigation.liveTv, systemImage: "tv", id: "home.liveTv") {
                         app.session.shell.openLiveTv()
                     }
+                    .shortcutFocus(focus, Self.liveTvKey)
+                }
+                ForEach(Array(shownLibraries.enumerated()), id: \.element.globalKey) { index, library in
+                    ShortcutChip(
+                        title: library.serverName.map { "\(library.title) · \($0)" } ?? library.title,
+                        systemImage: library.kind.librarySymbol, id: "home.library.\(index)"
+                    ) {
+                        onOpenLibrary(library.globalKey)
+                    }
+                    .shortcutFocus(focus, Self.libraryKey(library.globalKey))
                 }
                 let room = app.watchToolbar.state
                 ShortcutChip(
@@ -65,21 +72,15 @@ struct HomeShortcuts: View {
                 ) {
                     app.navigator.navigate(route: RouteWatchTogether.shared)
                 }
+                .shortcutFocus(focus, Self.watchTogetherKey)
                 if app.session.downloads != nil {
                     ShortcutChip(title: T.shared.navigation.downloads, systemImage: "arrow.down.circle", id: "home.downloads") {
                         app.session.shell.openLibrary(section: .downloads)
                     }
                 }
                 ServerTasksButton(app: app)
-                ForEach(Array((sidebarListsLibraries ? [] : libraries).enumerated()), id: \.element.globalKey) { index, library in
-                    ShortcutChip(
-                        title: library.serverName.map { "\(library.title) · \($0)" } ?? library.title,
-                        systemImage: library.kind.librarySymbol, id: "home.library.\(index)"
-                    ) {
-                        onOpenLibrary(library.globalKey)
-                    }
-                }
                 #if os(tvOS)
+                ShortcutChip(title: T.shared.common.refresh, systemImage: "arrow.clockwise", id: "home.refresh", action: onRefresh)
                 HomeUserMenu(app: app)
                 #else
                 if formFactor == .compact { HomeUserMenu(app: app) }
@@ -99,7 +100,7 @@ struct HomeShortcuts: View {
         .accessibilityHidden(!shown)
         .shelfFocusSection()
         #if os(tvOS)
-        .defaultFocus(focus, Self.firstKey, priority: .userInitiated)
+        .defaultFocus(focus, firstKey, priority: .userInitiated)
         #endif
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home.shortcuts")
@@ -123,8 +124,19 @@ struct HomeShortcuts: View {
         #endif
     }
 
-    /// The first chip's key in Home's focus (Apple TV's Refresh).
-    static let firstKey = "shortcut:refresh"
+    /// The libraries the row has a chip for: none where the sidebar lists them.
+    private var shownLibraries: [LibraryShortcutUi] { sidebarListsLibraries ? [] : libraries }
+
+    /// The first chip's key in Home's focus: Live TV, else the first library, else Watch Together.
+    private var firstKey: String {
+        if app.shell.state.liveTv { return Self.liveTvKey }
+        if let library = shownLibraries.first { return Self.libraryKey(library.globalKey) }
+        return Self.watchTogetherKey
+    }
+
+    private static let liveTvKey = "shortcut:liveTv"
+    private static let watchTogetherKey = "shortcut:watchTogether"
+    private static func libraryKey(_ globalKey: String) -> String { "shortcut:library:\(globalKey)" }
 
     /// The longest the row waits to show whole: a slow server's answer doesn't keep it empty.
     private static let wait = Duration.seconds(3)
@@ -190,6 +202,18 @@ private struct ShortcutChip: View {
             .modifier(ChipStyle())
             .accessibilityLabel(title)
             .accessibilityIdentifier(id)
+    }
+}
+
+private extension View {
+    /// On Apple TV, the chip's `key` in Home's focus, which the row's first focus (`HomeShortcuts.firstKey`) names.
+    @ViewBuilder
+    func shortcutFocus(_ focus: FocusState<String?>.Binding, _ key: String) -> some View {
+        #if os(tvOS)
+        focused(focus, equals: key)
+        #else
+        self
+        #endif
     }
 }
 
