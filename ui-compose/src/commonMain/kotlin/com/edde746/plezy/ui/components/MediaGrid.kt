@@ -103,6 +103,7 @@ fun MediaGrid(
     val motion = if (layerMotion && !list) remember(state) { GridMotion(state) } else null
     val reach = if (motion != null) gridMotionReach() else 0
     val reachDp = with(LocalDensity.current) { reach.toDp() }
+    val gutter = with(LocalDensity.current) { dimens.gutter.toPx() }
     val direction = LocalLayoutDirection.current
     CompositionLocalProvider(LocalBringIntoViewSpec provides if (motion != null) StaysPut else platformScroll) {
         LazyVerticalGrid(
@@ -144,7 +145,7 @@ fun MediaGrid(
                         PosterCard(
                             item,
                             onClick = { onClick(item) },
-                            modifier = cardModifier(index, item).fillMaxWidth(),
+                            modifier = (if (motion != null) Modifier.drawnNearView(motion, gutter) else Modifier).then(cardModifier(index, item)).fillMaxWidth(),
                             shape = shape,
                             onLongClick = onLongClick?.let { { it(item) } },
                             position = position(index, count, columns),

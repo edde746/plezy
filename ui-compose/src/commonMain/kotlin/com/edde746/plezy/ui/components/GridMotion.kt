@@ -22,6 +22,11 @@ import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.relocation.bringIntoView
 import kotlin.math.roundToInt
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.LayoutAwareModifierNode
 import kotlinx.coroutines.launch
 
 /**
@@ -81,6 +86,26 @@ internal class GridMotion(private val state: LazyGridState) {
             if (!scrolled && move == moves) pending = 0f
         }
     }
+
+    private var grid: LayoutCoordinates? = null
+    private var reach = 0
+
+    /** The grid's coordinates (its layout, the layer aside) and how far past each end it is laid out. */
+    fun placed(coordinates: LayoutCoordinates, reach: Int) {
+        grid = coordinates
+        this.reach = reach
+    }
+
+    /** Whether [item] shows, at the layer's offset, or lies within a row of its own height and [gap] px of the bounds. */
+    fun nearView(item: LayoutCoordinates, gap: Float): Boolean {
+        val grid = grid?.takeIf { it.isAttached } ?: return true
+        if (!item.isAttached) return true
+        // Read without observing it: the offset moves the layer, and must not draw the items again.
+        val top = grid.localPositionOf(item, Offset.Zero).y - reach + Snapshot.withoutReadObservation { offset }
+        val row = item.size.height + gap
+        val shown = grid.size.height - 2 * reach
+        return top + item.size.height > -row && top < shown + row
+    }
 }
 
 /** How far past each end a grid [gridMotion] moves is laid out (px): half the window, more than the row a move brings in. */
@@ -110,6 +135,38 @@ private val VisibleRows = GenericShape { size, _ -> addRect(Rect(-size.width, 0f
 /** The spring the platform scrolls into view with. */
 private val MotionSpring = spring<Float>()
 
+/**
+ * Draws this item of a grid [motion] moves only while it shows, or lies within a row (its own height and [gap] px) of
+ * the grid's bounds, where the next move may bring it in: the rows laid out past that are there to be moved in later,
+ * and drawing them would cost every frame. Decided as the grid draws its items (after a scroll), at the layer's offset.
+ */
+internal fun Modifier.drawnNearView(motion: GridMotion, gap: Float): Modifier = this then DrawnNearViewElement(motion, gap)
+
+private data class DrawnNearViewElement(val motion: GridMotion, val gap: Float) : ModifierNodeElement<DrawnNearViewNode>() {
+    override fun create() = DrawnNearViewNode(motion, gap)
+
+    override fun update(node: DrawnNearViewNode) {
+        node.motion = motion
+        node.gap = gap
+    }
+}
+
+private class DrawnNearViewNode(var motion: GridMotion, var gap: Float) :
+    Modifier.Node(),
+    DrawModifierNode,
+    LayoutAwareModifierNode {
+    private var placed: LayoutCoordinates? = null
+
+    override fun onPlaced(coordinates: LayoutCoordinates) {
+        placed = coordinates
+    }
+
+    override fun ContentDrawScope.draw() {
+        val item = placed
+        if (item == null || motion.nearView(item, gap)) drawContent()
+    }
+}
+
 private data class GridMotionElement(val motion: GridMotion, val reach: Int, val platform: BringIntoViewSpec) :
     ModifierNodeElement<GridMotionNode>() {
     override fun create() = GridMotionNode(motion, reach, platform)
@@ -128,7 +185,12 @@ private data class GridMotionElement(val motion: GridMotion, val reach: Int, val
  */
 private class GridMotionNode(var motion: GridMotion, var reach: Int, var platform: BringIntoViewSpec) :
     Modifier.Node(),
-    BringIntoViewModifierNode {
+    BringIntoViewModifierNode,
+    LayoutAwareModifierNode {
+    override fun onPlaced(coordinates: LayoutCoordinates) {
+        motion.placed(coordinates, reach)
+    }
+
     private val asked = ArrayList<Rect>()
 
     override suspend fun bringIntoView(childCoordinates: LayoutCoordinates, boundsProvider: () -> Rect?) {
