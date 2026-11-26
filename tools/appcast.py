@@ -4,7 +4,7 @@
 One item for the release: title `Version X`, sparkle:version the build number (CURRENT_PROJECT_VERSION, which the apps
 compare with their own), sparkle:shortVersionString X (MARKETING_VERSION), the release notes page, and an enclosure
 per platform whose EdDSA signature the release build wrote: the macOS DMG (`<macos-dir>/macos-ed-signature.txt`,
-`macos-dmg-size.txt`; Apple silicon only, sparkle:hardwareRequirements arm64) and the Windows installer (`<windows-dir>/win-ed-signature.txt`, `win-installer-size.txt`),
+`macos-dmg-size.txt`; a universal app, for Apple silicon and Intel Macs) and the Windows installer (`<windows-dir>/win-ed-signature.txt`, `win-installer-size.txt`),
 which the Windows app runs with `/SILENT /SP-`. A platform without a signature (a build without SPARKLE_PRIVATE_KEY)
 gets no enclosure, so no app is offered an update it would refuse. A signature without its size file, or a size that
 isn't the file's beside it, fails.
@@ -78,11 +78,9 @@ def appcast(version: str, build_number: str, macos_dir: Path, windows_dir: Path)
         raise AppcastError(f"version {version!r} is not major.minor.patch")
     if not re.fullmatch(r"[1-9]\d*", build_number):
         raise AppcastError(f"build number {build_number!r} is not a positive integer")
-    # The Mac app is built for Apple silicon only: Sparkle (2.9 or later, which every release since the first has carried)
-    # skips the item on an Intel Mac, which stays on the release it has. WinSparkle and the Windows app ignore the element.
+    # The Mac app is universal (arm64 and x86_64), so its enclosure carries no sparkle:hardwareRequirements: every Mac
+    # takes the update.
     mac = enclosure("macos", macos_dir, version)
-    if mac:
-        mac = ["      <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>", *mac]
     lines = [
         '<?xml version="1.0" encoding="utf-8"?>',
         '<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">',

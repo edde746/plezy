@@ -60,7 +60,7 @@ kotlin {
     // Kotlin runtime of its own): :shared exported with the development session, built by the Xcode script phase
     // (`:dev:embedAndSignAppleFrameworkForXcode`). Release links :shared's PlezyKit, which has no development
     // session.
-    listOf(iosArm64(), iosSimulatorArm64(), macosArm64(), tvosArm64(), tvosSimulatorArm64()).forEach { target ->
+    listOf(iosArm64(), iosSimulatorArm64(), macosArm64(), macosX64(), tvosArm64(), tvosSimulatorArm64()).forEach { target ->
         target.binaries.framework(listOf(NativeBuildType.DEBUG)) {
             baseName = "PlezyKit"
             isStatic = true

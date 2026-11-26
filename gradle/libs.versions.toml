@@ -44,8 +44,9 @@ zxing = "3.5.4"
 kotlinx-io = "0.9.1"
 
 # -- watch together --
-# Open Watch Party's Kotlin SDK (rooms, sync, matching), on Kotlin 2.4.10, coroutines, serialization and Ktor as above.
-openwatchparty = "1.1.0"
+# Open Watch Party's Kotlin SDK (rooms, sync, matching), on Kotlin 2.4.10, coroutines, serialization and Ktor as above;
+# from 1.1.2 with macosX64, for the universal Mac app.
+openwatchparty = "1.1.2"
 
 # -- cast --
 # The desktop's DNS-SD (cast receivers on the local network); Android and Apple use the system's.

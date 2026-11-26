@@ -30,8 +30,7 @@ HEAD = """<?xml version="1.0" encoding="utf-8"?>
       <sparkle:shortVersionString>2.26.0</sparkle:shortVersionString>
       <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/2.26.0</sparkle:releaseNotesLink>
 """
-MAC_ENCLOSURE = f"""      <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-      <enclosure url="https://github.com/edde746/plezy/releases/download/2.26.0/plezy-macos.dmg"
+MAC_ENCLOSURE = f"""      <enclosure url="https://github.com/edde746/plezy/releases/download/2.26.0/plezy-macos.dmg"
        length="123" type="application/octet-stream"
        sparkle:edSignature="{MAC_SIGNATURE}"
        sparkle:os="macos" />
@@ -97,7 +96,8 @@ class AppcastTest(unittest.TestCase):
         self.assertEqual(enclosures["windows"].get(f"{SPARKLE}installerArguments"), "/SILENT /SP-")
         self.assertEqual(enclosures["macos"].get(f"{SPARKLE}edSignature"), MAC_SIGNATURE)
         self.assertIsNone(enclosures["macos"].get(f"{SPARKLE}installerArguments"))
-        self.assertEqual(item.findtext(f"{SPARKLE}hardwareRequirements"), "arm64")
+        # Universal: no hardware requirement, so Intel Macs take the update too.
+        self.assertIsNone(item.find(f"{SPARKLE}hardwareRequirements"))
 
     def test_each_enclosure_needs_its_signature(self) -> None:
         self.assertEqual(self.generate(), HEAD + TAIL)

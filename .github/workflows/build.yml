@@ -412,12 +412,12 @@ jobs:
           xcodegen=$(tools/install_xcodegen.sh "$RUNNER_TEMP")
           cd apple && "$xcodegen" generate
 
-      # Arm64 only, as the Kotlin/Native targets. Signed ad hoc by the project; the steps below re-sign. The Mac app is
-      # always a sideloaded build (apple/project.yml).
+      # Universal (arm64 and x86_64, the project's macOS ARCHS), for Apple silicon and Intel Macs. Signed ad hoc by the
+      # project; the steps below re-sign. The Mac app is always a sideloaded build (apple/project.yml).
       - name: Build macOS
         run: |
           xcodebuild -project apple/Plezy.xcodeproj -scheme Plezy-macOS -configuration Release \
-            -destination "platform=macOS,arch=arm64" -derivedDataPath apple/build/dd \
+            -destination "generic/platform=macOS" -derivedDataPath apple/build/dd \
             -clonedSourcePackagesDirPath apple/build/spm build
 
       # Sparkle refuses an update whose signature its SUPublicEDKey doesn't verify.
