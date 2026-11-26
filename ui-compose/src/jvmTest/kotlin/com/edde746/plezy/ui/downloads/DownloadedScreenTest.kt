@@ -1,4 +1,4 @@
-package com.edde746.plezy.ui.libraries
+package com.edde746.plezy.ui.downloads
 
 import com.edde746.plezy.model.BackendKind
 import com.edde746.plezy.model.MediaItem

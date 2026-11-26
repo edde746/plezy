@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edde746.plezy.model.FormFactor
+import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.strings.T
 import com.edde746.plezy.ui.adaptive.AdaptiveLayout
@@ -120,7 +121,8 @@ class NavigationBarLabelsTest {
                             }
                         }
                     }
-                    for (destination in TopLevelDestination.entries) {
+                    // A phone either way up leaves Downloads to Home.
+                    for (destination in NavigationTabs.bar(TopLevelDestination.entries)) {
                         val layouts = mutableListOf<TextLayoutResult>()
                         onNode(hasText(destination.label) and SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult), useUnmergedTree = true)
                             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
@@ -181,11 +183,11 @@ class NavigationBarLabelsTest {
                 bar(fontScale) { measurer ->
                     full = MaterialTheme.typography.labelMedium.fontSize.value
                     val style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp)
-                    for (destination in TopLevelDestination.entries) {
+                    for (destination in NavigationTabs.bar(TopLevelDestination.entries)) {
                         reference[destination.label] = measurer.measure(destination.label, style).getBoundingBox(0).width
                     }
                 }
-                val sizes = TopLevelDestination.entries.associate { it.label to layoutOf(it.label).getBoundingBox(0).width / reference.getValue(it.label) * 10 }
+                val sizes = NavigationTabs.bar(TopLevelDestination.entries).associate { it.label to layoutOf(it.label).getBoundingBox(0).width / reference.getValue(it.label) * 10 }
                 val read = sizes.entries.joinToString { (label, size) -> "\"" + label + "\" " + "%.1f".format(size) + " sp" }
                 if (sizes.values.max() - sizes.values.min() > 0.3f) wrong += "at font scale $fontScale: $read"
                 if (fontScale == 1f && sizes.values.max() > full - 0.3f) wrong += "at font scale 1 the labels keep full size: $read"

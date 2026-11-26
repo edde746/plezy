@@ -11,7 +11,7 @@ import PlezyKit
 /// failed. Its actions (`downloadRowActions`: pause, resume, retry, cancel, delete) are in its ⋯, its context menu (a
 /// long press, a right click) and on iOS its swipes: those that remove at the trailing edge, the first other at the
 /// leading edge. Every row is at least as tall as a title over a line of details, so a film's is as tall as a show's.
-/// The Libraries tab picked again brings the list back to its first row (`scrollToTopRequests`). Empty: "No downloads".
+/// The Downloads tab picked again brings the list back to its first row (`scrollToTopRequests`). Empty: "No downloads".
 ///
 /// Accessibility identifiers: `downloads.tree`, `downloads.row.<key>` with its ⋯ `downloads.row.<key>.menu` and its
 /// actions `downloads.row.<key>.<action>` (`pause`, `deleteAll`, …), `downloads.tree.empty`.

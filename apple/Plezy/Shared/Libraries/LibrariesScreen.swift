@@ -9,20 +9,17 @@ final class HeaderRoom {
 }
 #endif
 
-/// Libraries' views, the view menu's options (`LibraryViewMenu`): the selected library's tabs, then Downloads where the
-/// device keeps downloads; `selected` is the one shown, `onSelect` shows another. `loading`: the library's tabs are still
-/// to come.
+/// Libraries' views, the view menu's options (`LibraryViewMenu`): the selected library's tabs; `selected` is the one
+/// shown, `onSelect` shows another.
 struct LibraryViews {
     let labels: [String]
     let selected: Int
-    let loading: Bool
     let onSelect: (Int) -> Void
 }
 
-/// Libraries' view menu: a filter capsule naming the view shown (a tab of the library, or Downloads), listing them all
-/// (`libraries.view`, its options `libraries.view.option.<i>`); where the header row gives way, its symbol alone
-/// (`HeaderRank.view`): one symbol whatever the view. Not drawn while there is only one view, unless the library's tabs
-/// are still loading: then it holds its place, so the filters after it stay put as the tabs come in.
+/// Libraries' view menu: a filter capsule naming the library's tab shown, listing them all (`libraries.view`, its
+/// options `libraries.view.option.<i>`); where the header row gives way, its symbol alone (`HeaderRank.view`): one
+/// symbol whatever the tab. Not drawn while there is only one tab.
 struct LibraryViewMenu: View {
     let views: LibraryViews
 
@@ -30,7 +27,7 @@ struct LibraryViewMenu: View {
     @Environment(\.symbolRank) private var symbolRank
 
     var body: some View {
-        if views.labels.count > 1 || views.loading {
+        if views.labels.count > 1 {
             let shown = min(views.selected, views.labels.count - 1)
             FilterMenu(
                 chip: FilterChip(name: T.shared.libraries.title, text: views.labels[shown]),
@@ -46,7 +43,7 @@ struct LibraryViewMenu: View {
 
 /// Libraries: the screen's header row (`screenHeader`; tvOS: `FilterRow`) of filters, the library (named, its libraries
 /// each with its server's name where they come from several; on the Mac its name alone, the sidebar picking the
-/// library), the view (the library's tabs and Downloads: `LibraryViewMenu`) and on Browse its sort, filters and
+/// library), the view (the library's tabs: `LibraryViewMenu`) and on Browse its sort, filters and
 /// grouping, on one line (`scrolls`), where the other filters give way to their symbols before the library's name does:
 /// first the Mac's Shuffle and ⋯ show their icons alone, then the sort its symbol, then the view, then Filters and the
 /// type (`HeaderRank`), and only then is the name cut short; at its trailing end Shuffle and the ⋯ menu's Manage
@@ -64,8 +61,6 @@ struct LibraryViewMenu: View {
 struct LibrariesScreen: View {
     let app: AppModel
     let model: StoreModel<LibrariesScreenStore, LibrariesUiState>
-    /// Shows Downloads, the view menu's last option, where the device keeps downloads.
-    let onDownloads: (() -> Void)?
 
     /// The tabs shown since the library was picked, kept mounted.
     @State private var mounted: Set<LibraryTab> = []
@@ -166,17 +161,12 @@ struct LibrariesScreen: View {
         }
     }
 
-    /// The view menu's options: the library's tabs while one shows, then Downloads. The menu comes with the library's
+    /// The view menu's options: the library's tabs while one shows. The menu comes with the library's
     /// name and content, the row filling at once, so it holds no place while they load.
     private func views(_ state: LibrariesUiState) -> LibraryViews {
         let tabs = state.load == .content && state.selected != nil ? state.tabs : []
-        let labels = tabs.map(\.label) + (onDownloads != nil ? [LibrarySection.downloads.label] : [])
-        return LibraryViews(labels: labels, selected: tabs.firstIndex(of: state.tab) ?? 0, loading: false) { index in
-            if index < tabs.count {
-                model.store.selectTab(tab: tabs[index])
-            } else {
-                onDownloads?()
-            }
+        return LibraryViews(labels: tabs.map(\.label), selected: tabs.firstIndex(of: state.tab) ?? 0) { index in
+            model.store.selectTab(tab: tabs[index])
         }
     }
 

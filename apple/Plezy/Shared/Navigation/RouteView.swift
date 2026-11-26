@@ -36,9 +36,11 @@ struct RouteView: View {
             SearchScreen(app: app, route: route)
         #if os(tvOS)
         // Apple TV keeps no downloads: nothing leads here.
-        case .syncRules:
+        case .downloads, .syncRules:
             EmptyView()
         #else
+        case .downloads:
+            DownloadsScreen(app: app)
         case .syncRules:
             SyncRulesScreen(app: app)
         #endif

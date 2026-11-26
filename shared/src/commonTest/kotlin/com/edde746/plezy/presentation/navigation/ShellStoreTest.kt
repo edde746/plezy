@@ -1,5 +1,6 @@
 package com.edde746.plezy.presentation.navigation
 
+import com.edde746.plezy.presentation.navigation.TopLevelDestination.DOWNLOADS
 import com.edde746.plezy.presentation.navigation.TopLevelDestination.EXPLORE
 import com.edde746.plezy.presentation.navigation.TopLevelDestination.HOME
 import com.edde746.plezy.presentation.navigation.TopLevelDestination.LIBRARIES
@@ -16,26 +17,31 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class NavigationTabsTest {
     @Test
-    fun onlineShowsTheFiveDestinationsInOrderWithExploreOnlyWhileAvailable() {
-        assertEquals(listOf(HOME, LIBRARIES, EXPLORE, SEARCH, SETTINGS), NavigationTabs.visible(offline = false, hasExplore = true, appleTv = false))
-        assertEquals(listOf(HOME, LIBRARIES, SEARCH, SETTINGS), NavigationTabs.visible(offline = false, hasExplore = false, appleTv = false))
-        assertEquals(listOf(HOME, LIBRARIES, SEARCH, SETTINGS), NavigationTabs.visible(offline = false, hasExplore = false, appleTv = true))
+    fun onlineShowsTheDestinationsInOrderWithExploreOnlyWhileAvailableAndDownloadsWhereKept() {
+        assertEquals(listOf(HOME, LIBRARIES, DOWNLOADS, EXPLORE, SEARCH, SETTINGS), NavigationTabs.visible(offline = false, hasExplore = true, downloads = true))
+        assertEquals(listOf(HOME, LIBRARIES, DOWNLOADS, SEARCH, SETTINGS), NavigationTabs.visible(offline = false, hasExplore = false, downloads = true))
+        assertEquals(listOf(HOME, LIBRARIES, SEARCH, SETTINGS), NavigationTabs.visible(offline = false, hasExplore = false, downloads = false))
     }
 
     @Test
-    fun offlineKeepsLibrariesAndSettingsAndTheAppleTvOnlySettings() {
-        assertEquals(listOf(LIBRARIES, SETTINGS), NavigationTabs.visible(offline = true, hasExplore = true, appleTv = false))
-        assertEquals(listOf(SETTINGS), NavigationTabs.visible(offline = true, hasExplore = true, appleTv = true))
+    fun offlineKeepsDownloadsAndSettingsAndWithoutDownloadsOnlySettings() {
+        assertEquals(listOf(DOWNLOADS, SETTINGS), NavigationTabs.visible(offline = true, hasExplore = true, downloads = true))
+        assertEquals(listOf(SETTINGS), NavigationTabs.visible(offline = true, hasExplore = true, downloads = false))
+    }
+
+    @Test
+    fun aPhonesBarLeavesDownloadsToHomeWhileLibrariesShows() {
+        assertEquals(listOf(HOME, LIBRARIES, SEARCH, SETTINGS), NavigationTabs.bar(NavigationTabs.visible(offline = false, hasExplore = false, downloads = true)))
+        assertEquals(listOf(DOWNLOADS, SETTINGS), NavigationTabs.bar(NavigationTabs.visible(offline = true, hasExplore = false, downloads = true)))
     }
 
     @Test
     fun startupPrefersTheVisiblePreferenceThenTheFirst() {
-        val online = NavigationTabs.visible(offline = false, hasExplore = false, appleTv = false)
+        val online = NavigationTabs.visible(offline = false, hasExplore = false, downloads = true)
         assertEquals(SEARCH, NavigationTabs.startup(online, preferred = SEARCH))
         assertEquals(HOME, NavigationTabs.startup(online, preferred = EXPLORE))
         assertEquals(HOME, NavigationTabs.startup(online, preferred = null))
@@ -66,6 +72,8 @@ class ShellStoreTest {
             availability,
             preferred,
             appleTv,
+            // The Apple TV keeps no downloads.
+            downloads = !appleTv,
             CoroutineScope(scope.backgroundScope.coroutineContext + UnconfinedTestDispatcher(scope.testScheduler)),
         )
         val selected: TopLevelDestination get() = store.state.value.selected
@@ -156,30 +164,41 @@ class ShellStoreTest {
     }
 
     @Test
-    fun openLibraryShowsLibrariesAndHandsItTheSection() = runTest {
+    fun openAtRootShowsTheDestinationPoppedToItsRoot() = runTest {
         val shell = Shell(this, online, preferred = null)
-        shell.store.openLibrary(LibrarySection.DOWNLOADS)
-        assertEquals(LIBRARIES, shell.selected)
-        assertEquals(LibrarySection.DOWNLOADS, shell.navigator.takeLibrarySection())
-        assertNull(shell.navigator.takeLibrarySection())
+        val movie = Route.MediaDetail(com.edde746.plezy.model.ServerId("server_1"), "movie", offline = true)
+        shell.store.select(DOWNLOADS)
+        shell.navigator.navigate(movie)
+        shell.store.select(HOME)
+
+        shell.store.openAtRoot(DOWNLOADS)
+        assertEquals(DOWNLOADS, shell.selected)
+        assertEquals(listOf(Route.Downloads), shell.stack)
     }
 
     @Test
-    fun aDownloadsStartOpensLibrariesOnTheDownloads() = runTest {
-        val shell = Shell(this, online, preferred = Startup.DOWNLOADS)
-        assertEquals(LIBRARIES, shell.selected)
-        assertEquals(LibrarySection.DOWNLOADS, shell.navigator.librarySection.value)
+    fun openAtRootIgnoresADestinationThatDoesNotShow() = runTest {
+        val shell = Shell(this, online, preferred = null, appleTv = true)
+        shell.store.openAtRoot(DOWNLOADS)
+        assertEquals(HOME, shell.selected)
     }
 
     @Test
-    fun goingOfflineSwitchesToLibrariesAndComingBackRestoresTheDestination() = runTest {
+    fun aDownloadsStartOpensDownloads() = runTest {
+        val shell = Shell(this, online, preferred = Startup(DOWNLOADS))
+        assertEquals(DOWNLOADS, shell.selected)
+        assertEquals(listOf(Route.Downloads), shell.stack)
+    }
+
+    @Test
+    fun goingOfflineSwitchesToDownloadsAndComingBackRestoresTheDestination() = runTest {
         val shell = Shell(this, online, preferred = null)
         shell.store.select(SEARCH)
 
         shell.availability.value = online.copy(offline = true)
         runCurrent()
-        assertEquals(LIBRARIES, shell.selected)
-        assertEquals(listOf(LIBRARIES, SETTINGS), shell.store.state.value.destinations)
+        assertEquals(DOWNLOADS, shell.selected)
+        assertEquals(listOf(DOWNLOADS, SETTINGS), shell.store.state.value.destinations)
         assertTrue(shell.store.state.value.offline)
 
         shell.availability.value = online
@@ -275,12 +294,12 @@ class ShellStoreTest {
     }
 
     @Test
-    fun offlineBackReturnsToLibrariesTheFirstDestination() = runTest {
+    fun offlineBackReturnsToDownloadsTheFirstDestination() = runTest {
         val shell = Shell(this, online.copy(offline = true), preferred = Startup(SEARCH))
-        assertEquals(LIBRARIES, shell.selected)
+        assertEquals(DOWNLOADS, shell.selected)
         shell.store.select(SETTINGS)
         assertEquals(ShellBack.FIRST_DESTINATION, shell.store.back())
-        assertEquals(LIBRARIES, shell.selected)
+        assertEquals(DOWNLOADS, shell.selected)
     }
 
     @Test
@@ -293,8 +312,9 @@ class ShellStoreTest {
     @Test
     fun anOfflineStartIgnoresThePreferenceForTheFirstDestinationThatShows() = runTest {
         val offline = online.copy(offline = true, hasExplore = true, hasLiveTv = true)
-        assertEquals(LIBRARIES, Shell(this, offline, preferred = Startup.LIVE_TV).selected)
-        assertEquals(LIBRARIES, Shell(this, offline, preferred = Startup(EXPLORE)).selected)
+        assertEquals(DOWNLOADS, Shell(this, offline, preferred = Startup.LIVE_TV).selected)
+        assertEquals(DOWNLOADS, Shell(this, offline, preferred = Startup(EXPLORE)).selected)
+        assertEquals(DOWNLOADS, Shell(this, offline, preferred = Startup(LIBRARIES)).selected)
         // The Apple TV keeps no downloads: offline only Settings shows.
         assertEquals(SETTINGS, Shell(this, offline, preferred = Startup(LIBRARIES), appleTv = true).selected)
     }

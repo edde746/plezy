@@ -9,6 +9,7 @@ import com.edde746.plezy.model.MediaKind
 import com.edde746.plezy.model.MediaItem
 import com.edde746.plezy.model.MediaLibrary
 import com.edde746.plezy.model.ServerId
+import com.edde746.plezy.presentation.navigation.TopLevelDestination.DOWNLOADS
 import com.edde746.plezy.presentation.navigation.TopLevelDestination.EXPLORE
 import com.edde746.plezy.presentation.navigation.TopLevelDestination.HOME
 import com.edde746.plezy.presentation.navigation.TopLevelDestination.LIBRARIES
@@ -33,10 +34,13 @@ class NavigationHighlightTest {
             Route.LiveTvShowSchedule("News", "server_1") to HOME,
             Route.HubDetail("hub", "Recently Added") to HOME,
             Route.Libraries to LIBRARIES,
-            Route.SyncRules to LIBRARIES,
+            Route.Downloads to DOWNLOADS,
+            Route.SyncRules to DOWNLOADS,
             Route.MediaDetail(server, "1") to LIBRARIES,
+            Route.MediaDetail(server, "1", offline = true) to DOWNLOADS,
             Route.Person(server, "2", "Name") to LIBRARIES,
             Route.CollectionDetail(server, "3") to LIBRARIES,
+            Route.CollectionDetail(server, "3", offline = true) to DOWNLOADS,
             Route.PlaylistDetail(server, "4") to LIBRARIES,
             Route.MusicArtist("server_1", "5") to LIBRARIES,
             Route.MusicAlbum("server_1", "6") to LIBRARIES,

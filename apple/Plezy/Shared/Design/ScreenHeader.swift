@@ -622,7 +622,7 @@ private struct HeaderActionTitle: ViewModifier {
 /// beside the actions on one line, it goes on more lines there, the actions centred on its first, as long as every
 /// control of it shows whole beside them (Library's view, type and sort beside the Calendar in a long language); else
 /// it has the whole width and the actions go on a line of their own under it, `spacing` below, at the trailing end
-/// (Downloads' titled actions beside its view menu at a large text size). No height at all while nothing in it has any
+/// (Downloads' titled actions beside its title at a large text size). No height at all while nothing in it has any
 /// (Addons on iOS with one type, Install in the bar), so a row with nothing to show leaves no gap.
 private struct HeaderLine: Layout {
     let spacing: CGFloat

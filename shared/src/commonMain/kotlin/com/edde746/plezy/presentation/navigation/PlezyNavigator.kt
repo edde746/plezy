@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.map
  *   takes them, and whatever lies over them, off the stack left (the player's route leaving ends the playback). Closing
  *   the player returns to the screen under it, on the stack it opened on.
  * - Back ([back]) pops the shown stack; at the root of a destination other than the [first] one it shows the first's
- *   stack (Home's, or Libraries' offline: the shell sets [first] to the first destination it shows).
+ *   stack (Home's, or Downloads' offline: the shell sets [first] to the first destination it shows).
  * - [retain] keeps an object (a screen's store) for as long as its route is on any stack, across the screen leaving
  *   the view hierarchy while another screen or destination is shown, and releases it once the route has left every
  *   stack. A route on no stack gets nothing. A destination's route stays at the bottom of its stack until [close] (the
@@ -165,24 +165,6 @@ class PlezyNavigator(start: NavigationStacks) {
      */
     fun select(destination: TopLevelDestination, screen: Route? = null) =
         show(destination, listOf(destination.route) + listOfNotNull(screen))
-
-    private val pendingLibrarySection = MutableStateFlow<LibrarySection?>(null)
-
-    /**
-     * The section Libraries is to show ([openLibrary]) until one is picked there ([takeLibrarySection]). A flow, so a
-     * Libraries screen already shown switches to it; kept here, so a Libraries screen made anew (a profile switch
-     * remakes every screen) shows it too.
-     */
-    val librarySection: StateFlow<LibrarySection?> = pendingLibrarySection.asStateFlow()
-
-    /** Opens Libraries at its root on [section] (Home's Downloads shortcut, a remote's Downloads tab). */
-    fun openLibrary(section: LibrarySection) {
-        pendingLibrarySection.value = section
-        select(TopLevelDestination.LIBRARIES)
-    }
-
-    /** The section [openLibrary] asked for, dropped: a section was picked in Libraries, which shows that one from now on. */
-    fun takeLibrarySection(): LibrarySection? = pendingLibrarySection.value.also { pendingLibrarySection.value = null }
 
     /**
      * The user picked [destination] in the app's navigation (the tab bar, the sidebar, the rail, the Mac's and iPad's

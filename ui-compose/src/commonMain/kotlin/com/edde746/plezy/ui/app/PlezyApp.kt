@@ -21,7 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.edde746.plezy.ui.downloads.DownloadOverlays
-import com.edde746.plezy.ui.downloads.DownloadsScreen
+import com.edde746.plezy.ui.downloads.DownloadsDestination
 import com.edde746.plezy.ui.downloads.SyncRulesScreen
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -571,6 +571,7 @@ private fun RouteContent(app: AppSession, route: Route) {
     when (route) {
         Route.Home -> HomeScreen(app)
         Route.Libraries -> LibrariesDestination(app)
+        Route.Downloads -> DownloadsDestination(app)
         Route.LiveTv -> LiveTvScreen(app)
         Route.Search -> SearchScreen(app)
         Route.SyncRules -> app.syncRulesStore()?.let { store -> SyncRulesScreen(store, onBack = { app.navigator.back() }) }

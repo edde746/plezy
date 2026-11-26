@@ -2,11 +2,12 @@
 import XCTest
 
 /// Downloads on iPhone, iPad and the Mac (Apple TV has none), each step kept as a screenshot of the result bundle:
-/// - Libraries' Downloads view of a `--dev` session with nothing downloaded: Manage's empty tree, the content tabs'
-///   empty states (picked from the header row's `downloads.tab` menu), the Movies grouping menu and the Active sync
-///   rules screen;
-/// - Downloads opened as the app starts signed in to a server, whose libraries the same destination holds: it shows
-///   Libraries' view menu from its first frame and answers its menus;
+/// - the Downloads destination of a `--dev` session with nothing downloaded: its title, Manage's empty tree, the content
+///   tabs' empty states (picked from the header row's `downloads.tab` menu), the Movies grouping menu and the Active
+///   sync rules screen;
+/// - Downloads opened as the app starts signed in to a server: titled, it answers its menus, and iPad's and the Mac's
+///   sidebar has its row; Home's Downloads chip opens it (iPhone's bar has no Downloads tab online); Libraries' view
+///   menu lists no Downloads; a session started offline lands on it;
 /// - a movie and a season downloaded from the dev Jellyfin server (`--dev-download`, `PLEZY_JELLYFIN` overriding the
 ///   server's address; `_` stands for a space in its titles) shown completed in Manage's tree, the show opened down to
 ///   its episodes, and in the Movies and TV Shows tabs; then the device offline (the session's `offline` switch: the
@@ -76,20 +77,98 @@ final class DownloadsTests: PlezyUITestCase {
         shot("downloads sync rules empty")
     }
 
-    /// Downloads asked for as the app starts signed in to a server: the screen shows and answers its menus, though the
-    /// Libraries destination it opens in holds the server's libraries too (the Libraries screen laid out before it
-    /// showed kept the main thread laying its header out, and the app never answered again). Libraries' view menu leads
-    /// the header row from the first frame, before the server's libraries come in, so the tab menu after it stays where
-    /// it first showed: the view menu coming in later moved the tab menu from under a click on it, which opened the view
-    /// menu instead.
+    /// Downloads asked for as the app starts signed in to a server: the screen shows titled Downloads and answers its
+    /// menus; iPad's and the Mac's sidebar has its row, after Home and before Search, highlighted.
     func testOpensOverTheServersLibraries() {
-        launchDev(arguments: ["--dev-open", "downloads", "--dev-server", "jellyfin=maestro:maestro@\(server)"])
+        #if os(iOS)
+        let pad = UIDevice.current.userInterfaceIdiom == .pad
+        if pad {
+            // Landscape, where the kept sidebar sits beside the screen.
+            XCUIDevice.shared.orientation = .landscapeLeft
+            addTeardownBlock { XCUIDevice.shared.orientation = .portrait }
+        }
+        #else
+        let pad = true
+        #endif
+        launchDev(
+            settings: pad ? ["always_keep_sidebar_open=true"] : [],
+            arguments: ["--dev-open", "downloads", "--dev-server", "jellyfin=maestro:maestro@\(server)"]
+        )
         opened()
+        XCTAssertEqual(require("downloads.title", "the Downloads title").label, "Downloads", "the screen is titled Downloads")
         require("downloads.tab", "the Downloads tab menu")
-        XCTAssertTrue(element("libraries.view").exists, "Libraries' view menu leads the header row as Downloads shows")
         require("downloads.tree.empty", "Manage's empty tree")
+        if pad {
+            let row = require("nav.downloads", timeout: 30, "the sidebar's Downloads row")
+            XCTAssertTrue(row.isSelected, "Downloads' row is highlighted")
+            XCTAssertLessThan(element("nav.home").frame.minY, row.frame.minY, "Downloads' row after Home's")
+            XCTAssertLessThan(row.frame.minY, element("nav.search").frame.minY, "Downloads' row before Search's")
+            // Lets the sidebar's highlight settle before the shot.
+            Thread.sleep(forTimeInterval: 1)
+            shot("downloads sidebar")
+        }
         show("Movies")
         require("downloads.empty", "Movies' empty state")
+    }
+
+    /// Home's Downloads chip opens the Downloads destination, titled; on iPhone, whose bar has no Downloads tab online,
+    /// the bar shows its tab, selected, while it shows, and Home's tab brings Home back, the tab gone again.
+    func testHomeChipOpensDownloads() {
+        launchDev(arguments: ["--dev-open", "home", "--dev-server", "jellyfin=maestro:maestro@\(server)"])
+        require("home.screen", timeout: 60, "Home")
+        #if os(iOS)
+        let phone = UIDevice.current.userInterfaceIdiom == .phone
+        if phone {
+            XCTAssertFalse(app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch.exists, "no Downloads tab in iPhone's bar online")
+        }
+        #endif
+        let chip = require("home.downloads", timeout: 30, "Home's Downloads chip")
+        // Lets Home's rows finish drawing before the shot.
+        Thread.sleep(forTimeInterval: 2)
+        shot("home with downloads chip")
+        press(chip)
+        opened()
+        XCTAssertEqual(require("downloads.title", "the Downloads title").label, "Downloads", "the chip opens the Downloads page")
+        // Lets the destination's switch finish before the shot.
+        Thread.sleep(forTimeInterval: 1)
+        shot("downloads from home chip")
+        #if os(iOS)
+        if phone {
+            let tab = app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch
+            XCTAssertTrue(tab.exists && tab.isSelected, "iPhone's bar shows Downloads' tab, selected, while it shows")
+            app.tabBars.buttons.matching(identifier: "nav.home").firstMatch.tap()
+            require("home.screen", timeout: 10, "Home's tab brings Home back")
+            XCTAssertTrue(tab.waitForNonExistence(timeout: 5), "Downloads' tab leaves iPhone's bar with Home shown")
+        }
+        #endif
+    }
+
+    /// Libraries' view menu lists the library's tabs alone: Downloads is a destination of its own.
+    func testLibrariesViewMenuHasNoDownloads() {
+        launchDev(arguments: ["--dev-open", "libraries", "--dev-server", "jellyfin=maestro:maestro@\(server)"])
+        require("libraries.screen", timeout: 60, "Libraries")
+        let steps = LibrarySteps(test: self)
+        steps.pickLibrary("Movies")
+        require("libraries.view", timeout: 30, "the view menu")
+        steps.openFilterMenu("libraries.view")
+        let options = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'libraries.view.option.'"))
+        if !options.firstMatch.exists(within: 10) { fail("the view menu's options") }
+        let labels = (0..<options.count).compactMap { try? options.element(boundBy: $0).snapshot() }
+            .map { $0.title.isEmpty ? $0.label : $0.title }
+        XCTAssertFalse(labels.contains { $0.hasPrefix("Downloads") }, "the view menu lists Downloads: \(labels)")
+        steps.dismissMenu()
+    }
+
+    /// A session started offline shows Downloads, the first of the destinations that show (Downloads, Settings).
+    func testOfflineStartLandsOnDownloads() {
+        launchDev(settings: ["offline=true"])
+        opened()
+        require("downloads.title", "the Downloads title")
+        XCTAssertFalse(element("nav.home").exists, "no Home offline")
+        XCTAssertFalse(element("nav.libraries").exists, "no Libraries offline")
+        // Lets the offline line settle before the shot.
+        Thread.sleep(forTimeInterval: 1)
+        shot("downloads offline start")
     }
 
     /// Settings → Downloads: on the Mac the location row opens its dialog (Select folder, Cancel); iPhone and iPad keep

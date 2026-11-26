@@ -27,7 +27,7 @@ class DevLaunch private constructor(
     val dev: Boolean,
     /**
      * `--dev-open <destination>`: where the session starts: a top-level destination by its lowercase name, `live_tv`
-     * (Live TV over Home) or `downloads` (Libraries' downloads); Home without it.
+     * (Live TV over Home); Home without it.
      */
     val open: Startup,
     /**
@@ -286,10 +286,10 @@ class DevLaunch private constructor(
             throw IllegalArgumentException("$name ${e.message}", e)
         }
 
-        /** A destination by its lowercase name, or `live_tv` (Live TV over Home) and `downloads` (Libraries' section). */
+        /** A destination by its lowercase name (`downloads` among them), or `live_tv` (Live TV over Home). */
         private fun destination(name: String): Startup {
             val starts = TopLevelDestination.entries.associate { it.name.lowercase() to Startup(it) } +
-                mapOf("live_tv" to Startup.LIVE_TV, "downloads" to Startup.DOWNLOADS)
+                mapOf("live_tv" to Startup.LIVE_TV)
             return starts[name] ?: throw IllegalArgumentException("needs one of ${starts.keys.joinToString()}, got '$name'")
         }
 

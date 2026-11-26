@@ -53,7 +53,7 @@ class DevLaunchTest {
         assertEquals(emptyList(), parse("--dev").settings)
         assertEquals(2_500L, parse("--dev-slow-start", "2.5").slowStartMillis)
         assertEquals(Startup.LIVE_TV, parse("--dev", "--dev-open", "live_tv").open)
-        assertEquals(Startup.DOWNLOADS, parse("--dev", "--dev-open", "downloads").open)
+        assertEquals(Startup(TopLevelDestination.DOWNLOADS), parse("--dev", "--dev-open", "downloads").open)
         assertEquals(listOf("http://h/a.flac", "file:///b.mp3"), parse("--dev", "--dev-music-url", "http://h/a.flac,file:///b.mp3").musicUrls)
         assertEquals(listOf("http://h/a.flac", "http://h/b.flac"), parse("--dev", "--dev-music-url", "http://h/a.flac", "--dev-music-url", "http://h/b.flac").musicUrls)
         val server = arrayOf("--dev", "--dev-server", "jellyfin=a:b@http://media.test:8096")

@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.edde746.plezy.model.FormFactor
+import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.presentation.probeName
 import com.edde746.plezy.ui.adaptive.AdaptiveLayout
@@ -51,9 +53,11 @@ import com.edde746.plezy.ui.focus.arrowKeyFocus
 import com.edde746.plezy.ui.focus.rememberFocus
 import com.edde746.plezy.ui.focus.rememberFocusMemory
 import com.edde746.plezy.ui.probe.FocusedProbe
+import com.edde746.plezy.ui.probe.LayoutProbe
 import com.edde746.plezy.ui.probe.LocalLayoutProbe
 import com.edde746.plezy.ui.probe.layoutProbe
 import com.edde746.plezy.ui.theme.PlezyTheme
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -63,26 +67,54 @@ class NavigationRailTest {
     private val destinations = TopLevelDestination.entries
 
     /**
-     * A phone held upright (412 × 700 dp) gets the bar along the window's foot, every destination named under its
-     * icon, side by side.
+     * A phone held upright (412 × 700 dp) gets the bar along the window's foot, every destination but Downloads (Home's
+     * shortcut opens it while Libraries shows) named under its icon, side by side.
      */
     @Test
     fun aCompactWindowGetsTheBarAlongItsFoot() = runComposeUiTest {
         rail(FormFactor.HANDHELD, 412, 700)
-        val items = destinations.map { shown(hasText(it.label)) }
+        val items = (destinations - TopLevelDestination.DOWNLOADS).map { shown(hasText(it.label)) }
         for (item in items) assertTrue(item.bottom <= 700.dp && item.top >= 620.dp, "a destination at ${item.top}–${item.bottom} isn't in the bar")
         for ((a, b) in items.zipWithNext()) assertTrue(a.right <= b.left, "destinations overlap: $a and $b")
+        onAllNodes(named(TopLevelDestination.DOWNLOADS.label)).assertCountEquals(0)
+    }
+
+    /** The desktop's rail and the TV column offer Downloads, between Libraries and Search. */
+    @Test
+    fun theDesktopRailAndTheTvColumnOfferDownloadsAfterLibraries() {
+        for ((formFactor, size) in listOf(FormFactor.DESKTOP to (1280 to 800), FormFactor.TV to (960 to 540))) runComposeUiTest {
+            val placed = ConcurrentHashMap<String, Rect>()
+            val probe = LayoutProbe { name, bounds -> if (bounds == null) placed.remove(name) else placed[name] = bounds }
+            setContent {
+                CompositionLocalProvider(LocalLayoutProbe provides probe) {
+                    PlezyTheme {
+                        Box(Modifier.size(size.first.dp, size.second.dp)) {
+                            AdaptiveLayout(formFactor) {
+                                NavigationScaffold(destinations, TopLevelDestination.HOME, onSelect = {}, showNavigation = true) { Box(Modifier.fillMaxSize()) }
+                            }
+                        }
+                    }
+                }
+            }
+            waitForIdle()
+            val top = { destination: TopLevelDestination -> checkNotNull(placed["nav.${destination.probeName}"]) { "$formFactor: no ${destination.label} item" }.top }
+            assertTrue(top(TopLevelDestination.LIBRARIES) < top(TopLevelDestination.DOWNLOADS), "$formFactor: Downloads isn't under Libraries")
+            assertTrue(top(TopLevelDestination.DOWNLOADS) < top(TopLevelDestination.SEARCH), "$formFactor: Downloads isn't above Search")
+        }
     }
 
     /**
      * A phone in landscape (914 × 360 dp) and a tablet held upright (800 × 1280 dp) both get the 80 dp rail: every
-     * destination named, one under another, inside the window, and the screen beside the rail.
+     * destination it shows named, one under another, inside the window, and the screen beside the rail. The tablet shows
+     * Downloads; the phone, as in its bar, leaves it to Home's shortcut.
      */
     @Test
     fun aWindowFromSixHundredDpGetsTheRailInEitherOrientation() {
         for ((width, height) in listOf(914 to 360, 800 to 1280)) runComposeUiTest {
             rail(FormFactor.HANDHELD, width, height)
-            val items = destinations.map { shown(named(it.label)) }
+            val phone = height < 600
+            onAllNodes(named(TopLevelDestination.DOWNLOADS.label)).assertCountEquals(if (phone) 0 else 1)
+            val items = (if (phone) NavigationTabs.bar(destinations) else destinations).map { shown(named(it.label)) }
             for (item in items) {
                 assertTrue(item.top >= 0.dp && item.bottom <= height.dp, "$width × $height: a destination at ${item.top}–${item.bottom} is cut off")
                 assertTrue(item.right <= 80.dp, "$width × $height: a destination reaches ${item.right}, past the rail")

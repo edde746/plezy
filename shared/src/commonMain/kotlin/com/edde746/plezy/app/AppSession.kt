@@ -119,7 +119,6 @@ import com.edde746.plezy.presentation.home.libraryShortcuts
 import com.edde746.plezy.presentation.home.shortcutsSettled
 import com.edde746.plezy.presentation.libraries.LibrariesScreenStore
 import com.edde746.plezy.presentation.libraries.LibraryPlayRequest
-import com.edde746.plezy.presentation.navigation.LibrarySection
 import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.PlezyNavigator
 import com.edde746.plezy.presentation.navigation.Route
@@ -339,9 +338,9 @@ class AppSession(
         AppDownloads(graph, it, platform.notificationPermission, servers, playingItemKey = { playingKey.value }) { url -> WebUrl.isWeb(url) && platform.openUrl(url) }
     }
 
-    /** The downloads section's store, kept with Libraries' route; null without downloads. */
+    /** Downloads' store, kept with its route; null without downloads. */
     fun downloadsStore(): DownloadsStore? = downloads?.let { d ->
-        navigator.retain(Route.Libraries, "downloads", { d.downloadsStore(scope) }, DownloadsStore::release)
+        navigator.retain(Route.Downloads, "downloads", { d.downloadsStore(scope) }, DownloadsStore::release)
     }
 
     /** The sync rules screen's store, kept while its route is on a stack; null without downloads. */
@@ -552,6 +551,7 @@ class AppSession(
         availability,
         start ?: NavigationTabs.startupOf(storedAppearance.value.startupSection),
         platform.appleTv,
+        downloads != null,
         scope,
     )
 
@@ -1029,7 +1029,7 @@ class AppSession(
         playTrack = { musicScreens.open(it) },
         openLibrary = { key ->
             libraries()?.selectLibrary(key)
-            shell.openLibrary(LibrarySection.LIBRARY)
+            shell.openAtRoot(TopLevelDestination.LIBRARIES)
         },
         notify = { notify(it) },
         menu = MediaMenu(
