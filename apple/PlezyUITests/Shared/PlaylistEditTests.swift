@@ -431,6 +431,12 @@ private final class PlaylistTestAccount {
             _ = try? call("DELETE", "\(base)/Users/\(user)", token: adminToken, body: nil)
             throw Failure(description: "the new account's sign-in answered no token")
         }
+        do {
+            try FreshAccountWatchState.blank(kind: kind, base: base, user: user) { try call($0, $1, token: token, body: $2) }
+        } catch {
+            _ = try? call("DELETE", "\(base)/Users/\(user)", token: adminToken, body: nil)
+            throw error
+        }
         return PlaylistTestAccount(spec: "\(kind)=\(name):@\(base)", base: base, adminToken: adminToken, token: token, user: user)
     }
 

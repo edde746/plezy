@@ -1275,15 +1275,24 @@ struct WatchRecords {
         self.user = user
     }
 
-    /// A new account on `server`'s Jellyfin, added by its user (an administrator): every library, nothing played, no
-    /// other run signed in to it. Its Continue Watching holds only what the test sets, whatever other runs play as the
-    /// server's own accounts meanwhile. `removeAccount()` deletes it.
+    /// A new account on `server`'s Jellyfin, added by its user (an administrator): every library, nothing played or
+    /// started (blanked: `FreshAccountWatchState`), no other run signed in to it. Its Continue Watching holds only what
+    /// the test sets, whatever other runs play as the server's own accounts meanwhile. `removeAccount()` deletes it.
     static func ownAccount(on server: String) throws -> WatchRecords {
         let admin = try WatchRecords(server: server)
         let name = "ui-tests-\(UUID().uuidString.prefix(8).lowercased())"
         _ = try call("POST", "\(admin.base)/Users/New", client: admin.client, token: admin.token, body: ["Name": name, "Password": name])
         var records = try WatchRecords(server: "jellyfin=\(name):\(name)@\(admin.base)")
         records.admin = (admin.client, admin.token)
+        let (client, token) = (records.client, records.token)
+        do {
+            try FreshAccountWatchState.blank(kind: "jellyfin", base: records.base, user: records.user) {
+                try call($0, $1, client: client, token: token, body: $2)
+            }
+        } catch {
+            try? records.removeAccount()
+            throw error
+        }
         return records
     }
 

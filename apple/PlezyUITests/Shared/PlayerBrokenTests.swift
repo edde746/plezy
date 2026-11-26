@@ -918,11 +918,11 @@ private struct BrokenTestAccount {
             throw Failure(description: "the new account's sign-in answered no token")
         }
         let account = BrokenTestAccount(spec: "\(kind)=\(name):@\(base)", kind: kind, base: base, adminToken: adminToken, token: token, user: user)
-        // A new Jellyfin account can come with the watch state of an account deleted before it.
-        for show in ["Maestro Show", "Yume Anime"] {
-            for episode in try account.episodes(of: show) {
-                try account.setUserData(episode, ["PlaybackPositionTicks": 0, "Played": false])
-            }
+        do {
+            try FreshAccountWatchState.blank(kind: kind, base: base, user: user) { try call($0, $1, token: token, body: $2) }
+        } catch {
+            try? account.remove()
+            throw error
         }
         return account
     }
