@@ -337,7 +337,7 @@ struct TagEditSheet: View {
                 }
                 if !state.suggestions.isEmpty {
                     Section {
-                        ScrollView(.horizontal) {
+                        SideScroll {
                             HStack(spacing: 8) {
                                 ForEach(Array(state.suggestions.enumerated()), id: \.offset) { index, suggestion in
                                     Button {
@@ -355,7 +355,6 @@ struct TagEditSheet: View {
                             }
                             .padding(.vertical, 4)
                         }
-                        .scrollIndicators(.hidden)
                         #if os(tvOS)
                         .focusSection()
                         .defaultFocus($chipFocus, 0, priority: .userInitiated)

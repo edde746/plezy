@@ -48,7 +48,7 @@ struct HomeShortcuts: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal) {
+        SideScroll {
             HStack(spacing: formFactor == .tv ? 16 : 8) {
                 if app.shell.state.liveTv {
                     ShortcutChip(title: T.shared.navigation.liveTv, systemImage: "tv", id: "home.liveTv") {
@@ -92,7 +92,6 @@ struct HomeShortcuts: View {
             // Room for Apple TV's focus or a keyboard's focus ring, which the row doesn't clip.
             .padding(.vertical, dimens.focusRoom)
         }
-        .scrollIndicators(.hidden)
         .scrollClipDisabled()
         .clearOfVerticalBar()
         .opacity(shown ? 1 : 0)

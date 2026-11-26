@@ -423,7 +423,7 @@ private struct FilterStrip<Content: View>: View {
     @ViewBuilder let content: Content
 
     /// More of the strip lies past its ends.
-    @State private var more = Ends()
+    @State private var more = RowEnds()
     /// The strip's width, nil until measured.
     @State private var width: CGFloat?
 
@@ -432,44 +432,18 @@ private struct FilterStrip<Content: View>: View {
     var body: some View {
         ScrollView(.horizontal) {
             Proposing(width: width.map { max($0 - leading, 0) }) { content }
-                .onGeometryChange(for: Ends.self) { proxy in
-                    let frame = proxy.frame(in: .scrollView)
-                    let width = proxy.bounds(of: .scrollView)?.width ?? frame.maxX
-                    return Ends(leading: frame.minX < leading - 0.5, trailing: frame.maxX > width + 0.5)
-                } action: { more = $0 }
+                .onGeometryChange(for: RowEnds.self) { RowEnds($0, margin: leading) } action: { more = $0 }
         }
         .scrollIndicators(.hidden)
         .contentMargins(.leading, leading, for: .scrollContent)
         .contentMargins(.vertical, padding, for: .scrollContent)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .mask {
-            HStack(spacing: 0) {
-                edge(shown: more.leading, from: .leading)
-                Rectangle()
-                edge(shown: more.trailing, from: .trailing)
-            }
-            .animation(.easeOut(duration: 0.2), value: more)
-        }
+        .mask { RowFade(ends: more, width: fade) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("header.filters")
         .clearOfVerticalBar()
         .padding(.leading, -leading)
         .padding(.vertical, -padding)
-    }
-
-    /// The mask's `fade` at one end: clear at the strip's `end` where `shown`, opaque inward; else opaque.
-    private func edge(shown: Bool, from end: UnitPoint) -> some View {
-        LinearGradient(
-            colors: [.black.opacity(shown ? 0 : 1), .black],
-            startPoint: end,
-            endPoint: end == .leading ? .trailing : .leading
-        )
-        .frame(width: fade)
-    }
-
-    private struct Ends: Equatable {
-        var leading = false
-        var trailing = false
     }
 }
 

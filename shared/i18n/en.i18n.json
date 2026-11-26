@@ -770,7 +770,9 @@
     "hexColor": "Hex color",
     "alphabetNavigation": "Alphabet navigation",
     "rowColumnPosition": "Row ${row} of ${rowCount}, column ${column} of ${columnCount}",
-    "rowPosition": "Row ${row} of ${rowCount}"
+    "rowPosition": "Row ${row} of ${rowCount}",
+    "scrollBack": "Scroll back",
+    "scrollForward": "Scroll forward"
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",

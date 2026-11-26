@@ -651,7 +651,8 @@ struct DetailSectionEmpty: View {
 /// reads as the chip's value. A chip selects its season (on tvOS as focus lands on it, so passing through the row
 /// lands on the selected chip and the next season is one Right); its menu (a long press, a right click, a held Select)
 /// is the season's shared menu (`onMenu`, by season id: mark watched, download, delete). `nameStart` is where the first
-/// name starts from the row's leading edge.
+/// name starts from the row's leading edge. The row opens scrolled to show the selected chip; on the Mac in the row's
+/// middle, clear of the fades and scroll buttons at its ends (`SideScroll`), the seasons before and after it in sight.
 struct DetailSeasonChips: View {
     let seasons: [SeasonTabUi]
     let selected: Int
@@ -665,7 +666,7 @@ struct DetailSeasonChips: View {
     var body: some View {
         let inset = ChipMetrics.inset(formFactor)
         ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
+            SideScroll {
                 HStack(spacing: formFactor == .tv ? 8 : 4) {
                     ForEach(Array(seasons.enumerated()), id: \.element.id) { index, season in
                         chip(season, index: index)
@@ -677,7 +678,11 @@ struct DetailSeasonChips: View {
             }
             .scrollClipDisabled()
             .clearOfVerticalBar()
+            #if os(macOS)
+            .onAppear { proxy.scrollTo(selected, anchor: .center) }
+            #else
             .onAppear { proxy.scrollTo(selected) }
+            #endif
         }
         .shelfFocusSection()
         // Moving into the row lands on the selected chip, so passing through it selects nothing.
