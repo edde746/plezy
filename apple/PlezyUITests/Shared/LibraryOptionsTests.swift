@@ -874,15 +874,17 @@ final class LibraryOptionsTests: PlezyUITestCase {
         // Opened on Browse, no tab switch moves focus into the grid: from the header, Down enters it.
         steps.tvFocus([(.down, 2)]) { focusedCard()?.hasPrefix("Codec ASS Subtitles") == true }
         XCTAssertTrue(waitUntil(15) { focusedCard()?.hasPrefix("Codec ASS Subtitles") == true }, "focus on the first film")
+        // Whichever film the second row's second card is (the columns follow the screen), it sorts after Codec AV1 HDR10.
         XCTAssertTrue(move(.down) && move(.right), "focus moves into the second row")
-        XCTAssertEqual(focusedCard()?.hasPrefix("Codec H264 SDR"), true, "focus on Codec H264 SDR")
+        let focused = try XCTUnwrap(focusedCard(), "a film focused in the second row")
+        XCTAssertFalse(focused.hasPrefix("Codec ASS Subtitles") || focused.hasPrefix("Codec AV1 HDR10"), "focus on a film after Codec AV1 HDR10: \(focused)")
         let secondX = second.frame.minX
         XCTAssertTrue(server.setSortTitle(moved, "zzz Codec AV1 HDR10"), "the server sorts Codec AV1 HDR10 last")
         // The server pushes the change about 30 s later; the tab refetches at most every 2 minutes, counted from its load.
         XCTAssertTrue(waitUntil(210) { abs(third.frame.minX - secondX) < 2 }, "the live refetch moves the films after it back")
         // Gives a stray focus jump after the refetch time to show before checking focus stayed.
         sleep(2)
-        XCTAssertEqual(focusedCard()?.hasPrefix("Codec H264 SDR"), true, "focus stays on Codec H264 SDR, now a place earlier")
+        XCTAssertEqual(focusedCard(), focused, "focus stays on \(focused), now a place earlier")
         shot("focus after the live refetch")
     }
 
