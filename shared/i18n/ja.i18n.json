@@ -1355,6 +1355,7 @@
   "navigation": {
     "libraries": "ライブラリ",
     "downloads": "ダウンロード",
+    "downloadsTab": "ダウンロード",
     "liveTv": "ライブTV",
     "explore": "見つける"
   },

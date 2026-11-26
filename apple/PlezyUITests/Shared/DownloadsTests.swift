@@ -6,8 +6,8 @@ import XCTest
 ///   tabs' empty states (picked from the header row's `downloads.tab` menu), the Movies grouping menu and the Active
 ///   sync rules screen;
 /// - Downloads opened as the app starts signed in to a server: titled, it answers its menus, and iPad's and the Mac's
-///   sidebar has its row; Home's Downloads chip opens it (iPhone's bar has no Downloads tab online); Libraries' view
-///   menu lists no Downloads; a session started offline lands on it;
+///   sidebar has its row; Home's Downloads chip opens it (on iPhone its tab, in the bar from the start, selected then);
+///   Libraries' view menu lists no Downloads; a session started offline lands on it;
 /// - a movie and a season downloaded from the dev Jellyfin server (`--dev-download`, `PLEZY_JELLYFIN` overriding the
 ///   server's address; `_` stands for a space in its titles) shown completed in Manage's tree, the show opened down to
 ///   its episodes, and in the Movies and TV Shows tabs; then the device offline (the session's `offline` switch: the
@@ -100,11 +100,13 @@ final class DownloadsTests: PlezyUITestCase {
         require("downloads.tree.empty", "Manage's empty tree")
         if pad {
             let row = require("nav.downloads", timeout: 30, "the sidebar's Downloads row")
-            XCTAssertTrue(row.isSelected, "Downloads' row is highlighted")
+            // The sidebar lists its rows again as the session's libraries come in: its selection and its rows' places
+            // are read once they have settled.
+            if !waitUntil(10, { row.isSelected }) { fail("Downloads' row isn't highlighted") }
             let home = require("nav.home", timeout: 10, "the sidebar's Home row")
             let search = require("nav.search", timeout: 10, "the sidebar's Search row")
-            XCTAssertLessThan(home.frame.minY, row.frame.minY, "Downloads' row after Home's")
-            XCTAssertLessThan(row.frame.minY, search.frame.minY, "Downloads' row before Search's")
+            let ordered = waitUntil(10) { home.frame.minY < row.frame.minY && row.frame.minY < search.frame.minY }
+            if !ordered { fail("Downloads' row isn't between Home's and Search's: \(home.frame), \(row.frame), \(search.frame)") }
             // Lets the sidebar's highlight settle before the shot.
             Thread.sleep(forTimeInterval: 1)
             shot("downloads sidebar")
@@ -113,15 +115,17 @@ final class DownloadsTests: PlezyUITestCase {
         require("downloads.empty", "Movies' empty state")
     }
 
-    /// Home's Downloads chip opens the Downloads destination, titled; on iPhone, whose bar has no Downloads tab online,
-    /// the bar shows its tab, selected, while it shows, and Home's tab brings Home back, the tab gone again.
+    /// Home's Downloads chip opens the Downloads destination, titled; on iPhone its tab, in the bar from the start, is the
+    /// selected one then, and Home's tab brings Home back, Downloads' tab staying in the bar.
     func testHomeChipOpensDownloads() {
         launchDev(arguments: ["--dev-open", "home", "--dev-server", "jellyfin=maestro:maestro@\(server)"])
         require("home.screen", timeout: 60, "Home")
         #if os(iOS)
         let phone = UIDevice.current.userInterfaceIdiom == .phone
+        let tab = app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch
         if phone {
-            XCTAssertFalse(app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch.exists, "no Downloads tab in iPhone's bar online")
+            XCTAssertTrue(tab.exists(within: 10), "iPhone's bar has Downloads' tab online")
+            XCTAssertFalse(tab.isSelected, "Downloads' tab isn't selected with Home shown")
         }
         #endif
         let chip = require("home.downloads", timeout: 30, "Home's Downloads chip")
@@ -140,11 +144,10 @@ final class DownloadsTests: PlezyUITestCase {
         shot("downloads from home chip")
         #if os(iOS)
         if phone {
-            let tab = app.tabBars.buttons.matching(identifier: "nav.downloads").firstMatch
-            XCTAssertTrue(tab.exists && tab.isSelected, "iPhone's bar shows Downloads' tab, selected, while it shows")
+            XCTAssertTrue(tab.isSelected, "Downloads' tab is the selected one while Downloads shows")
             app.tabBars.buttons.matching(identifier: "nav.home").firstMatch.tap()
             require("home.screen", timeout: 10, "Home's tab brings Home back")
-            XCTAssertTrue(tab.waitForNonExistence(timeout: 5), "Downloads' tab leaves iPhone's bar with Home shown")
+            XCTAssertTrue(tab.exists && !tab.isSelected, "Downloads' tab stays in iPhone's bar with Home shown")
         }
         #endif
     }

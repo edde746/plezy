@@ -1360,6 +1360,7 @@
   "navigation": {
     "libraries": "Media",
     "downloads": "Downloads",
+    "downloadsTab": "Downloads",
     "liveTv": "Live-tv",
     "explore": "Verkennen"
   },

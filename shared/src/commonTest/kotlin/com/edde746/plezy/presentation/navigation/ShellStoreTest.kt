@@ -34,12 +34,6 @@ class NavigationTabsTest {
     }
 
     @Test
-    fun aPhonesBarLeavesDownloadsToHomeWhileLibrariesShows() {
-        assertEquals(listOf(HOME, LIBRARIES, SEARCH, SETTINGS), NavigationTabs.bar(NavigationTabs.visible(offline = false, hasExplore = false, downloads = true)))
-        assertEquals(listOf(DOWNLOADS, SETTINGS), NavigationTabs.bar(NavigationTabs.visible(offline = true, hasExplore = false, downloads = true)))
-    }
-
-    @Test
     fun startupPrefersTheVisiblePreferenceThenTheFirst() {
         val online = NavigationTabs.visible(offline = false, hasExplore = false, downloads = true)
         assertEquals(SEARCH, NavigationTabs.startup(online, preferred = SEARCH))

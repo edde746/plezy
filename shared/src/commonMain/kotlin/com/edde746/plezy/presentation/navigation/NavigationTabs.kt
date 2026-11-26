@@ -19,13 +19,6 @@ object NavigationTabs {
             }
         }
 
-    /**
-     * The destinations a phone's bottom bar shows of [visible]: Downloads only while Libraries doesn't show (offline),
-     * Home's Downloads shortcut opening it otherwise. The sidebars, rails and TV columns show every visible one.
-     */
-    fun bar(visible: List<TopLevelDestination>): List<TopLevelDestination> =
-        if (TopLevelDestination.LIBRARIES in visible) visible - TopLevelDestination.DOWNLOADS else visible
-
     /** The destination to start on among [visible]: the [preferred] one while it shows, otherwise the first. */
     fun startup(visible: List<TopLevelDestination>, preferred: TopLevelDestination?): TopLevelDestination =
         preferred?.takeIf { it in visible } ?: visible.first()
