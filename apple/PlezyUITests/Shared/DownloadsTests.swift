@@ -28,17 +28,6 @@ final class DownloadsTests: PlezyUITestCase {
     private let show = "Maestro Show"
     private let season = "Season 1"
 
-    override func setUp() {
-        super.setUp()
-        // The Mac's "quit unexpectedly" dialog of an app an earlier run left would take the test's clicks.
-        addUIInterruptionMonitor(withDescription: "a crash report dialog") { dialog in
-            let ignore = dialog.buttons["Ignore"]
-            guard ignore.exists else { return false }
-            self.press(ignore)
-            return true
-        }
-    }
-
     /// Waits for the Downloads screen; on the Mac brings its window to the front, which then takes the clicks, and shows
     /// its sidebar where the window came back with it collapsed (the offline line sits at its foot).
     private func opened() {
