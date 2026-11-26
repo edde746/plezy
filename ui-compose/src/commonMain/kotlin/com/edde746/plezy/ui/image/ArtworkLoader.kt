@@ -34,6 +34,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.asCoroutineDispatcher
 import okio.Buffer
 import okio.BufferedSink
 import okio.ForwardingFileSystem
@@ -54,6 +55,7 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
 import java.nio.channels.OverlappingFileLockException
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.TimeMark
 import okio.Path.Companion.toOkioPath
@@ -94,6 +96,7 @@ internal fun artworkImageLoader(
         .diskCache { openArtworkDiskCache(directory) }
         .crossfade(true)
         .interceptorCoroutineContext(Dispatchers.Default)
+        .apply { if (reduced) decoderCoroutineContext(reducedDecoding) }
         .eventListener(
             object : EventListener() {
                 override fun onSuccess(request: ImageRequest, result: SuccessResult) {
@@ -102,6 +105,15 @@ internal fun artworkImageLoader(
             },
         )
         .build()
+}
+
+/**
+ * The reduced tier's decoding: two images at a time on threads at Android's background priority, so a weak box's
+ * decodes don't take the CPU from the frames that draw the screen.
+ */
+private val reducedDecoding by lazy {
+    Executors.newFixedThreadPool(2) { Thread(it, "artwork-decode").apply { isDaemon = true; priority = Thread.NORM_PRIORITY - 1 } }
+        .asCoroutineDispatcher()
 }
 
 /**
