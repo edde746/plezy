@@ -205,9 +205,9 @@ private fun LazyGridItemInfo.cell(): Int? = (key as? String)?.let { key ->
 }
 
 /**
- * After each move of [grid] the posters of the two rows past its last shown cell, fetched at a card's artwork size in
- * pixels; the shown cards load their own. A fetch still going when its poster leaves those rows (it shows, or the grid
- * moved past it) or the grid leaves is cancelled, so it never queues ahead of the posters on screen.
+ * Once each move of [grid] ends, the posters of the two rows past its last shown cell, fetched at a card's artwork size
+ * in pixels; the shown cards load their own. A fetch still going when its poster leaves those rows (it shows, or the
+ * grid moved past it) or the grid leaves is cancelled, so it never queues ahead of the posters on screen.
  */
 @Composable
 private fun PrefetchPosters(grid: LazyGridState, card: (Int) -> MediaCardUi?, shape: CardShape) {
@@ -220,6 +220,8 @@ private fun PrefetchPosters(grid: LazyGridState, card: (Int) -> MediaCardUi?, sh
         val asked = HashMap<String, Disposable>()
         try {
             snapshotFlow {
+                // Nothing while the grid moves: the decodes would take the CPU from the frames that move it.
+                if (grid.isScrollInProgress) return@snapshotFlow null
                 val info = grid.layoutInfo
                 val cells = info.visibleItemsInfo.filter { it.contentType == CARD || it.contentType == BLANK }
                 val sized = cells.firstOrNull { it.contentType == CARD } ?: return@snapshotFlow null
