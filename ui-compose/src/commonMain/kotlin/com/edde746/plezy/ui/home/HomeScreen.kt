@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
+import com.edde746.plezy.ui.components.ScrollRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
@@ -574,7 +574,7 @@ internal fun ShortcutRow(memory: FocusMemory, first: String, below: String?, mod
     LaunchedEffect(state) { snapshotFlow { state.isScrollInProgress }.collect { if (it) scrolled = true } }
     // The list keeps its first visible chip in place as chips are inserted before it, which would open the row scrolled.
     LaunchedEffect(first) { if (!scrolled) state.requestScrollToItem(0) }
-    LazyRow(
+    ScrollRow(
         state = state,
         modifier = modifier
             .fillMaxWidth()

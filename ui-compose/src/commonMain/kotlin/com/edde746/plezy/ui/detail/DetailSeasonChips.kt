@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
+import com.edde746.plezy.ui.components.ScrollRow
+import com.edde746.plezy.ui.components.scrollRowFade
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -70,7 +72,8 @@ import kotlin.math.roundToInt
 /**
  * A show's seasons as a row of chips (`detail.season.<i>`; harness name of the row `detail.seasons`) on every layout:
  * the TV page, the one-column page and the episodes' column beside the details. The row opens with the selected
- * season's chip in view, its first name at [nameStart] from the row's start edge. A chip selects its season: off TV a
+ * season's chip in view, clear of the row's edge fades ([scrollRowFade]: the season before it shows in the fade), its
+ * first name at [nameStart] from the row's start edge. A chip selects its season: off TV a
  * tap, a click or Select, and Left and Right on a focused chip move to the neighbour and select it; on TV (a D-pad) as
  * focus moves onto it, so the next season is one Right, and a move into the row from above or below lands on the
  * selected chip ([tvRow]), Up going where [up] puts focus. Each season's menu (a long press, a held Select, a right
@@ -91,8 +94,10 @@ internal fun SeasonChips(
     if (seasons.isEmpty()) return
     val selected = state.selectedSeason
     val list = rememberLazyListState()
-    LaunchedEffect(Unit) { list.showWhole(selected) }
-    LazyRow(
+    // The selected chip clear of the edge fades, past the row's own padding.
+    val room = with(LocalDensity.current) { (scrollRowFade() - (nameStart - ChipInset)).coerceAtLeast(0.dp).roundToPx() }
+    LaunchedEffect(Unit) { list.showWhole(selected, room) }
+    ScrollRow(
         state = list,
         modifier = modifier
             .fillMaxWidth()
@@ -121,11 +126,14 @@ internal fun SeasonChips(
 /** The focus key of the season chip [seasonId]. */
 internal fun seasonFocusKey(seasonId: String): String = "season:$seasonId"
 
-/** Scrolls the row to show item [index] whole, once the row has its first layout, where it doesn't already. */
-private suspend fun LazyListState.showWhole(index: Int) {
+/**
+ * Scrolls the row to show item [index] whole, [room] pixels clear of the row's end, once the row has its first layout,
+ * where it doesn't already; [room] before it then too.
+ */
+private suspend fun LazyListState.showWhole(index: Int, room: Int) {
     val info = snapshotFlow { layoutInfo }.first { it.totalItemsCount > 0 }
     val shown = info.visibleItemsInfo.firstOrNull { it.index == index }
-    if (shown == null || shown.offset + shown.size > info.viewportEndOffset) scrollToItem(index)
+    if (shown == null || shown.offset + shown.size > info.viewportEndOffset - room) scrollToItem(index, -room)
 }
 
 /**

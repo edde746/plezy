@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -85,7 +84,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * shelves space them with `sectionSpacing` less that bottom room ([shelfSpacing]).
  *
  * Keyboard, D-pad and remote: left/right move between cards (right on the last card stays there) and the row scrolls to
- * keep the focused card in view;
+ * keep the focused card in view; a mouse scrolls it on the desktop ([ScrollRow]);
  * moving into the row from above or below lands on the card that had focus last, else, on TV, the first, not the card
  * under the focus, which the cards' widths, their count and the row's scroll would decide (the first Down from Search's
  * field). Elsewhere it lands on the card under the focus: the heading's See all sits at the row's right end, and Down
@@ -188,7 +187,7 @@ fun <T> ShelfRow(
         val padStart = padding.calculateStartPadding(direction)
         // The first card and its focus growth clear the rail or the TV column, wherever the row is placed.
         val (placed, clearance) = rememberNavigationClearance(padStart, NavigationCardGap)
-        LazyRow(
+        ScrollRow(
             state = state,
             // The heading's gap above; the focused card's growth at the ends and below (TV). Scrolled-away cards end at
             // the TV column's edge.
