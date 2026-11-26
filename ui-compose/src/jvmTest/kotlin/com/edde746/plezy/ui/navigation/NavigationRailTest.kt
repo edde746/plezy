@@ -41,8 +41,10 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.edde746.plezy.model.FormFactor
+import com.edde746.plezy.presentation.navigation.NavigationTabs
 import com.edde746.plezy.presentation.navigation.TopLevelDestination
 import com.edde746.plezy.presentation.probeName
+import com.edde746.plezy.strings.T
 import com.edde746.plezy.ui.adaptive.AdaptiveLayout
 import com.edde746.plezy.ui.components.PlezyButton
 import com.edde746.plezy.ui.focus.LocalScreenFocus
@@ -66,13 +68,14 @@ class NavigationRailTest {
     private val destinations = TopLevelDestination.entries
 
     /**
-     * A phone held upright (412 × 700 dp) gets the bar along the window's foot, every destination (Downloads after
-     * Libraries) named under its icon, side by side.
+     * A phone held upright (412 × 700 dp) gets the bar along the window's foot, every destination it holds named under
+     * its icon, side by side, More last for those it leaves (Explore shown: Downloads and Settings).
      */
     @Test
     fun aCompactWindowGetsTheBarAlongItsFoot() = runComposeUiTest {
         rail(FormFactor.HANDHELD, 412, 700)
-        val items = destinations.map { shown(hasText(it.label)) }
+        val labels = (destinations - NavigationTabs.moreHeld(destinations).toSet()).map { it.label } + T.navigation.more
+        val items = labels.map { shown(hasText(it)) }
         for (item in items) assertTrue(item.bottom <= 700.dp && item.top >= 620.dp, "a destination at ${item.top}–${item.bottom} isn't in the bar")
         for ((a, b) in items.zipWithNext()) assertTrue(a.right <= b.left, "destinations overlap: $a and $b")
     }
