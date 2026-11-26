@@ -261,7 +261,9 @@ final class ShellChromeTests: PlezyUITestCase {
     }
 
     /// An artist opened over Home, the sidebar shown (iPad, the Mac): its server's Music library is the highlighted row,
-    /// not Home, and every destination keeps its row; Home picked then goes back to its root, highlighted again.
+    /// not Home, and every destination keeps its row; Home picked then goes back to its root, highlighted again. On an
+    /// iPad in portrait the sidebar lies over the screen and the pick hides it: the floating tab bar then shows Home
+    /// selected, with no Music tab to highlight.
     func testAnArtistOverHomeHighlightsItsMusicLibrary() throws {
         #if os(iOS)
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "the iPhone's tab bar has no library rows")
@@ -280,7 +282,8 @@ final class ShellChromeTests: PlezyUITestCase {
         shot("artist over home highlights music")
         pick("nav.home")
         require("home.screen", "Home's root once Home is picked")
-        if !waitUntil(10, { selected("nav.home") && !selected("nav.library.Music") }) { fail("Home's row isn't highlighted at Home's root") }
+        let music = element("nav.library.Music")
+        if !waitUntil(10, { selected("nav.home") && !(music.exists && music.isSelected) }) { fail("Home's row isn't highlighted at Home's root") }
         shot("home highlighted again")
     }
 
