@@ -39,7 +39,12 @@ final class OfflineCollectionTests: PlezyUITestCase {
         }
         // Downloads opens from Home's Downloads chip.
         press(require("nav.home", "the chrome's Home"))
-        press(require("home.downloads", timeout: 30, "Home's Downloads chip"))
+        let chip = require("home.downloads", timeout: 30, "Home's Downloads chip")
+        #if os(iOS)
+        // The chip row scrolls sideways: Downloads comes after the libraries' chips.
+        for _ in 0..<6 where chip.frame.maxX > app.frame.maxX - 16 { element("home.shortcuts").swipeLeft() }
+        #endif
+        press(chip)
         require("downloads.screen", timeout: 30, "the Downloads screen")
         // The collection's titles download as the Manage tree's rows.
         for title in Self.titles {
