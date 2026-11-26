@@ -1,5 +1,6 @@
 package com.edde746.plezy.ui
 
+import coil3.SingletonImageLoader
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +23,13 @@ object TestMain {
     val dispatcher: CoroutineDispatcher =
         Executors.newSingleThreadExecutor { task -> Thread(task, "test-main").apply { isDaemon = true } }.asCoroutineDispatcher()
 
-    /** Makes [dispatcher] Main for the calling test and every test after it. */
-    fun install() = Dispatchers.setMain(dispatcher)
+    /**
+     * Makes [dispatcher] Main for the calling test and every test after it, and drops Coil's singleton loader: a closed
+     * graph's coroutine resuming after its test (above) can load an image and so make that loader, which the next app
+     * frame's image setup ([com.edde746.plezy.ui.image.ProvideImageLoader]) may no longer replace.
+     */
+    fun install() {
+        Dispatchers.setMain(dispatcher)
+        SingletonImageLoader.reset()
+    }
 }
