@@ -204,9 +204,17 @@ internal class DetailFixture(
             related = related,
         )
 
-        /** A show of two seasons of [episodes] episodes each, one actor and a long overview, which can shuffle. */
-        fun show(tv: Boolean, episodes: Int = 3): DetailFixture {
-            val seasons = (1..2).map { n -> item("s$n", MediaKind.SEASON, "Season $n") { copy(index = n, parentId = "show") } }
+        /**
+         * A show of two seasons (or one per entry of [watched]) of [episodes] episodes each, one actor and a long
+         * overview, which can shuffle. [watched] gives each season's count of watched episodes; without it the seasons
+         * carry no counts.
+         */
+        fun show(tv: Boolean, episodes: Int = 3, watched: List<Int> = emptyList()): DetailFixture {
+            val seasons = (1..maxOf(2, watched.size)).map { n ->
+                item("s$n", MediaKind.SEASON, "Season $n") {
+                    copy(index = n, parentId = "show", leafCount = episodes.takeIf { watched.isNotEmpty() }, viewedLeafCount = watched.getOrNull(n - 1))
+                }
+            }
             val rows = seasons.associate { season ->
                 season.id to (1..episodes).map { n ->
                     item("${season.id}e$n", MediaKind.EPISODE, "Episode $n") { copy(index = n, parentIndex = season.index, parentId = season.id, grandparentId = "show") }

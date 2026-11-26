@@ -931,18 +931,52 @@ class MediaDetailStoreTest {
     }
 
     @Test
-    fun `watched checks and unwatched counts follow their settings`() = runTest {
+    fun `season chips show a check once watched and the watched share while partly watched`() = runTest {
         scriptShow(watched = 1)
-        val counted = s1.copy(leafCount = 3, viewedLeafCount = 1)
-        backend.children = { listOf(counted, s2) }
+        val partly = s1.copy(leafCount = 3, viewedLeafCount = 1)
+        val done = s2.copy(leafCount = 2, viewedLeafCount = 2)
+        val unstarted = item("s3", MediaKind.SEASON) { copy(index = 3, parentId = "show", leafCount = 2, viewedLeafCount = 0) }
+        val uncounted = item("s4", MediaKind.SEASON) { copy(index = 4, parentId = "show") }
+        backend.children = { listOf(partly, done, unstarted, uncounted) }
         val shown = store("show")
         runCurrent()
         assertTrue(shown.state.value.episodes!!.rows.first().watched)
-        assertEquals(2, shown.state.value.seasons.first().unwatchedCount)
-        val hidden = store("show", options = CardOptions(showWatchedIndicators = false, showUnwatchedCount = false))
+        assertEquals(listOf(false, true, false, false), shown.state.value.seasons.map { it.watched })
+        assertEquals(listOf(1.0 / 3, null, null, null), shown.state.value.seasons.map { it.progress })
+        val hidden = store("show", options = CardOptions(showWatchedIndicators = false))
         runCurrent()
         assertTrue(hidden.state.value.episodes!!.rows.none { it.watched })
-        assertEquals(0, hidden.state.value.seasons.first().unwatchedCount)
+        assertTrue(hidden.state.value.seasons.none { it.watched || it.progress != null }, "${hidden.state.value.seasons}")
+    }
+
+    @Test
+    fun `an episode marked watched or unwatched moves its season chip`() = runTest {
+        scriptShow()
+        var serverSeasons = listOf(s1.copy(leafCount = 3, viewedLeafCount = 0), s2)
+        backend.children = { serverSeasons }
+        val store = store("show")
+        runCurrent()
+        assertNull(store.state.value.seasons.first().progress)
+        val (first, second, third) = episodes(s1, 3)
+
+        serverSeasons = listOf(s1.copy(leafCount = 3, viewedLeafCount = 1), s2)
+        notifier.notifyWatched(first)
+        runCurrent()
+        assertEquals(1.0 / 3, store.state.value.seasons.first().progress)
+
+        serverSeasons = listOf(s1.copy(leafCount = 3, viewedLeafCount = 3), s2)
+        notifier.notifyWatched(second)
+        notifier.notifyWatched(third)
+        runCurrent()
+        assertTrue(store.state.value.seasons.first().watched)
+        assertNull(store.state.value.seasons.first().progress)
+
+        serverSeasons = listOf(s1.copy(leafCount = 3, viewedLeafCount = 2), s2)
+        notifier.notifyWatched(third, isNowWatched = false)
+        runCurrent()
+        assertFalse(store.state.value.seasons.first().watched)
+        assertEquals(2.0 / 3, store.state.value.seasons.first().progress)
+        assertEquals(0, store.state.value.selectedSeason)
     }
 
     @Test

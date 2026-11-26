@@ -647,7 +647,8 @@ struct DetailSectionEmpty: View {
 
 /// A show's seasons as a row of chips scrolling sideways, as the Apple TV app draws its tabs: no fill at rest, the
 /// row's focus fill while focused; the selected one's name semibold in the text colour, the others' regular and dimmed;
-/// a check marks a watched season. A chip selects its season (on tvOS as focus lands on it, so passing through the row
+/// a check marks a watched season and a ring of its watched share a partly watched one (`SeasonRing`), which VoiceOver
+/// reads as the chip's value. A chip selects its season (on tvOS as focus lands on it, so passing through the row
 /// lands on the selected chip and the next season is one Right); its menu (a long press, a right click, a held Select)
 /// is the season's shared menu (`onMenu`, by season id: mark watched, download, delete). `nameStart` is where the first
 /// name starts from the row's leading edge.
@@ -689,7 +690,7 @@ struct DetailSeasonChips: View {
         let height = ChipMetrics.height(formFactor)
         let isSelected = index == selected
         return Button { if !isSelected { onSelect(index) } } label: {
-            SeasonChipLabel(title: season.title, selected: isSelected, watched: season.watched)
+            SeasonChipLabel(title: season.title, selected: isSelected, watched: season.watched, progress: season.progress?.doubleValue)
                 .padding(.horizontal, ChipMetrics.inset(formFactor))
                 .frame(minHeight: height)
                 .contentShape(Capsule())
@@ -701,11 +702,18 @@ struct DetailSeasonChips: View {
         }
         .buttonStyle(SurfaceButtonStyle(fill: .clear, radius: height / 2))
         .accessibilityLabel(season.title)
-        .accessibilityValue(season.watched ? T.shared.accessibility.mediaCardWatched : "")
+        .accessibilityValue(Self.value(of: season))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("detail.season.\(index)")
         .modifier(SeasonFocus(focus: focus, key: "season/\(season.id)", select: isSelected ? nil : { onSelect(index) }))
         .mediaMenuTrigger(onMenu.map { open in { open(season.id) } }, item: season)
+    }
+
+    /// What VoiceOver says of a season's progress: watched, the share watched, or nothing.
+    private static func value(of season: SeasonTabUi) -> String {
+        if season.watched { return T.shared.accessibility.mediaCardWatched }
+        guard let progress = season.progress?.doubleValue else { return "" }
+        return T.shared.accessibility.mediaCardPartiallyWatched(percent: String(Int((progress * 100).rounded())))
     }
 }
 
@@ -723,12 +731,14 @@ private struct SelectedChipFocus: ViewModifier {
 }
 
 /// A season chip's name in the chips' font (`ChipMetrics`), cut short past `ChipMetrics.maxNameWidth`; the selected
-/// one's semibold, the others' regular and dimmed but while focused; a watched season's checkmark after the name, in
-/// the name's font, weight and colour, so only the weight tells which season is selected.
+/// one's semibold, the others' regular and dimmed but while focused; after the name a watched season's checkmark, in
+/// the name's font, weight and colour, so only the weight tells which season is selected, or a partly watched season's
+/// ring of its `progress` in the checkmark's place and size.
 private struct SeasonChipLabel: View {
     let title: String
     let selected: Bool
     let watched: Bool
+    let progress: Double?
 
     @Environment(\.isFocused) private var focused
     @Environment(\.formFactor) private var formFactor
@@ -744,9 +754,38 @@ private struct SeasonChipLabel: View {
                 Image(systemName: "checkmark").font(font.weight(.semibold)).hidden()
                     .overlay { Image(systemName: "checkmark").font(font.weight(selected ? .semibold : .regular)) }
                     .accessibilityHidden(true)
+            } else if let progress {
+                Image(systemName: "checkmark").font(font.weight(.semibold)).hidden()
+                    .overlay { SeasonRing(fraction: progress, onFill: focused) }
+                    .accessibilityHidden(true)
             }
         }
         .opacity(selected || focused ? 1 : 0.8)
+    }
+}
+
+/// How much of a season is watched, as a ring the checkmark's size: `fraction` of it in the accent, clockwise from the
+/// top (counter-clockwise right to left), over a faint full track. On a focused chip's fill (`onFill`, Apple TV) in the
+/// label's colour there: the base themes' accent is the text colour, which that fill takes.
+private struct SeasonRing: View {
+    let fraction: Double
+    let onFill: Bool
+
+    @Environment(\.formFactor) private var formFactor
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    var body: some View {
+        let width: CGFloat = formFactor == .tv ? 3.5 : 2
+        ZStack {
+            Circle().stroke(.quaternary, lineWidth: width)
+            Circle()
+                .trim(from: 0, to: min(max(fraction, 0), 1))
+                .stroke(onFill ? AnyShapeStyle(.primary) : AnyShapeStyle(Palette.primary), style: StrokeStyle(lineWidth: width, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .scaleEffect(x: layoutDirection == .rightToLeft ? -1 : 1)
+        }
+        .padding(width / 2 + 1)
+        .aspectRatio(1, contentMode: .fit)
     }
 }
 

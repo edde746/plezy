@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,13 +23,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusEnterExitScope
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -37,6 +48,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.edde746.plezy.presentation.detail.MediaDetailUiState
 import com.edde746.plezy.presentation.detail.SeasonTabUi
@@ -53,6 +65,7 @@ import com.edde746.plezy.ui.probe.layoutProbe
 import com.edde746.plezy.ui.theme.LocalPlezyDimens
 import com.edde746.plezy.ui.theme.PlezyColors
 import kotlinx.coroutines.flow.first
+import kotlin.math.roundToInt
 
 /**
  * A show's seasons as a row of chips (`detail.season.<i>`; harness name of the row `detail.seasons`) on every layout:
@@ -92,6 +105,7 @@ internal fun SeasonChips(
         itemsIndexed(seasons, key = { _, season -> season.id }) { index, season ->
             SeasonChip(
                 season,
+                index,
                 selected = index == selected,
                 poster = state.seasonPosters,
                 onSelect = { if (index != state.selectedSeason) onSelect(index) },
@@ -118,13 +132,16 @@ private suspend fun LazyListState.showWhole(index: Int) {
  * A season's chip, as tvOS draws its tabs over a picture: no fill at rest, the primary fill while it has focus (no
  * growth, no ring: the row keeps one height); hover and press tint it. The selected one's name is in the content colour
  * and SemiBold, the others' at [UNSELECTED_ALPHA] and Regular, each as wide as the wider of the two, so a pick moves no
- * chip of the row; a check marks a watched season, which screen readers hear as its state. With [poster] the season's
- * poster sits over the name. [onSelect] runs on a tap, a click or Select, and with [selectsOnFocus] (TV) as focus moves
- * onto it; [onMenu] is its menu.
+ * chip of the row; a check marks a watched season and a ring of its watched share ([SeasonRing]) a partly watched one,
+ * in the check's place and size, which screen readers hear as its state ("watched", "33 percent watched"). With
+ * [poster] the season's poster sits over the name. [onSelect] runs on a tap, a click or Select, and with
+ * [selectsOnFocus] (TV) as focus moves onto it; [onMenu] is its menu. [index] names its check and ring
+ * (`detail.season.<index>.check`, `.progress`).
  */
 @Composable
 private fun SeasonChip(
     season: SeasonTabUi,
+    index: Int,
     selected: Boolean,
     poster: Boolean,
     onSelect: () -> Unit,
@@ -132,13 +149,23 @@ private fun SeasonChip(
     modifier: Modifier,
 ) {
     val art = season.poster.takeIf { poster }
+    val progress = season.progress
+    var focused by remember { mutableStateOf(false) }
+    val state = when {
+        season.watched -> T.accessibility.mediaCardWatched
+        progress != null -> T.accessibility.mediaCardPartiallyWatched(percent = (progress * 100).roundToInt().toString())
+        else -> null
+    }
     PlezySurface(
         onClick = onSelect,
         modifier = modifier
             .menuGestures(onMenu)
             .heightIn(min = LocalPlezyDimens.current.chipHeight)
-            .onFocusChanged { if (it.isFocused) onSelect() }
-            .then(if (season.watched) Modifier.semantics { stateDescription = T.accessibility.mediaCardWatched } else Modifier),
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onSelect()
+            }
+            .then(if (state != null) Modifier.semantics { stateDescription = state } else Modifier),
         shape = if (art != null) MaterialTheme.shapes.medium else CircleShape,
         color = Color.Transparent,
         role = Role.Tab,
@@ -162,7 +189,19 @@ private fun SeasonChip(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (season.watched) Icon(PlezyIcons.Check, contentDescription = null, Modifier.size(18.dp), tint = content)
+                if (season.watched) {
+                    Icon(PlezyIcons.Check, contentDescription = null, Modifier.size(18.dp).testTag("detail.season.$index.check"), tint = content)
+                } else if (progress != null) {
+                    // The accent; on a focused chip, whose fill is the accent (a keyboard's focus) or the text colour (TV),
+                    // the fill's own content colour.
+                    val arc = if (focused) LocalContentColor.current else PlezyColors.Primary
+                    SeasonRing(
+                        progress.toFloat(),
+                        arc.copy(alpha = content.alpha),
+                        LocalContentColor.current.copy(alpha = RING_TRACK_ALPHA),
+                        Modifier.size(18.dp).testTag("detail.season.$index.progress"),
+                    )
+                }
                 Text(
                     season.title,
                     Modifier.widthIn(max = ChipMaxWidth).widestLook(measurer, season.title, style, 0, selectedStyle, 0),
@@ -177,8 +216,30 @@ private fun SeasonChip(
     }
 }
 
+/**
+ * How much of a season is watched, as a ring the size of the watched check: [fraction] of it in [color] clockwise from
+ * the top (counter-clockwise right to left) over a full [track].
+ */
+@Composable
+private fun SeasonRing(fraction: Float, color: Color, track: Color, modifier: Modifier) {
+    Spacer(
+        modifier.drawBehind {
+            val stroke = 2.dp.toPx()
+            val inset = 2.dp.toPx() + stroke / 2
+            val arc = Size(size.width - inset * 2, size.height - inset * 2)
+            val topLeft = Offset(inset, inset)
+            drawArc(track, 0f, 360f, useCenter = false, topLeft = topLeft, size = arc, style = Stroke(stroke))
+            val sweep = 360f * fraction.coerceIn(0f, 1f) * if (layoutDirection == LayoutDirection.Rtl) -1 else 1
+            drawArc(color, -90f, sweep, useCenter = false, topLeft = topLeft, size = arc, style = Stroke(stroke, cap = StrokeCap.Round))
+        },
+    )
+}
+
 /** How bright an unselected chip's name is: the selected name's 100 % and SemiBold set it apart. */
 private const val UNSELECTED_ALPHA = 0.65f
+
+/** How strong a season ring's track is against the chip's content colour. */
+private const val RING_TRACK_ALPHA = 0.25f
 
 /** How far a chip's focus fill reaches past its name; the first name lines up with what it sits over. */
 private val ChipInset = 12.dp

@@ -3,7 +3,8 @@ import XCTest
 #if !os(tvOS)
 /// A show's season tabs and episode rows on a phone, a tablet or the Mac, against the development Jellyfin server:
 /// Maestro Show's season chips, a held (right-clicked) chip opens the season's shared menu (on iOS titled by the season
-/// alone, an episode's by the episode's title), a downloaded episode's row says its download's state to VoiceOver, an
+/// alone, an episode's by the episode's title), a chip says how much of its season is watched and follows an episode
+/// marked watched, a downloaded episode's row says its download's state to VoiceOver, an
 /// offline show's episode row has its menu, which marks that one episode watched, Continue Watching's episode
 /// (opened to its details) lands on its show with that episode's row in view (in the middle where the page is one
 /// column), and on the Mac, with the system's keyboard navigation on, Tab reaches an episode row and its ⋯. Each step is
@@ -20,23 +21,7 @@ final class DetailEpisodesTests: PlezyUITestCase {
     }
 
     func testSeasonTabsMenuAndEpisodeDownload() {
-        #if os(macOS)
-        // From the Shows grid, typing nothing (`LibrarySteps.openCard`): Search's typing leaves the right clicks below
-        // reaching no item.
-        launchDev(arguments: ["--dev-open", "libraries", "--dev-server", Self.server])
-        require("libraries.screen", timeout: 90, "Libraries")
-        LibrarySteps(test: self).openCard("Maestro Show", in: "Shows")
-        #else
-        launchDev(arguments: ["--dev-open", "search", "--dev-server", Self.server])
-        require("search.screen", timeout: 90, "the Search screen")
-        type("Maestro Show")
-        let result = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "identifier BEGINSWITH 'search.result.' AND label == %@", "Maestro Show")).firstMatch
-        if !result.exists(within: 30) { fail("typing Maestro Show lists no Maestro Show") }
-        _ = waitUntil(5) { result.isHittable }
-        tap(result)
-        #endif
-        require("detail.title", timeout: 30, "Maestro Show's title")
+        openMaestroShow(as: Self.server)
         let tab = require("detail.season.1", timeout: 30, "the show's season chips")
         let row = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH 'detail.episode.' AND NOT (identifier ENDSWITH '.menu')")).firstMatch
@@ -83,6 +68,60 @@ final class DetailEpisodesTests: PlezyUITestCase {
         }
         scroll()
         shot("episode downloaded")
+    }
+
+    /// As an account of the test's own: Specials watched, Season 1 one episode of three (Maestro Episode 2 started, which
+    /// doesn't count), Season 2 none. The chips say so (VoiceOver's value: watched, 33 percent watched, nothing), and
+    /// Season 1's follows Maestro Episode 2 marked watched from its row's menu.
+    func testSeasonChipsSayHowMuchIsWatched() throws {
+        let records = try WatchRecords.ownAccount(on: Self.server)
+        addTeardownBlock { try records.removeAccount() }
+        // Every episode of the show, played or not: on the test server a new account can start with the watch records of
+        // accounts removed before it (Maestro Episode 2 played, as this test leaves it).
+        try records.set("Behind the Pattern", seconds: 0, played: true, ago: 120)
+        try records.set("Maestro Episode 1", seconds: 0, played: true, ago: 60)
+        try records.set("Maestro Episode 2", seconds: 70, ago: 30)
+        for title in ["Maestro Episode 3", "Second Season Opener", "Second Season Finale"] {
+            try records.set(title, seconds: 0, ago: 3600)
+        }
+        openMaestroShow(as: records.server)
+        let chips = (0..<3).map { element("detail.season.\($0)") }
+        let values = { chips.map { $0.value as? String ?? "" } }
+        let started = ["watched", "33 percent watched", ""]
+        if !waitUntil(20, { values() == started }) { return fail("the season chips say \(values()), not \(started)") }
+        if !chips[1].isSelected { tap(chips[1]) }
+        _ = waitUntil(5) { chips[1].isSelected }
+        shot("season chips watched partly and not")
+
+        let row = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'detail.episode.' AND NOT (identifier ENDSWITH '.menu') AND label CONTAINS 'Maestro Episode 2'")).firstMatch
+        if !row.exists(within: 20) { return fail("Season 1 lists no Maestro Episode 2") }
+        openMenu(on: row)
+        tap(require("menu.watch", timeout: 10, "Maestro Episode 2's menu offers Mark as watched"))
+        if !waitUntil(20, { values()[1] == "67 percent watched" }) {
+            return fail("after Maestro Episode 2 is marked watched Season 1's chip says \(values()[1]), not 67 percent watched")
+        }
+        shot("season chip after an episode marked watched")
+    }
+
+    /// Launches signed in as `server` and opens Maestro Show: on the Mac from the Shows grid, typing nothing
+    /// (`LibrarySteps.openCard`: Search's typing leaves later right clicks reaching no item), elsewhere from Search.
+    private func openMaestroShow(as server: String) {
+        #if os(macOS)
+        launchDev(arguments: ["--dev-open", "libraries", "--dev-server", server])
+        require("libraries.screen", timeout: 90, "Libraries")
+        LibrarySteps(test: self).openCard("Maestro Show", in: "Shows")
+        #else
+        launchDev(arguments: ["--dev-open", "search", "--dev-server", server])
+        require("search.screen", timeout: 90, "the Search screen")
+        type("Maestro Show")
+        let result = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'search.result.' AND label == %@", "Maestro Show")).firstMatch
+        if !result.exists(within: 30) { fail("typing Maestro Show lists no Maestro Show") }
+        _ = waitUntil(5) { result.isHittable }
+        tap(result)
+        #endif
+        require("detail.title", timeout: 30, "Maestro Show's title")
     }
 
     #if os(macOS)

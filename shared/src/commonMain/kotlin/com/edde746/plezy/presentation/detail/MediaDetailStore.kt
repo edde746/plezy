@@ -867,7 +867,11 @@ class MediaDetailStore(
         when {
             event.itemId == route.itemId -> Unit
             season && item?.kind == MediaKind.SHOW -> refreshSeasonList()
-            else -> patchItem(event.itemId)
+            else -> {
+                patchItem(event.itemId)
+                // An episode's mark moves its season's counts, which its chip shows (the ring, the check).
+                if (item?.kind == MediaKind.SHOW && seasons.any { it.id in event.parentChain }) refreshSeasonList()
+            }
         }
     }
 
@@ -1309,7 +1313,7 @@ class MediaDetailStore(
         title = season.title ?: T.common.seasonNumber((season.index ?: 0).toString()),
         poster = art(season.thumbPath, ImageKind.POSTER),
         watched = options.showWatchedIndicators && season.isWatched,
-        unwatchedCount = if (options.showUnwatchedCount && !season.isWatched) season.unwatchedCount ?: 0 else 0,
+        progress = season.leafWatchFraction?.takeIf { options.showWatchedIndicators && season.isPartiallyWatched },
     )
 
     private fun episodeRow(episode: MediaItem, options: CardOptions, onDeckId: String?): EpisodeRowUi {
