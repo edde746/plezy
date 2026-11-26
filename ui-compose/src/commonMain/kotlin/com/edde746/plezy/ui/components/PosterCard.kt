@@ -77,6 +77,22 @@ import com.edde746.plezy.ui.theme.PlezyColors
 import com.edde746.plezy.ui.theme.contentDirection
 import com.edde746.plezy.ui.theme.hyphenated
 import kotlin.math.roundToInt
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateDraw
+import androidx.compose.ui.node.invalidateMeasurement
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 
 /** Width ÷ height of a card's artwork in [this] shape. */
 val CardShape.aspectRatio: Float get() = aspect.toFloat()
@@ -142,39 +158,51 @@ fun PosterCard(
                 // to it): an accessibility service walks every node again on each frame a grid scrolls.
                 .clearAndSetSemantics {},
             corner,
+            // The card's clip above (around its click, so the press ripple is rounded) already clips the artwork.
+            clip = false,
         )
         if (!caption && !tv) return@Column
         // On TV the focused artwork grows over the gap: the caption stays clear of it.
         Spacer(Modifier.height(if (tv) 10.dp else 6.dp))
         val lines = if (largeFontScale()) 2 else 1
         // A TV card without its caption keeps the room, shown while focused.
-        val shown = Modifier.alpha(if (caption || focused) 1f else 0f)
-        // The text under the artwork is hidden from screen readers: one cleared node, not one per line.
-        Column(Modifier.clearAndSetSemantics {}) {
-            DetailLinkText(
-                item.title,
-                item.titleLink,
-                MaterialTheme.typography.titleSmall.contentDirection().hyphenated(),
-                LocalContentColor.current,
+        val shown = caption || focused
+        val titleStyle = MaterialTheme.typography.titleSmall.contentDirection().hyphenated()
+        val captionStyle = MaterialTheme.typography.bodySmall.hyphenated()
+        val captionText = item.caption.orEmpty()
+        val links = item.titleLink != null || item.captionLink?.let { captionText.startsWith(it.prefix) } == true
+        if (links && LocalOpenRoute.current != null && !isFocusVisible()) {
+            // Links under a pointer or a touch; the text under the artwork is hidden from screen readers: one cleared
+            // node, not one per line.
+            val alpha = if (shown) Modifier else Modifier.alpha(0f)
+            Column(Modifier.clearAndSetSemantics {}) {
+                DetailLinkText(item.title, item.titleLink, titleStyle, LocalContentColor.current, alpha, maxOf(lines, titleLines))
+                LinkedLine(captionText, item.captionLink, captionStyle, PlezyColors.TextMuted, alpha, lines)
+            }
+        } else {
+            CardLabel(
+                listOf(
+                    LabelLine(item.title, titleStyle, LocalContentColor.current, maxOf(lines, titleLines)),
+                    LabelLine(captionText, captionStyle, PlezyColors.TextMuted, lines),
+                ),
                 shown,
-                maxOf(lines, titleLines),
             )
-            LinkedLine(item.caption.orEmpty(), item.captionLink, MaterialTheme.typography.bodySmall.hyphenated(), PlezyColors.TextMuted, shown, lines)
         }
     }
 }
 
 /**
- * An item's artwork in [modifier]'s bounds, clipped to [shape]: the image over the raised fill while it loads, its
+ * An item's artwork in [modifier]'s bounds, clipped to [shape] (by [modifier] itself without [clip]: one clip, one
+ * layer): the image over the raised fill while it loads, its
  * fallback once it fails, blurred while a spoiler, its placeholder when there is none ([ArtworkPlaceholder]); over it its quality labels (or a catalog title's availability) down the
  * top start corner, the watched check or the unwatched count at the top end, and the watch progress along the foot
  * ([ArtworkProgress]); an artist has neither check, count nor progress.
  */
 @Composable
-fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTheme.shapes.medium) {
+fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTheme.shapes.medium, clip: Boolean = true) {
     val fill = PlezyColors.SurfaceHigh
     // The fill is the image's blank: under an opaque poster it would be drawn for nothing on every frame.
-    Box(modifier.clip(shape)) {
+    Box(if (clip) modifier.clip(shape) else modifier) {
         val primary = item.primaryArtwork
         val retry = item.retryArtwork
         RemoteImage(
@@ -210,6 +238,104 @@ fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTh
         item.progress?.let { ArtworkProgress(it.toFloat(), Modifier.matchParentSize()) }
     }
 }
+
+/** One line of a [CardLabel]: [text] in [style] and [color], at most [lines] lines and as many reserved. */
+private data class LabelLine(val text: String, val style: TextStyle, val color: Color, val lines: Int)
+
+/**
+ * A card's [lines] (its title over its caption) laid out and drawn as a column of [Text]s at its start would (each cut
+ * short with an ellipsis, its lines reserved), by one element with no semantics: no layout node and no semantics node
+ * per line, which a grid lays out, and an accessibility service walks, for every card it brings in as it scrolls.
+ * Drawn while [shown]; the room stays either way.
+ */
+@Composable
+private fun CardLabel(lines: List<LabelLine>, shown: Boolean) {
+    Spacer(CardLabelElement(lines, LocalCardText.current ?: rememberCardText(), shown))
+}
+
+/**
+ * The text measurer [CardLabel]s lay out with, and the heights [Text] reserves for a style's lines beyond the first
+ * (as its minLines measures them: the height of two reference lines less one), measured once a style.
+ */
+internal class CardText(val measurer: TextMeasurer) {
+    private val lineHeights = HashMap<TextStyle, FloatArray>()
+
+    fun reservedHeight(style: TextStyle, lines: Int): Int {
+        if (lines <= 1) return 0
+        val (one, two) = lineHeights.getOrPut(style) {
+            floatArrayOf(
+                measurer.measure(REFERENCE_LINE, style, softWrap = false, maxLines = 1).multiParagraph.height,
+                measurer.measure("$REFERENCE_LINE\n$REFERENCE_LINE", style, maxLines = 2).multiParagraph.height,
+            )
+        }
+        return (one + (two - one) * (lines - 1)).roundToInt()
+    }
+}
+
+/** The cards' shared [CardText] (a grid's, [MediaGrid]); without one each card has its own. */
+internal val LocalCardText = staticCompositionLocalOf<CardText?> { null }
+
+@Composable
+internal fun rememberCardText(): CardText {
+    val measurer = rememberTextMeasurer()
+    return remember(measurer) { CardText(measurer) }
+}
+
+private data class CardLabelElement(val lines: List<LabelLine>, val text: CardText, val shown: Boolean) :
+    ModifierNodeElement<CardLabelNode>() {
+    override fun create() = CardLabelNode(lines, text, shown)
+
+    override fun update(node: CardLabelNode) = node.update(lines, text, shown)
+}
+
+private class CardLabelNode(private var lines: List<LabelLine>, private var text: CardText, private var shown: Boolean) :
+    Modifier.Node(),
+    LayoutModifierNode,
+    DrawModifierNode {
+    private var laid: List<TextLayoutResult> = emptyList()
+    private var tops = IntArray(0)
+
+    fun update(lines: List<LabelLine>, text: CardText, shown: Boolean) {
+        if (lines != this.lines || text !== this.text) {
+            this.lines = lines
+            this.text = text
+            invalidateMeasurement()
+        }
+        if (shown != this.shown) {
+            this.shown = shown
+            invalidateDraw()
+        }
+    }
+
+    override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult {
+        val width = Constraints(maxWidth = constraints.maxWidth)
+        val results = lines.map { text.measurer.measure(it.text, it.style, TextOverflow.Ellipsis, maxLines = it.lines, constraints = width) }
+        val tops = IntArray(lines.size)
+        var height = 0
+        lines.forEachIndexed { i, line ->
+            tops[i] = height
+            height += maxOf(results[i].size.height, text.reservedHeight(line.style, line.lines))
+        }
+        if (results != laid) invalidateDraw()
+        laid = results
+        this@CardLabelNode.tops = tops
+        val w = constraints.constrainWidth(results.maxOfOrNull { it.size.width } ?: 0)
+        val h = constraints.constrainHeight(height)
+        val placeable = measurable.measure(Constraints.fixed(w, h))
+        return layout(w, h) { placeable.place(0, 0) }
+    }
+
+    override fun ContentDrawScope.draw() {
+        if (!shown) return
+        laid.forEachIndexed { i, result ->
+            val x = if (layoutDirection == LayoutDirection.Rtl) size.width - result.size.width else 0f
+            drawText(result, color = lines[i].color, topLeft = Offset(x, tops[i].toFloat()))
+        }
+    }
+}
+
+/** The reference line [Text] measures its reserved lines with. */
+private const val REFERENCE_LINE = "HHHHHHHHHH"
 
 /**
  * How much of an item is watched, over its artwork (a poster, a thumbnail; place it with `matchParentSize()`): a

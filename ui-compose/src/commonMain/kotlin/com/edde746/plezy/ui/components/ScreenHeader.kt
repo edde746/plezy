@@ -30,6 +30,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.FocusDirection
@@ -162,6 +164,10 @@ fun HeaderScaffold(
                 // Drawn after the content, so the scroll edge lies over its top.
                 .zIndex(1f)
                 .scrollEdge { edge.scrolled }
+                // On TV the row (not its scroll edge, which reaches below it) is in a texture of its own: Android
+                // redraws the whole window on each frame the content under the row scrolls, and the row's chips and
+                // icons are then one cached draw instead of some thirty.
+                .then(if (LocalAppearance.current.tv) Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen } else Modifier)
                 .fillMaxWidth()
                 .padding(top = statusBarOverlap + 8.dp, bottom = 8.dp, end = end),
             verticalAlignment = Alignment.CenterVertically,

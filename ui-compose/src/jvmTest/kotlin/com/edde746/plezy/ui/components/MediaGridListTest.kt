@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.DpRect
@@ -44,13 +45,16 @@ class MediaGridListTest {
     @Test
     fun theGridViewModeSharesARow() = runComposeUiTest {
         grid(ViewMode.GRID)
-        val (first, second, third) = titles.map { bounds(it) }
+        val (first, second, third) = titles.map { cardBounds(it) }
         assertEquals(first.top, second.top, "cards share a row")
         assertEquals(first.top, third.top, "cards share a row")
         assertTrue(second.left > first.left && third.left > second.left, "cards go across: $first $second $third")
     }
 
     private fun ComposeUiTest.bounds(title: String): DpRect = onNodeWithText(title, useUnmergedTree = true).getBoundsInRoot()
+
+    /** A card's artwork, which tells its title; the card draws the title under it without a node of its own. */
+    private fun ComposeUiTest.cardBounds(title: String): DpRect = onNodeWithContentDescription(title).getBoundsInRoot()
 
     private fun ComposeUiTest.grid(mode: ViewMode) = setContent {
         val appearance = Appearance.of(AppearanceSettings(viewMode = mode), FormFactor.DESKTOP, supporterUnlocked = false)
