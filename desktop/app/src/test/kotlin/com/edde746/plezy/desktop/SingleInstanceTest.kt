@@ -1,6 +1,8 @@
 package com.edde746.plezy.desktop
 
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.PrintStream
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -15,6 +17,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -65,6 +68,20 @@ class SingleInstanceTest {
         assertNull(SingleInstance.claim(directory, link = null))
         // The app has taken each link by the time its start returns.
         assertEquals(listOf("plezy://open?server=4242", null), received.toList())
+    }
+
+    @Test
+    fun aLaterStartSaysWhichRunningAppTookIt() {
+        app()
+        val said = ByteArrayOutputStream()
+        val stderr = System.err
+        System.setErr(PrintStream(said, true))
+        try {
+            assertNull(SingleInstance.claim(directory, link = null))
+        } finally {
+            System.setErr(stderr)
+        }
+        assertContains(said.toString(), "Plezy is already running (process ${ProcessHandle.current().pid()}, data in $directory)")
     }
 
     @Test

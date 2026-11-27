@@ -34,7 +34,9 @@ private val isWindows = System.getProperty("os.name").startsWith("Windows")
  * directory locks `instance.lock` there and listens on a loopback port it writes to `instance.port`, with a random
  * token and its process id (a file only its user can read). A later
  * start, such as the one the OS makes for a `plezy://` link while Plezy runs, sends that app the token and its link
- * (the token alone for a plain start, which brings the window forward) and exits once the app answers `ok`; on Windows
+ * (the token alone for a plain start, which brings the window forward) and exits once the app answers `ok`, saying on
+ * standard error which process took it (an app whose window can't be seen would otherwise look like a start that did
+ * nothing); on Windows
  * it first lets the app's process take the foreground, which Windows otherwise keeps from a process the user didn't
  * just start. It waits for that answer as long as its patience lasts and sends its link again only when the app hung up
  * without taking it, so the app takes each start's link once, however late it answers. The app takes nothing else: a
@@ -158,7 +160,11 @@ internal class SingleInstance private constructor(
                 if (locked) return listen(directory, channel)
                 channel.close()
                 try {
-                    if (send(running(directory.resolve(PORT_FILE)), link, deadline)) return null
+                    val running = running(directory.resolve(PORT_FILE))
+                    if (send(running, link, deadline)) {
+                        System.err.println("plezy: Plezy is already running (process ${running.pid}, data in $directory): this start went to it")
+                        return null
+                    }
                 } catch (e: IOException) {
                     failure = e
                 }
