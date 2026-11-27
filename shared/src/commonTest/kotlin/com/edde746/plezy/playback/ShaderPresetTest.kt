@@ -94,7 +94,7 @@ class ShaderPresetTest {
         val custom = CustomShader("custom_a.glsl", "Sharpen", "a.glsl")
         fun kinds(renderer: ShaderRenderer) = ShaderPreset.available(renderer, listOf(custom)).map { it::class.simpleName }.distinct()
         assertEquals(listOf("Off", "NvScaler", "ArtCnn", "Anime4k", "Custom"), kinds(ShaderRenderer.LIBPLACEBO), "Windows, Apple")
-        assertEquals(listOf("Off", "NvScaler", "Anime4k"), kinds(ShaderRenderer.OPENGL), "Linux: no ArtCNN, no imported shaders")
+        assertEquals(listOf("Off", "Anime4k"), kinds(ShaderRenderer.OPENGL), "Linux: no NVScaler, no ArtCNN, no imported shaders")
         assertEquals(listOf("Off", "Anime4k", "Custom"), kinds(ShaderRenderer.OPENGL_ES), "Android: no luma hooks")
         assertEquals(13, ShaderPreset.available(ShaderRenderer.OPENGL_ES, emptyList()).size)
     }

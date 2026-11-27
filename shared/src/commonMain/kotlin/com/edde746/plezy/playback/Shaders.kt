@@ -90,9 +90,10 @@ enum class ShaderRenderer {
     LIBPLACEBO,
 
     /**
-     * mpv's own OpenGL renderer, the render API's on Linux. No ArtCNN: Mesa rejects the `#extension` its passes declare
-     * after mpv's own lines, and libmpv aborts on the failed compute pass. No imported shaders, which can fail the same
-     * way.
+     * mpv's own OpenGL renderer, the render API's on Linux, on an OpenGL ES 3 context. No NVScaler: GLSL ES converts no
+     * integer to a float implicitly, which its compute pass relies on, so Mesa rejects it and the video shows none. No
+     * ArtCNN: Mesa rejects the `#extension` its passes declare after mpv's own lines, and libmpv aborts on the failed
+     * compute pass. No imported shaders, which can fail the same way.
      */
     OPENGL,
 
@@ -106,8 +107,7 @@ enum class ShaderRenderer {
 /** [renderer] runs this preset ([ShaderRenderer]). */
 fun ShaderPreset.runsOn(renderer: ShaderRenderer): Boolean = when (this) {
     ShaderPreset.Off, is ShaderPreset.Anime4k -> true
-    ShaderPreset.NvScaler -> renderer != ShaderRenderer.OPENGL_ES
-    is ShaderPreset.ArtCnn -> renderer == ShaderRenderer.LIBPLACEBO
+    ShaderPreset.NvScaler, is ShaderPreset.ArtCnn -> renderer == ShaderRenderer.LIBPLACEBO
     is ShaderPreset.Custom -> renderer.runsCustomShaders
 }
 

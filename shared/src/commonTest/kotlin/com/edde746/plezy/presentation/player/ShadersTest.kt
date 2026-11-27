@@ -211,12 +211,15 @@ class ShadersTest {
         }
 
     @Test
-    fun linuxsRendererHasNoArtCnnAndNoImports() =
-        playerTest(shaderFiles = FakeShaderFiles(ShaderRenderer.OPENGL), importsShaders = true) {
+    fun linuxsRendererHasNoNvScalerNorArtCnnNorImportsAndAStoredNvScalerIsOff() =
+        playerTest(picture = PictureChoices(shaderPreset = "nvscaler"), shaderFiles = FakeShaderFiles(ShaderRenderer.OPENGL), importsShaders = true) {
             playing()
-            assertTrue(shaders()?.choices?.none { it.label.startsWith("ArtCNN") } == true)
-            assertEquals(true, shaders()?.choices?.any { it.label == "NVScaler" })
+            assertEquals("Off", shaders()?.value)
+            assertEquals(emptyList(), engine.shaders)
+            assertTrue(shaders()?.choices?.none { it.label.startsWith("NVScaler") || it.label.startsWith("ArtCNN") } == true)
             assertNull(shaders()?.importLabel)
+            press(InputKey.G)
+            assertEquals("Shaders: Anime4K Fast A", state.osd)
             dispatch(PlayerCommand.ImportShader("sharpen.glsl", "//!HOOK MAIN"))
             assertEquals(emptyList(), harnessImports())
         }
