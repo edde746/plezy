@@ -48,7 +48,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import com.edde746.plezy.ui.app.LocalPlezyPlatform
+import kotlinx.coroutines.delay
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -111,7 +119,8 @@ val CardShape.aspectRatio: Float get() = aspect.toFloat()
  * ([menuGestures]). Screen readers take that element alone: named by the title, its state the caption, the progress or
  * "watched", the unwatched count and the quality labels ([cardState]), then [position] (where it sits in a grid: "Row 2
  * of 5, column 3 of 4"); the text under it is hidden from them. Without [caption] the card is the artwork alone; on TV
- * the room stays and the focused card alone shows its caption, so the row keeps its height as the focus moves.
+ * the room stays and the focused card alone shows its caption, so the row keeps its height as the focus moves. Under a
+ * remote or a keyboard, the focused card's title scrolls when it is cut short ([CardLabel]).
  */
 @Composable
 fun PosterCard(
@@ -128,14 +137,13 @@ fun PosterCard(
     val dimens = LocalPlezyDimens.current
     val corner = if (item.placeholder.circular) CircleShape else MaterialTheme.shapes.medium
     val tv = dimens.focusGrows
-    var focused by remember { mutableStateOf(false) }
+    val focus = remember { mutableStateOf(false) }
     val state = listOfNotNull(item.cardState(), position).joinToString(", ").ifEmpty { null }
-    Column(modifier.width(width).then(InViewOnFocusElement)) {
+    Column(modifier.width(width).then(InViewOnFocusElement(focus))) {
         CardArtwork(
             item,
             Modifier
                 .fillMaxWidth()
-                .then(if (!caption && tv) Modifier.onFocusChanged { focused = it.hasFocus } else Modifier)
                 .aspectRatio(shape.aspectRatio)
                 .focusRing(corner)
                 .clip(corner)
@@ -164,7 +172,7 @@ fun PosterCard(
         Spacer(Modifier.height(if (tv) 10.dp else 6.dp))
         val lines = if (largeFontScale()) 2 else 1
         // A TV card without its caption keeps the room, shown while focused.
-        val shown = caption || focused
+        val shown = caption || focus.value
         val titleStyle = MaterialTheme.typography.titleSmall.contentDirection().hyphenated()
         val captionStyle = MaterialTheme.typography.bodySmall.hyphenated()
         val captionText = item.caption.orEmpty()
@@ -184,6 +192,7 @@ fun PosterCard(
                     LabelLine(captionText, captionStyle, PlezyColors.TextMuted, lines, item.captionLink?.prefix),
                 ),
                 shown,
+                focused = { focus.value },
             )
         }
     }
@@ -237,21 +246,25 @@ fun CardArtwork(item: MediaCardUi, modifier: Modifier, shape: Shape = MaterialTh
     }
 }
 
-/** Brings the card, its labels too, into view as focus comes into it: one node, without a coroutine scope a card. */
-private data object InViewOnFocusElement : ModifierNodeElement<InViewOnFocusNode>() {
-    override fun create() = InViewOnFocusNode()
+/**
+ * Brings the card, its labels too, into view as focus comes into it, and keeps whether it has focus in [focused]: one
+ * node, without a coroutine scope a card.
+ */
+private data class InViewOnFocusElement(val focused: MutableState<Boolean>) : ModifierNodeElement<InViewOnFocusNode>() {
+    override fun create() = InViewOnFocusNode(focused)
 
-    override fun update(node: InViewOnFocusNode) = Unit
+    override fun update(node: InViewOnFocusNode) {
+        node.focused = focused
+    }
 }
 
-private class InViewOnFocusNode :
+private class InViewOnFocusNode(var focused: MutableState<Boolean>) :
     Modifier.Node(),
     FocusEventModifierNode {
-    private var focused = false
-
     override fun onFocusEvent(focusState: FocusState) {
-        if (focusState.hasFocus && !focused) coroutineScope.launch { bringIntoView() }
-        focused = focusState.hasFocus
+        if (focusState.hasFocus == focused.value) return
+        if (focusState.hasFocus) coroutineScope.launch { bringIntoView() }
+        focused.value = focusState.hasFocus
     }
 }
 
@@ -266,11 +279,69 @@ internal data class LabelLine(val text: String, val style: TextStyle, val color:
  * short with an ellipsis, its lines reserved), by one element with no semantics: no layout node and no semantics node
  * per line, which a grid lays out, and an accessibility service walks, for every card it brings in as it scrolls.
  * Drawn while [shown]; the room stays either way.
+ *
+ * While [focused] (read here alone, so a focus move recomposes no more than the two labels) and the focus shows
+ * ([isFocusVisible]: a remote's or a keyboard's, not a pointer's or a touch's), a title on one line that is cut short
+ * scrolls ([ScrollingCardLabel]).
  */
 @Composable
-internal fun CardLabel(lines: List<LabelLine>, shown: Boolean) {
-    Spacer(CardLabelElement(lines, LocalCardText.current ?: rememberCardText(), shown))
+internal fun CardLabel(lines: List<LabelLine>, shown: Boolean, focused: () -> Boolean = { false }) {
+    val text = LocalCardText.current ?: rememberCardText()
+    if (shown && lines.first().lines == 1 && focused() && isFocusVisible()) {
+        ScrollingCardLabel(lines, text)
+    } else {
+        Spacer(CardLabelElement(lines, text, shown))
+    }
 }
+
+/**
+ * The focused card's [CardLabel]: drawn as every card's until its title is found cut short and [MARQUEE_DELAY_MILLIS]
+ * have passed; then the title is one line that scrolls along ([basicMarquee]: at its default speed, with a pause back
+ * at its start each round, for as long as the focus stays), its two ends fading out ([marqueeEdges]). With
+ * less motion asked for (`PlezyPlatform.reducedMotion`) it stays cut short. When the focus leaves, the label is every
+ * card's again: the title back at its start, cut short.
+ */
+@Composable
+private fun ScrollingCardLabel(lines: List<LabelLine>, text: CardText) {
+    val overflows = remember { mutableStateOf(false) }
+    var waited by remember { mutableStateOf(false) }
+    LaunchedEffect(overflows.value) {
+        waited = false
+        if (!overflows.value) return@LaunchedEffect
+        delay(MARQUEE_DELAY_MILLIS)
+        waited = true
+    }
+    val scrolls = waited && overflows.value && !LocalPlezyPlatform.current.reducedMotion
+    Box(Modifier.clearAndSetSemantics {}) {
+        Spacer(CardLabelElement(lines, text, shown = true, overflows, hidesTitle = scrolls))
+        if (scrolls) {
+            val title = lines.first()
+            Text(
+                title.text,
+                Modifier.fillMaxWidth().marqueeEdges().basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 0),
+                color = title.color,
+                style = title.style,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/** Fades out the first and last [MARQUEE_FADE] of a scrolling title's line: where its text leaves and comes back. */
+private fun Modifier.marqueeEdges(): Modifier = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fade = (MARQUEE_FADE.toPx() / size.width).coerceAtMost(0.5f)
+        drawRect(
+            Brush.horizontalGradient(0f to Color.Transparent, fade to Color.Black, 1f - fade to Color.Black, 1f to Color.Transparent),
+            blendMode = BlendMode.DstIn,
+        )
+    }
+
+/** How long a focused card's cut short title holds still before it scrolls ([ScrollingCardLabel]). */
+internal const val MARQUEE_DELAY_MILLIS = 1000L
+
+private val MARQUEE_FADE = 12.dp
 
 /**
  * The text measurer [CardLabel]s lay out with, and the heights [Text] reserves for a style's lines beyond the first
@@ -300,28 +371,44 @@ internal fun rememberCardText(): CardText {
     return remember(measurer) { CardText(measurer) }
 }
 
-private data class CardLabelElement(val lines: List<LabelLine>, val text: CardText, val shown: Boolean) :
-    ModifierNodeElement<CardLabelNode>() {
-    override fun create() = CardLabelNode(lines, text, shown)
+/**
+ * Lays out and draws a [CardLabel]: its title left out of the drawing while [hidesTitle] (a scrolling title is drawn
+ * over it); whether the title is cut short kept in [overflows], where one is given.
+ */
+private data class CardLabelElement(
+    val lines: List<LabelLine>,
+    val text: CardText,
+    val shown: Boolean,
+    val overflows: MutableState<Boolean>? = null,
+    val hidesTitle: Boolean = false,
+) : ModifierNodeElement<CardLabelNode>() {
+    override fun create() = CardLabelNode(lines, text, shown, overflows, hidesTitle)
 
-    override fun update(node: CardLabelNode) = node.update(lines, text, shown)
+    override fun update(node: CardLabelNode) = node.update(lines, text, shown, overflows, hidesTitle)
 }
 
-private class CardLabelNode(private var lines: List<LabelLine>, private var text: CardText, private var shown: Boolean) :
-    Modifier.Node(),
+private class CardLabelNode(
+    private var lines: List<LabelLine>,
+    private var text: CardText,
+    private var shown: Boolean,
+    private var overflows: MutableState<Boolean>?,
+    private var hidesTitle: Boolean,
+) : Modifier.Node(),
     LayoutModifierNode,
     DrawModifierNode {
     private var laid: List<LaidLine> = emptyList()
     private var tops = IntArray(0)
 
-    fun update(lines: List<LabelLine>, text: CardText, shown: Boolean) {
-        if (lines != this.lines || text !== this.text) {
+    fun update(lines: List<LabelLine>, text: CardText, shown: Boolean, overflows: MutableState<Boolean>?, hidesTitle: Boolean) {
+        if (lines != this.lines || text !== this.text || overflows !== this.overflows) {
             this.lines = lines
             this.text = text
+            this.overflows = overflows
             invalidateMeasurement()
         }
-        if (shown != this.shown) {
+        if (shown != this.shown || hidesTitle != this.hidesTitle) {
             this.shown = shown
+            this.hidesTitle = hidesTitle
             invalidateDraw()
         }
     }
@@ -337,6 +424,7 @@ private class CardLabelNode(private var lines: List<LabelLine>, private var text
         if (results.map { it.parts } != laid.map { it.parts }) invalidateDraw()
         laid = results
         this@CardLabelNode.tops = tops
+        overflows?.value = results.first().parts.first().hasVisualOverflow
         val w = constraints.constrainWidth(results.maxOfOrNull { it.width } ?: 0)
         val h = constraints.constrainHeight(height)
         val placeable = measurable.measure(Constraints.fixed(w, h))
@@ -361,6 +449,7 @@ private class CardLabelNode(private var lines: List<LabelLine>, private var text
         if (!shown) return
         val rtl = layoutDirection == LayoutDirection.Rtl
         laid.forEachIndexed { i, line ->
+            if (i == 0 && hidesTitle) return@forEachIndexed
             // From the start edge: the left one, or the right one right to left.
             var x = if (rtl) size.width else 0f
             for (part in line.parts) {

@@ -95,14 +95,16 @@ struct PosterCard: View {
     }
 
     /// The title and caption under the artwork: two lines each at the accessibility text sizes, the title on a grid's
-    /// lines (`cardTitleLines`) where it gives more, all kept on every card so a row's cards stay as tall.
+    /// lines (`cardTitleLines`) where it gives more, all kept on every card so a row's cards stay as tall. On tvOS the
+    /// focused card's title, on one line and cut short, scrolls (`MarqueeTitle`).
     private var captionLabel: some View {
         let lines = dynamicTypeSize.isAccessibilitySize ? 2 : 1
+        let titleLimit = max(lines, titleLines)
         return VStack(alignment: .leading, spacing: 2) {
-            CardLinkText(text: card.title, route: card.titleLink)
+            title(lines: titleLimit)
                 .font(Self.titleFont)
                 .foregroundStyle(Palette.onBackground)
-                .lineLimit(max(lines, titleLines), reservesSpace: true)
+                .lineLimit(titleLimit, reservesSpace: true)
                 .background(alignment: .topLeading) {
                     if widensToWords {
                         ZStack(alignment: .leading) {
@@ -122,6 +124,15 @@ struct PosterCard: View {
         }
         .opacity(showsCaption ? 1 : 0)
         .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func title(lines: Int) -> some View {
+        #if os(tvOS)
+        MarqueeTitle(text: card.title, scrolls: focused && lines == 1)
+        #else
+        CardLinkText(text: card.title, route: card.titleLink)
+        #endif
     }
 
     /// A shelf's card at an accessibility text size, whose title wraps onto two lines: as wide as its longest word.
@@ -187,6 +198,84 @@ struct FocusReporter: View {
 
     var body: some View {
         Color.clear.onChange(of: isFocused, initial: true) { focused = isFocused }
+    }
+}
+
+/// A card's title, cut short with an ellipsis as any text. While `scrolls` (its card has focus, the title on one line)
+/// and it doesn't fit, after a second it scrolls along as the system's lockups scroll theirs: round and round, with a
+/// pause back at its start each round, its two ends fading out; with Reduce Motion on it stays cut short. Once
+/// `scrolls` ends it is back at its start, cut short. Only the focused card measures its title or draws a frame a tick.
+struct MarqueeTitle: View {
+    let text: String
+    let scrolls: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The title's width on one line and its line's, measured while `scrolls`.
+    @State private var textWidth: CGFloat = 0
+    @State private var lineWidth: CGFloat = 0
+    /// When the title started scrolling; nil while it holds still.
+    @State private var start: Date?
+
+    /// How long the focused title holds still first, in seconds.
+    static let delay = 1.0
+    /// Its speed, in points a second: about a thirtieth of the screen's width.
+    static let speed: CGFloat = 60
+    /// The pause back at its start each round, in seconds.
+    static let pause: CGFloat = 1.2
+    /// How far in from each end of the line the title fades out.
+    static let fade: CGFloat = 24
+
+    var body: some View {
+        let overflows = scrolls && !reduceMotion && textWidth > lineWidth + 0.5
+        Text(text)
+            .opacity(start == nil ? 1 : 0)
+            // Two backgrounds: in one, the line's measure would take the title's whole width as a ZStack does.
+            .background {
+                if scrolls { Color.clear.onGeometryChange(for: CGFloat.self) { $0.size.width } action: { lineWidth = $0 } }
+            }
+            .background(alignment: .topLeading) {
+                if scrolls {
+                    Text(text).lineLimit(1).fixedSize().hidden()
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { textWidth = $0 }
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                if let start { scrolling(since: start) }
+            }
+            .task(id: overflows) {
+                start = nil
+                guard overflows else { return }
+                try? await Task.sleep(for: .seconds(Self.delay))
+                if !Task.isCancelled { start = .now }
+            }
+    }
+
+    /// Two copies of the title a third of the line apart, moved towards the line's start by `speed` from `start`
+    /// until the second stands where the first began, then held there (as the first at its start) for `pause`.
+    private func scrolling(since start: Date) -> some View {
+        let gap = (lineWidth / 3).rounded()
+        let travel = (textWidth + gap) / Self.speed
+        let edge = min(Self.fade / max(lineWidth, 1), 0.5)
+        return TimelineView(.animation) { context in
+            let phase = CGFloat(context.date.timeIntervalSince(start)).truncatingRemainder(dividingBy: travel + Self.pause)
+            HStack(spacing: gap) {
+                Text(text)
+                Text(text)
+            }
+            .lineLimit(1)
+            .fixedSize()
+            .offset(x: -min(phase, travel) * Self.speed)
+        }
+        .frame(width: lineWidth, alignment: .leading)
+        .clipped()
+        .mask {
+            LinearGradient(
+                stops: [.init(color: .clear, location: 0), .init(color: .black, location: edge),
+                        .init(color: .black, location: 1 - edge), .init(color: .clear, location: 1)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
     }
 }
 #endif
