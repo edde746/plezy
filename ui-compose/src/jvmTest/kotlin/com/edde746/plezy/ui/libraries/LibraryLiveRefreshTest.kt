@@ -1,6 +1,17 @@
 package com.edde746.plezy.ui.libraries
 
 import androidx.compose.foundation.MutatePriority
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
+import com.edde746.plezy.ui.focus.LocalKeyboardWaitsForSelect
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -62,6 +73,22 @@ class LibraryLiveRefreshTest {
         onNodeWithText("All").performClick()
         waitForIdle()
         assertEquals(emptyList(), staged)
+    }
+
+    /** On an Android TV a remote moving down from All passes over From and To without their keyboard. */
+    @Test
+    fun theTvRemotePassesOverTheRangeWithoutItsKeyboard() = runComposeUiTest {
+        setContent {
+            CompositionLocalProvider(LocalKeyboardWaitsForSelect provides true) {
+                TvFrame { Column { NumberPage(duration, emptyList()) {} } }
+            }
+        }
+        val fields = onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText))
+        onNodeWithText("All").requestFocus()
+        for (index in 0..1) {
+            onRoot().performKeyInput { pressKey(Key.DirectionDown) }
+            fields[index].assertIsFocused().assert(SemanticsMatcher.expectValue(SemanticsProperties.IsEditable, false))
+        }
     }
 
     private fun grid(jumps: MutableSharedFlow<Int>, onState: (LazyGridState, CoroutineScope) -> Unit): @Composable () -> Unit = {

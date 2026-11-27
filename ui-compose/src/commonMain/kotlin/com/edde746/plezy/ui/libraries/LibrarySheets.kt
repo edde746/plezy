@@ -24,6 +24,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -82,6 +86,9 @@ import com.edde746.plezy.presentation.libraries.withTextMatch
 import com.edde746.plezy.model.clausesFor
 import com.edde746.plezy.strings.T
 import com.edde746.plezy.ui.adaptive.LocalWindowLayout
+import com.edde746.plezy.ui.focus.OnTextChange
+import com.edde746.plezy.ui.focus.rememberKeyboardOnSelect
+import com.edde746.plezy.ui.focus.remoteLeavesField
 import com.edde746.plezy.ui.components.BooleanFilterRow
 import com.edde746.plezy.ui.components.ButtonStyle
 import com.edde746.plezy.ui.components.FilterFieldRow
@@ -450,7 +457,7 @@ private fun ColumnScope.ValuePage(browse: LibraryBrowseStore, field: MediaFilter
     var values by remember(field) { mutableStateOf<List<MediaFilterValue>?>(null) }
     var failed by remember(field) { mutableStateOf(false) }
     var attempt by remember(field) { mutableIntStateOf(0) }
-    var query by remember(field) { mutableStateOf("") }
+    val query = remember(field) { TextFieldState() }
     LaunchedEffect(field, attempt) {
         failed = false
         values = runCatching { browse.filterValues(field) }.onFailure { failed = true }.getOrNull()
@@ -466,8 +473,9 @@ private fun ColumnScope.ValuePage(browse: LibraryBrowseStore, field: MediaFilter
         failed -> SheetOption(T.errors.unableToLoad(field.title), onClick = { attempt++ }, choice = false, icon = PlezyIcons.Refresh)
         loaded == null -> Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         else -> {
-            if (loaded.size > 15) SearchField(query) { query = it }
-            val shown = loaded.filter { query.isEmpty() || it.title.contains(query, ignoreCase = true) }
+            if (loaded.size > 15) SearchField(query)
+            val typed = query.text.toString()
+            val shown = loaded.filter { typed.isEmpty() || it.title.contains(typed, ignoreCase = true) }
             if (shown.isEmpty()) Text(T.libraries.advancedFilters.noValues, color = PlezyColors.TextMuted, modifier = Modifier.padding(16.dp))
             // The page opens at the first selected value.
             val firstSelected = shown.firstOrNull { browse.valueId(field, it) in selected }
@@ -490,7 +498,7 @@ private fun ColumnScope.ValuePage(browse: LibraryBrowseStore, field: MediaFilter
 }
 
 @Composable
-private fun SearchField(text: String, onChange: (String) -> Unit) {
+private fun SearchField(query: TextFieldState) {
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 8.dp)
             .background(PlezyColors.Text.copy(alpha = 0.08f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
@@ -499,8 +507,8 @@ private fun SearchField(text: String, onChange: (String) -> Unit) {
         Icon(PlezyIcons.Search, contentDescription = null, Modifier.size(20.dp), tint = PlezyColors.TextMuted)
         Spacer(Modifier.width(8.dp))
         Box(Modifier.weight(1f)) {
-            if (text.isEmpty()) Text(T.libraries.advancedFilters.searchValues, color = PlezyColors.TextMuted)
-            BasicTextField(text, onChange, singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = PlezyColors.Text), cursorBrush = SolidColor(PlezyColors.Text))
+            if (query.text.isEmpty()) Text(T.libraries.advancedFilters.searchValues, color = PlezyColors.TextMuted)
+            FilterTextField(query, Modifier)
         }
     }
 }
@@ -509,25 +517,23 @@ private fun SearchField(text: String, onChange: (String) -> Unit) {
 @Composable
 internal fun ColumnScope.NumberPage(field: MediaFilter, staged: List<LibraryFilter>, onStaged: (List<LibraryFilter>) -> Unit) {
     val unit = field.unit
-    var from by remember(field) { mutableStateOf(numberBound(staged, field.filter, LibraryFilterOperator.AT_LEAST, unit)?.toString().orEmpty()) }
-    var to by remember(field) { mutableStateOf(numberBound(staged, field.filter, LibraryFilterOperator.AT_MOST, unit)?.toString().orEmpty()) }
-    val commit = { f: String, t: String -> onStaged(withNumberRange(staged, field.filter, f.toLongOrNull(), t.toLongOrNull(), unit)) }
-    SheetOption(T.libraries.all, onClick = { from = ""; to = ""; commit("", "") }, selected = staged.clausesFor(field.filter).isEmpty())
+    val from = remember(field) { TextFieldState(numberBound(staged, field.filter, LibraryFilterOperator.AT_LEAST, unit)?.toString().orEmpty()) }
+    val to = remember(field) { TextFieldState(numberBound(staged, field.filter, LibraryFilterOperator.AT_MOST, unit)?.toString().orEmpty()) }
+    val commit = { onStaged(withNumberRange(staged, field.filter, from.text.toString().toLongOrNull(), to.text.toString().toLongOrNull(), unit)) }
+    OnTextChange(from) { commit() }
+    OnTextChange(to) { commit() }
+    SheetOption(T.libraries.all, onClick = { from.clearText(); to.clearText(); commit() }, selected = staged.clausesFor(field.filter).isEmpty())
     for ((label, value) in listOf(T.libraries.advancedFilters.from to from, T.libraries.advancedFilters.to to to)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(label, color = PlezyColors.Text, modifier = Modifier.width(80.dp))
-            BasicTextField(
+            FilterTextField(
                 value,
-                { typed ->
-                    val digits = typed.filter(Char::isDigit)
-                    if (label == T.libraries.advancedFilters.from) from = digits else to = digits
-                    commit(if (label == T.libraries.advancedFilters.from) digits else from, if (label == T.libraries.advancedFilters.from) to else digits)
-                },
-                singleLine = true,
+                Modifier.weight(1f).background(PlezyColors.Text.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(10.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = PlezyColors.Text),
-                cursorBrush = SolidColor(PlezyColors.Text),
-                modifier = Modifier.weight(1f).background(PlezyColors.Text.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(10.dp),
+                inputTransformation = {
+                    val digits = asCharSequence().filter(Char::isDigit)
+                    if (digits.length != length) replace(0, length, digits)
+                },
             )
             unit.suffix?.let { Text(it, color = PlezyColors.TextMuted, modifier = Modifier.padding(start = 8.dp)) }
         }
@@ -555,21 +561,36 @@ private fun ColumnScope.DatePage(field: MediaFilter, staged: List<LibraryFilter>
 @Composable
 private fun ColumnScope.TextPage(field: MediaFilter, staged: List<LibraryFilter>, onStaged: (List<LibraryFilter>) -> Unit) {
     val clause = staged.clausesFor(field.filter).firstOrNull()
-    var text by remember(field) { mutableStateOf(clause?.values?.firstOrNull().orEmpty()) }
+    val text = remember(field) { TextFieldState(clause?.values?.firstOrNull().orEmpty()) }
     var mode by remember(field) { mutableStateOf(clause?.op ?: LibraryFilterOperator.IS) }
-    SheetOption(T.libraries.all, onClick = { text = ""; onStaged(withTextMatch(staged, field.filter, "", mode)) }, selected = clause == null)
+    OnTextChange(text) { onStaged(withTextMatch(staged, field.filter, it, mode)) }
+    SheetOption(T.libraries.all, onClick = { text.clearText(); onStaged(withTextMatch(staged, field.filter, "", mode)) }, selected = clause == null)
     Box(Modifier.fillMaxWidth().padding(16.dp, 8.dp, 16.dp, 8.dp).background(PlezyColors.Text.copy(alpha = 0.08f), RoundedCornerShape(12.dp)).padding(12.dp)) {
-        if (text.isEmpty()) Text(T.libraries.advancedFilters.textHint, color = PlezyColors.TextMuted)
-        BasicTextField(
-            text,
-            { text = it; onStaged(withTextMatch(staged, field.filter, it, mode)) },
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = PlezyColors.Text),
-            cursorBrush = SolidColor(PlezyColors.Text),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (text.text.isEmpty()) Text(T.libraries.advancedFilters.textHint, color = PlezyColors.TextMuted)
+        FilterTextField(text, Modifier.fillMaxWidth())
     }
     for (op in textMatchModes(field)) {
-        SheetOption(textMatchLabel(op), onClick = { mode = op; onStaged(withTextMatch(staged, field.filter, text, op)) }, selected = op == mode)
+        SheetOption(textMatchLabel(op), onClick = { mode = op; onStaged(withTextMatch(staged, field.filter, text.text.toString(), op)) }, selected = op == mode)
     }
+}
+
+/** A filter page's single-line text field: on TV its keyboard waits for Select and the arrows leave it. */
+@Composable
+private fun FilterTextField(
+    state: TextFieldState,
+    modifier: Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    inputTransformation: InputTransformation? = null,
+) {
+    val keyboard = rememberKeyboardOnSelect()
+    BasicTextField(
+        state = state,
+        modifier = modifier.then(keyboard.modifier).remoteLeavesField(state),
+        readOnly = keyboard.readOnly,
+        inputTransformation = inputTransformation,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = PlezyColors.Text),
+        keyboardOptions = keyboardOptions,
+        lineLimits = TextFieldLineLimits.SingleLine,
+        cursorBrush = SolidColor(PlezyColors.Text),
+    )
 }
