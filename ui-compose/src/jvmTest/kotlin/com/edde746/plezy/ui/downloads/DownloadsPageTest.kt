@@ -44,11 +44,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 /**
- * Downloads is a destination of its own: a page titled Downloads, opened by Home's Downloads shortcut, and no longer a
- * choice of Libraries' library chip.
+ * Downloads is a destination of its own: a page whose header row starts with its view chip (no title), opened by
+ * Home's Downloads shortcut, and no longer a choice of Libraries' library chip.
  *
  * The app's session runs on the tests' main thread ([TestMain]), as the product's does on its own, beside the test's UI
  * thread.
@@ -64,12 +63,11 @@ class DownloadsPageTest {
     }
 
     @Test
-    fun aDownloadsStartShowsThePageUnderItsTitleWithoutTheLibraryChip() = runComposeUiTest {
+    fun aDownloadsStartShowsThePageUnderNoTitleWithoutTheLibraryChip() = runComposeUiTest {
         session(Startup(TopLevelDestination.DOWNLOADS), { DownloadsDestination(it) }) { app, placed ->
             waitUntil(timeoutMillis = 20_000) { "downloads.tab.manage" in placed }
             assertEquals(listOf<Route>(Route.Downloads), app.navigator.backStack.value)
-            onNodeWithText(T.downloads.title).assertExists()
-            assertTrue("downloads.title" in placed, "the page has no title")
+            assertFalse("downloads.title" in placed, "the page's header row starts with a title")
             assertFalse("libraries.picker" in placed, "the library chip still leads Downloads' row")
         }
     }
