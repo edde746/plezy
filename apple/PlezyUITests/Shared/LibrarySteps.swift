@@ -217,11 +217,16 @@ struct LibrarySteps {
     }
 
     #if os(macOS)
-    /// Clicks the card `title` in `library`'s grid, typing nothing: on the Mac a typed key hides the pointer and
-    /// SwiftUI's hover stays off until a real mouse move, which XCUITest's synthesized moves don't make, so a right
-    /// click after Search's typing would reach no item. The grid is long and lazy: its alphabet index brings the title's
-    /// letter in.
+    /// Clicks the card `title` in `library`'s grid (`shownCard`).
     func openCard(_ title: String, in library: String) {
+        shownCard(title, in: library).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).click()
+    }
+
+    /// The card `title` in `library`'s grid, scrolled into the window, typing nothing: on the Mac a typed key hides the
+    /// pointer and SwiftUI's hover stays off until a real mouse move, which XCUITest's synthesized moves don't make, so
+    /// a right click after Search's typing would reach no item. The grid is long and lazy: its alphabet index brings the
+    /// title's letter in.
+    func shownCard(_ title: String, in library: String) -> XCUIElement {
         pickLibrary(library)
         let card = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH 'card.' AND label == %@", title)).firstMatch
@@ -240,7 +245,7 @@ struct LibrarySteps {
             window.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).scroll(byDeltaX: 0, deltaY: -150)
             _ = waitUntil(1, shown)
         }
-        card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).click()
+        return card
     }
     #endif
 

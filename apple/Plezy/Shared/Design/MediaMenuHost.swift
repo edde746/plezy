@@ -11,6 +11,8 @@ import AppKit
 final class MediaMenuModel {
     let menu: MediaMenu
     private(set) var open: ItemMenu?
+    /// Counts the menus opened: a menu the store updates while it is open (`MediaMenu.menu`) stays the one it was.
+    private(set) var openings = 0
     private(set) var prompt: MenuPrompt?
     private(set) var message: MenuMessage?
     /// What the system menus' peeked entries offer may have changed (`MediaMenu.revision`): a view that peeks
@@ -36,7 +38,10 @@ final class MediaMenuModel {
     }
 
     private func observeMenu() async {
-        for await value in menu.menu { open = value }
+        for await value in menu.menu {
+            if open == nil, value != nil { openings += 1 }
+            open = value
+        }
     }
 
     private func observePrompt() async {
@@ -320,6 +325,7 @@ private struct MediaMenuHost: ViewModifier {
                     open.entries.map { entry in ItemMenuEntry(entry) { menu.select(entryId: $0) } }
                 } ?? optionEntries(options, menu: menu),
                 probe: open != nil ? "menu" : "menu.option",
+                identity: open != nil ? model.openings : nil,
                 onCancel: { open != nil ? menu.dismiss() : menu.choose(index: nil) }
             )
             .confirmation(
@@ -540,15 +546,21 @@ private struct LinkSheet: View {
 /// from a store a moment later (`MediaMenu` resolves the entries after the press), and a `.contextMenu` needs its
 /// entries at the click, so the press is caught (`PointerItem`) and the menu shows at the pointer. The view tells only
 /// that the pointer is over it: a view of its own over every card had AppKit place and hit-test it on every frame of
-/// a scroll.
+/// a scroll. The pointer coming over it warms what its menu should know (`MediaMenu.warm`: the watchlist's
+/// membership), as focus does elsewhere: nothing runs while the system's menu shows, so the open menu can't learn it.
 private struct SecondaryClick: ViewModifier {
     let open: (() -> Void)?
     let item: AnyHashable
 
+    @Environment(\.mediaMenu) private var model
+
     func body(content: Content) -> some View {
         if let open {
             content
-                .onHover { inside in PointerItem.shared.hover(inside, item: item, open: open) }
+                .onHover { inside in
+                    PointerItem.shared.hover(inside, item: item, open: open)
+                    if inside { model?.menu.warm(request: open) }
+                }
                 .onDisappear { PointerItem.shared.hover(false, item: item, open: open) }
         } else {
             content

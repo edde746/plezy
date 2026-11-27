@@ -653,18 +653,7 @@ class MediaMenuTest {
         val server = plex()
         server.externalIds = { ExternalIds(imdb = "tt-$it") }
         val trakt = WatchlistSource(CatalogSourceId.TRAKT, members = null).apply { onLoad = mutableSetOf("tt-m-1") }
-        val sources = listOf<CatalogSource>(trakt)
-        val cache = LibraryWatchlistCandidates { sources }
-        val watchlist = WatchlistMenuEntries(
-            candidates = { cache },
-            sources = { sources },
-            client = clients::client,
-            isOnline = { it in online },
-            isOffline = { false },
-            choose = { null },
-            scope = backgroundScope,
-        )
-        val menu = menu(providers = listOf(watchlist))
+        val menu = menu(providers = listOf(watchlist(trakt)))
         val ids = listOf("m-1", "m-2", "m-3")
         val revision = menu.revision.value
         ids.forEach { id -> menu.peek { menu.open(movie(server).copy(id = id)) } }
@@ -679,6 +668,62 @@ class MediaMenuTest {
         advanceUntilIdle()
         assertEquals(1, trakt.fetches, "one watchlist fetch for every card")
         assertEquals(ids.size, server.calls.count { it.startsWith("fetchExternalIds:") }, "each card's ids, once")
+    }
+
+    @Test
+    fun anOpenMenuOfACardOnTheWatchlistOpensAtOnceThenOffersRemoveOnceTheWatchlistLoads() = runTest {
+        val server = plex()
+        server.externalIds = { ExternalIds(imdb = "tt-$it") }
+        val trakt = WatchlistSource(CatalogSourceId.TRAKT, members = null).apply {
+            onLoad = mutableSetOf("tt-m-1")
+            loading = CompletableDeferred()
+        }
+        val menu = menu(providers = listOf(watchlist(trakt)))
+        fun watchlistEntry() = ids(assertNotNull(menu.menu.value, "the menu is open").entries)
+            .single { it == WatchlistMenuEntries.ADD || it == WatchlistMenuEntries.REMOVE }
+
+        menu.open(movie(server))
+        advanceUntilIdle()
+        assertEquals(WatchlistMenuEntries.ADD, watchlistEntry(), "the menu opens before the watchlist has loaded")
+        checkNotNull(trakt.loading).complete(Unit)
+        advanceUntilIdle()
+        assertEquals(WatchlistMenuEntries.REMOVE, watchlistEntry(), "the open menu offers Remove once it has")
+
+        menu.select(WatchlistMenuEntries.REMOVE)
+        advanceUntilIdle()
+        assertEquals(listOf("remove tt-m-1"), trakt.mutations)
+        assertEquals(MenuMessage(T.explore.removedFromWatchlist), menu.message.value)
+    }
+
+    @Test
+    fun aMenuClosedBeforeTheWatchlistLoadsStaysClosed() = runTest {
+        val server = plex()
+        server.externalIds = { ExternalIds(imdb = "tt-$it") }
+        val trakt = WatchlistSource(CatalogSourceId.TRAKT, members = null).apply {
+            onLoad = mutableSetOf("tt-m-1")
+            loading = CompletableDeferred()
+        }
+        val menu = menu(providers = listOf(watchlist(trakt)))
+        menu.open(movie(server))
+        advanceUntilIdle()
+        menu.dismiss()
+        checkNotNull(trakt.loading).complete(Unit)
+        advanceUntilIdle()
+        assertNull(menu.menu.value)
+    }
+
+    /** The watchlist's entries over [sources], on this test's servers. */
+    private fun TestScope.watchlist(vararg sources: CatalogSource): WatchlistMenuEntries {
+        val cache = LibraryWatchlistCandidates { sources.toList() }
+        return WatchlistMenuEntries(
+            candidates = { cache },
+            sources = { sources.toList() },
+            client = clients::client,
+            isOnline = { it in online },
+            isOffline = { false },
+            choose = { null },
+            scope = backgroundScope,
+        )
     }
 
     @Test

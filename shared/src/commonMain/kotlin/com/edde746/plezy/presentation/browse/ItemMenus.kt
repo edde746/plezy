@@ -84,15 +84,15 @@ interface MenuEntryProvider {
     fun entries(target: MenuTarget, place: MenuPlace): List<MenuEntry>
 
     /**
-     * Fetches what the next [entries] for [target] should know (the watchlist's membership): as a menu opens, or as a
-     * peeked menu's item gains focus or is pressed ([MediaMenu.warm]).
+     * Fetches what the next [entries] for [target] should know (the watchlist's membership), as its item gains focus,
+     * is pressed or comes under the pointer ([MediaMenu.warm]).
      */
     fun warm(target: MenuTarget) {}
 
     /**
-     * For an item whose menu was first peeked ([MediaMenu.peek]): fetches, once for every menu that needs it (shared
-     * loads, kept for the session), what its first opening should know (the watchlists' membership). True when it
-     * learnt something the menu's entries may now show; the peeked menus are then read again.
+     * Fetches, once for every menu that needs it (shared loads, kept for the session), what [target]'s menu should know
+     * (the watchlists' membership): as its menu is first peeked ([MediaMenu.peek]), and as it opens. True when it learnt
+     * something the menu's entries may now show; the peeked menus are then read again, and the open menu shows it.
      */
     suspend fun warmAhead(target: MenuTarget): Boolean = false
 

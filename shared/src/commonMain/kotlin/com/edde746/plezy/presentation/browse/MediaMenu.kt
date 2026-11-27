@@ -38,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,9 +50,10 @@ import kotlin.time.Duration
 
 /**
  * Item and playlist menus: [open] resolves what the menu offers (the user's rights on the item's server, whether that
- * server answers, its own per-item delete answer, the [providers]' entries) and publishes it as [menu]; [select] runs
- * an entry, whose questions and sheets come up one at a time as [prompt] and whose outcome lands in [message]. One menu
- * at a time: an open while a menu is open or its action runs does nothing. Main thread only.
+ * server answers, its own per-item delete answer, the [providers]' entries) and publishes it as [menu], and again while
+ * it is open once the providers have fetched what it should know (the watchlist's membership); [select] runs an entry,
+ * whose questions and sheets come up one at a time as [prompt] and whose outcome lands in [message]. One menu at a
+ * time: an open while a menu is open or its action runs does nothing. Main thread only.
  *
  * A UI whose menus are the system's, which need their entries as they open (the context menus of iOS and Apple TV),
  * reads an item's menu as it shows it ([peek]: from what is at hand, at once), reads it again as [revision] moves, and
@@ -145,8 +147,8 @@ class MediaMenu(
     }
 
     /**
-     * The item [request] opens the menu of has focus, or is pressed: its providers fetch what its next [peek] should
-     * know (the watchlist's membership), as opening a menu has them do.
+     * The item [request] opens the menu of has focus, is pressed or is under the pointer: its providers fetch what its
+     * next menu should know (the watchlist's membership), as opening a menu has them do.
      */
     fun warm(request: () -> Unit) {
         val opened = peeked(request) ?: return
@@ -281,7 +283,7 @@ class MediaMenu(
 
     private fun open(target: MenuTarget, place: MenuPlace, extras: List<MenuExtra>, playTrailer: (() -> Unit)?, onRow: Set<RowAction>) {
         peeking?.let { peek ->
-            peek.opened = resolve(target, place, extras, playTrailer, onRow, carriedDeletePermission(target), warm = false, version = 0)
+            peek.opened = resolve(target, place, extras, playTrailer, onRow, carriedDeletePermission(target), version = 0)
             fetchAhead(target)
             refreshQuality()
             return
@@ -292,9 +294,13 @@ class MediaMenu(
             try {
                 currentQuality?.let { quality = it() }
                 val version = (target as? MenuTarget.Item)?.item?.let { savedVersion?.invoke(it) } ?: 0
-                val resolved = resolve(target, place, extras, playTrailer, onRow, deletePermission(target), warm = true, version)
-                opened = resolved
-                mutableMenu.value = ItemMenu(target.menuTitle(), resolved.entries.map { it.first })
+                val deletePermission = deletePermission(target)
+                val resolved = resolve(target, place, extras, playTrailer, onRow, deletePermission, version)
+                publish(resolved)
+                // What the providers fetch as it opens (the watchlist's membership) shows in it while it is open.
+                if (!warmAhead(target) || opened !== resolved || mutableMenu.value == null) return@launch
+                val learnt = resolve(target, place, extras, playTrailer, onRow, deletePermission, version)
+                if (learnt.entries.map { it.first } != resolved.entries.map { it.first }) publish(learnt)
             } catch (e: CancellationException) {
                 busy = false
                 throw e
@@ -306,27 +312,34 @@ class MediaMenu(
         }
     }
 
+    private fun publish(resolved: Opened) {
+        opened = resolved
+        mutableMenu.value = ItemMenu(resolved.target.menuTitle(), resolved.entries.map { it.first })
+    }
+
     /**
-     * Has the providers fetch, once per item, what its first menu should know (`MenuEntryProvider.warmAhead`: the
-     * watchlists, loaded once for every menu); [revision] moves if one learnt something.
+     * Has the providers fetch, once per item, what its first menu should know ([warmAhead]: the watchlists, loaded once
+     * for every menu); [revision] moves if one learnt something.
      */
     private fun fetchAhead(target: MenuTarget) {
         if (providers.isEmpty() || !fetchedAhead.add(target.aheadKey())) return
-        scope.launch {
-            val learnt = providers.map { provider ->
-                async {
-                    try {
-                        provider.warmAhead(target)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Log.d(TAG, e) { "Warming the menu of ${target.title} ahead failed" }
-                        false
-                    }
+        scope.launch { if (warmAhead(target)) mutableRevision.update { it + 1 } }
+    }
+
+    /** Has the providers fetch what [target]'s menu should know (`MenuEntryProvider.warmAhead`); true if one learnt something. */
+    private suspend fun warmAhead(target: MenuTarget): Boolean = coroutineScope {
+        providers.map { provider ->
+            async {
+                try {
+                    provider.warmAhead(target)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.d(TAG, e) { "Warming the menu of ${target.title} ahead failed" }
+                    false
                 }
-            }.awaitAll().any { it }
-            if (learnt) mutableRevision.update { it + 1 }
-        }
+            }
+        }.awaitAll().any { it }
     }
 
     /**
@@ -346,8 +359,7 @@ class MediaMenu(
 
     /**
      * [target]'s menu, Delete offered by [deletePermission] (the server's answer: [deletePermission] or
-     * [carriedDeletePermission]), Play Version checking [version] and [quality]. [warm]: the providers fetch what the
-     * next opening should know.
+     * [carriedDeletePermission]), Play Version checking [version] and [quality].
      */
     private fun resolve(
         target: MenuTarget,
@@ -356,7 +368,6 @@ class MediaMenu(
         playTrailer: (() -> Unit)?,
         onRow: Set<RowAction>,
         deletePermission: Boolean?,
-        warm: Boolean,
         version: Int,
     ): Opened {
         val serverId = ServerId.tryParse(target.serverId)
@@ -371,7 +382,6 @@ class MediaMenu(
             }
             provided[provider.slot] = provided[provider.slot].orEmpty() + entries
             entries.forEach { owners[it.id] = provider }
-            if (warm) provider.warm(target)
         }
         val entries = when (target) {
             is MenuTarget.Playlist -> listMenuEntries(provided)

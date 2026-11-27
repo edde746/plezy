@@ -451,6 +451,31 @@ final class TrackersTests: PlezyUITestCase {
         settledShot("anilist connected")
     }
 
+    #if os(macOS)
+    /// Maestro Movie, on the fake's watchlists from the start, in the Movies library on a fresh launch: with the pointer
+    /// rested on its card a while, as a user's is before a right click, its first menu offers Remove from Watchlist;
+    /// Escape closes it, and no other menu comes back.
+    func testFirstMenuOfAMovieOnTheWatchlistOffersRemove() {
+        launchDev(arguments: ["--dev-open", "libraries", "--dev-server", Self.testServer, "--dev-trackers", fakeTrackers, "--dev-trackers-connected"])
+        require("libraries.screen", timeout: 90, "Libraries")
+        let movie = LibrarySteps(test: self).shownCard("Maestro Movie", in: "Movies")
+        // The card's own frame, not its hittability: the right-click catcher over it hides its activation point.
+        let point = movie.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+        point.hover()
+        // The session's first watchlist loads (every service's, and the anime mappings MyAnimeList's and AniList's
+        // matching needs) with nothing to wait on.
+        Thread.sleep(forTimeInterval: 10)
+        point.rightClick()
+        require("menu.watchlist_remove", timeout: 10, "the first menu offers Remove from Watchlist")
+        shot("first menu on the watchlist")
+        app.typeKey(.escape, modifierFlags: [])
+        requireGone("menu.watchlist_remove", timeout: 5, "Escape closes the menu")
+        // Long enough for a menu shown again to come up.
+        Thread.sleep(forTimeInterval: 3)
+        XCTAssertFalse(element("menu.watchlist_add").exists || element("menu.watchlist_remove").exists, "no menu comes back")
+    }
+    #endif
+
     #if os(iOS)
     /// A movie's menu (its Search result's) with every service connected to the fake: Add to Watchlist asks which of
     /// Trakt, Simkl and MDBList (the sources that can hold it) and adds it to Trakt, which a toast says above the tab

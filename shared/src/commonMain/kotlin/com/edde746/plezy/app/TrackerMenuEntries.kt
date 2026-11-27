@@ -67,10 +67,10 @@ internal class RateMenuEntries(
  * Add to / Remove from Watchlist in a movie's or show's menu ([MenuSlot.WATCHLIST]), through the active profile's
  * watchlist-capable catalog sources ([sources]) and the session's [candidates]: offered while one of them is connected,
  * the item's server answers and the app isn't offline, unless the item's candidates are known to be none. The label
- * says Remove only when the known candidates show the item on a watchlist; the candidates and every source's watchlist
- * are warmed apart ([warm]). Picking the entry resolves the candidates: one is toggled as the label said, unless it is
- * already as the label asks (a label from candidates since changed), which needs nothing; several open a chooser of
- * sources ([choose]), each toggled by its own membership.
+ * says Remove only when the known candidates show the item on a watchlist; the candidates and the watchlists are
+ * fetched apart ([warm], [warmAhead]). Picking the entry resolves the candidates: one is toggled as the label said,
+ * unless it is already as the label asks (a label from candidates since changed), which needs nothing; several open a
+ * chooser of sources ([choose]), each toggled by its own membership.
  */
 internal class WatchlistMenuEntries(
     private val candidates: () -> LibraryWatchlistCandidates,
@@ -165,7 +165,7 @@ internal class WatchlistMenuEntries(
     /**
      * Loads every source's watchlist (one load per source for the session, whichever menu asks first) and the item's
      * candidates (its ids from its own server, once per item for the session), so a card already on a watchlist offers
-     * Remove as its menu first opens. True when either wasn't known yet.
+     * Remove in its menu. True when either wasn't known yet.
      */
     override suspend fun warmAhead(target: MenuTarget): Boolean {
         val item = (target as? MenuTarget.Item)?.item ?: return false

@@ -51,15 +51,18 @@ extension View {
     /// `ItemMenuEntries` does; on iOS
     /// and Apple TV a submenu's entries follow their entry's label. A pick runs its entry's action, which clears the
     /// state; closing it without one (Cancel, a tap outside, a swipe down, Escape, the remote's Menu) runs `onCancel`,
-    /// once the pick, if any, has run.
+    /// once the pick, if any, has run. `identity`, where given, keeps the dialog one across changes of its entries (a
+    /// menu its store updated as it learnt what to show): on the Mac they reach its menu while it is yet to show, and
+    /// bring no other once it shows; elsewhere the dialog shows anew with them.
     func entriesDialog(
         _ title: String?,
         isPresented: Bool,
         entries: [ItemMenuEntry],
         probe: String,
+        identity: AnyHashable? = nil,
         onCancel: @escaping () -> Void
     ) -> some View {
-        modifier(EntriesDialog(title: title, isPresented: isPresented, entries: entries, probe: probe, onCancel: onCancel))
+        modifier(EntriesDialog(title: title, isPresented: isPresented, entries: entries, probe: probe, identity: identity, onCancel: onCancel))
     }
 }
 
@@ -224,9 +227,13 @@ private struct EntriesDialog: ViewModifier {
     let isPresented: Bool
     let entries: [ItemMenuEntry]
     let probe: String
+    let identity: AnyHashable?
     let onCancel: () -> Void
 
-    #if !os(macOS)
+    #if os(macOS)
+    /// The menu asked for last, which its own entries' changes reach while it is yet to show.
+    @State private var asked = AskedMenu()
+    #else
     /// The dialog is up, as the system last left it or the state put it.
     @State private var shown = false
     /// Counts the dialogs the state has put up. Each shows from the other of two presenters than the one before
@@ -248,9 +255,16 @@ private struct EntriesDialog: ViewModifier {
         #if os(macOS)
         content.onChange(of: key, initial: true) { _, key in
             guard key != nil else { return }
+            let again = identity != nil && identity == asked.identity
+            asked.identity = identity
+            asked.title = title
+            asked.entries = entries
+            // The asked menu's own entries changed: they reach it while it is yet to show; once it shows, the system's
+            // menu keeps what it shows, and nothing runs until it closes.
+            if again { return }
             // Out of the update that showed it: the menu's tracking runs until it closes.
-            Task { @MainActor in
-                PointerMenu.show(title: title, entries: entries, probe: probe, onCancel: onCancel)
+            Task { @MainActor [asked, probe, onCancel] in
+                PointerMenu.show(title: asked.title, entries: asked.entries, probe: probe, onCancel: onCancel)
             }
         }
         #else
@@ -305,6 +319,15 @@ private struct EntriesDialog: ViewModifier {
 }
 
 #if os(macOS)
+/// What an `EntriesDialog` last asked its menu to show, and which of its store's dialogs that is (`identity`); read as
+/// the menu shows.
+@MainActor
+private final class AskedMenu {
+    var identity: AnyHashable?
+    var title: String?
+    var entries: [ItemMenuEntry] = []
+}
+
 /// Where the next menu opened from code shows: the frame (in its window, SwiftUI's global space) of the item that opened
 /// it from itself (VoiceOver's Show menu, a controller's X), where the user's focus is, or of the ⋯ pressed (a Detail
 /// episode row's, `pullDown`); nil for the pointer (a right click). Taken by the menu that shows next.

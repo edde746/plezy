@@ -22,6 +22,7 @@ import com.edde746.plezy.presentation.browse.MenuPrompt
 import com.edde746.plezy.presentation.browse.MenuTarget
 import com.edde746.plezy.presentation.libraries.mediaItem
 import com.edde746.plezy.strings.T
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestScope
@@ -44,6 +45,8 @@ internal class WatchlistSource(override val id: CatalogSourceId, var members: Mu
     var onLoad: MutableSet<String>? = null
     /** The loads that fetched the watchlist ([onLoad]). */
     var fetches = 0
+    /** Held until completed: the watchlist is still loading. */
+    var loading: CompletableDeferred<Unit>? = null
 
     override val supportedRows: List<CatalogRowId> = emptyList()
     override val supportsWatchlist: Boolean = true
@@ -62,6 +65,7 @@ internal class WatchlistSource(override val id: CatalogSourceId, var members: Mu
 
     override suspend fun ensureWatchlistLoaded() {
         loads++
+        loading?.await()
         onLoad?.let {
             members = it
             fetches++
@@ -108,7 +112,7 @@ class TrackerMenuEntriesTest {
         scope = backgroundScope,
     )
 
-    /** The entries as an opening menu takes them, which then warms what the next opening knows. */
+    /** The entries a menu shows, then warmed for the next as its item's focus or press warms them. */
     private suspend fun WatchlistMenuEntries.open(item: MediaItem = movie): List<MenuEntry> =
         entries(MenuTarget.Item(item), MenuPlace()).also { warm(MenuTarget.Item(item)) }
 
