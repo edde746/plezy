@@ -299,6 +299,10 @@ object WaylandSession {
      * Asks KWin to draw [window]'s server-side title bar and frame in the colour scheme [scheme] (KDE's decoration
      * palette, a scheme file's path), as the X11 path's hint does; again with another scheme as the app's theme
      * changes. False where the compositor has no such protocol (it draws its own default). On the AWT event thread.
+     *
+     * With the palette the window keeps a KDE server decoration in mode Server: JetBrains Runtime destroys the window's
+     * xdg-decoration as it goes fullscreen and asks for none as it leaves, and KWin then falls back to this one rather
+     * than drawing no title bar.
      */
     internal fun useDecorationPalette(window: Window, scheme: String): Boolean {
         palettes[window]?.let { palette ->
@@ -314,18 +318,31 @@ object WaylandSession {
         var palette = MemorySegment.NULL
         try {
             var manager = MemorySegment.NULL
+            var decorations = MemorySegment.NULL
             val registry = Wl.globals(wrapper) { global ->
-                if (global.iface == "org_kde_kwin_server_decoration_palette_manager") {
-                    manager = global.bind(Protocols["org_kde_kwin_server_decoration_palette_manager"], 1)
+                when (global.iface) {
+                    "org_kde_kwin_server_decoration_palette_manager" ->
+                        manager = global.bind(Protocols["org_kde_kwin_server_decoration_palette_manager"], 1)
+                    "org_kde_kwin_server_decoration_manager" ->
+                        decorations = global.bind(Protocols["org_kde_kwin_server_decoration_manager"], 1)
                 }
             }
             Wl.roundtrip(display, queue)
             Wl.forget(registry)
-            if (manager.address() == 0L) return false
+            if (manager.address() == 0L) {
+                if (decorations.address() != 0L) Wl.forget(decorations)
+                return false
+            }
             // The palette object stays for the window's lifetime: releasing it puts the default palette back.
             palette = Wl.request(manager, 0, null, surface, newInterface = Protocols["org_kde_kwin_server_decoration_palette"])
             Wl.request(palette, 0, scheme)
             Wl.forget(manager)
+            // So does the server decoration (request_mode Server).
+            if (decorations.address() != 0L) {
+                val decoration = Wl.request(decorations, 0, null, surface, newInterface = Protocols["org_kde_kwin_server_decoration"])
+                Wl.request(decoration, 1, DECORATION_MODE_SERVER)
+                Wl.forget(decorations)
+            }
             Wl.flush(display)
             palettes[window] = palette
             return true
@@ -334,4 +351,7 @@ object WaylandSession {
             if (palette.address() == 0L) Wl.destroyQueue(queue)
         }
     }
+
+    /** org_kde_kwin_server_decoration's mode Server: the compositor draws the title bar and frame. */
+    private const val DECORATION_MODE_SERVER = 2
 }

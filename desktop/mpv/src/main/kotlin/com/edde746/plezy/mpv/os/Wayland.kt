@@ -353,6 +353,12 @@ internal object Protocols {
             listOf(Msg("create", "no", listOf("org_kde_kwin_server_decoration_palette", "wl_surface"))),
         ),
         Def("org_kde_kwin_server_decoration_palette", 1, listOf(Msg("set_palette", "s"), Msg("release", ""))),
+        Def(
+            "org_kde_kwin_server_decoration_manager", 1,
+            listOf(Msg("create", "no", listOf("org_kde_kwin_server_decoration", "wl_surface"))),
+            listOf(Msg("default_mode", "u")),
+        ),
+        Def("org_kde_kwin_server_decoration", 1, listOf(Msg("release", ""), Msg("request_mode", "u")), listOf(Msg("mode", "u"))),
     )
 
     private val interfaces: Map<String, MemorySegment>
