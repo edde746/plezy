@@ -2,7 +2,7 @@
 import XCTest
 
 /// Downloads on iPhone, iPad and the Mac (Apple TV has none), each step kept as a screenshot of the result bundle:
-/// - the Downloads destination of a `--dev` session with nothing downloaded: its title, Manage's empty tree, the content
+/// - the Downloads destination of a `--dev` session with nothing downloaded: Manage's empty tree, the content
 ///   tabs' empty states (picked from the header row's `downloads.tab` menu), the Movies grouping menu and the Active
 ///   sync rules screen;
 /// - Downloads opened as the app starts signed in to a server: titled, it answers its menus, and iPad's and the Mac's
@@ -77,8 +77,8 @@ final class DownloadsTests: PlezyUITestCase {
         shot("downloads sync rules empty")
     }
 
-    /// Downloads asked for as the app starts signed in to a server: the screen shows titled Downloads and answers its
-    /// menus; iPad's and the Mac's sidebar has its row, after Home and before Search, highlighted.
+    /// Downloads asked for as the app starts signed in to a server: the screen shows, its header row under no title,
+    /// and answers its menus; iPad's and the Mac's sidebar has its row, after Home and before Search, highlighted.
     func testOpensOverTheServersLibraries() {
         #if os(iOS)
         let pad = UIDevice.current.userInterfaceIdiom == .pad
@@ -95,7 +95,7 @@ final class DownloadsTests: PlezyUITestCase {
             arguments: ["--dev-open", "downloads", "--dev-server", "jellyfin=maestro:maestro@\(server)"]
         )
         opened()
-        XCTAssertEqual(require("downloads.title", "the Downloads title").label, "Downloads", "the screen is titled Downloads")
+        XCTAssertFalse(element("downloads.title").exists, "the page's header row starts with its view menu, under no title")
         require("downloads.tab", "the Downloads tab menu")
         require("downloads.tree.empty", "Manage's empty tree")
         if pad {
@@ -138,7 +138,6 @@ final class DownloadsTests: PlezyUITestCase {
         shot("home with downloads chip")
         press(chip)
         opened()
-        XCTAssertEqual(require("downloads.title", "the Downloads title").label, "Downloads", "the chip opens the Downloads page")
         // Lets the destination's switch finish before the shot.
         Thread.sleep(forTimeInterval: 1)
         shot("downloads from home chip")
@@ -172,7 +171,6 @@ final class DownloadsTests: PlezyUITestCase {
     func testOfflineStartLandsOnDownloads() {
         launchDev(settings: ["offline=true"])
         opened()
-        require("downloads.title", "the Downloads title")
         XCTAssertFalse(element("nav.home").exists, "no Home offline")
         XCTAssertFalse(element("nav.libraries").exists, "no Libraries offline")
         // Lets the offline line settle before the shot.

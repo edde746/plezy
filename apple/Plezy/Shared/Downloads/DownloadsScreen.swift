@@ -3,7 +3,7 @@ import SwiftUI
 import PlezyKit
 
 /// Downloads (iPhone, iPad, the Mac; Apple TV keeps no files and shows no Downloads), its own destination, over the
-/// session's `DownloadsStore`: the screen's header row (`screenHeader`) of its title, what shows (Manage, TV Shows,
+/// session's `DownloadsStore`: the screen's header row (`screenHeader`) of what shows (Manage, TV Shows,
 /// Movies, Music) and on a content tab its grouping,
 /// sort (the field picked again turns its direction around; Clear) and Filters (a form: `DownloadsFiltersSheet`); its
 /// actions Retry failed (while a download failed) and Sync rules, titled. Then the selected tab: Manage's tree, a list
@@ -15,7 +15,7 @@ import PlezyKit
 /// Feedback shows as a toast. A controller's shoulder buttons step what shows. The Downloads tab picked again while it
 /// shows brings the shown list back to its top (`scrollToTopRequests`).
 ///
-/// Accessibility identifiers: `downloads.screen`, `downloads.title`, `downloads.tab` (what shows, its options
+/// Accessibility identifiers: `downloads.screen`, `downloads.tab` (what shows, its options
 /// `downloads.tab.option.<i>`),
 /// `downloads.grouping`, `downloads.sort`, `downloads.filters`, `downloads.retryFailed`, `downloads.syncRules`,
 /// `downloads.items`, the cards `card.<global key>`, `downloads.album.<key>`, `downloads.track.<key>`,
@@ -92,14 +92,9 @@ struct DownloadsScreen: View {
         }
     }
 
-    /// The screen's title, what shows, and a content tab's grouping, sort and filters.
+    /// What shows, and a content tab's grouping, sort and filters.
     @ViewBuilder
     private func filters(store: DownloadsStore, state: DownloadsUiState) -> some View {
-        Text(state.title)
-            .font(.title3.weight(.semibold))
-            .lineLimit(1)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilityIdentifier("downloads.title")
         let tabs = DownloadsTab.allCases
         FilterMenu(
             chip: FilterChip(name: state.title, text: state.selected.label),
