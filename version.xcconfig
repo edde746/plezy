@@ -8,9 +8,15 @@
 //   dev             the fixture recorder's User-Agent version (dev/build.gradle.kts); the live tracker checks' too
 //   apple           MARKETING_VERSION and CURRENT_PROJECT_VERSION (project.yml includes this file)
 //   build.yml       the release tag must equal MARKETING_VERSION; the Sparkle appcast's sparkle:version is
-//                   CURRENT_PROJECT_VERSION
+//                   CURRENT_PROJECT_VERSION; the Linux deb, rpm and pacman packages' version is MARKETING_VERSION
+//                   with VERSION_PRERELEASE in each format's pre-release syntax (build-packages.py)
 // MARKETING_VERSION is major.minor.patch. CURRENT_PROJECT_VERSION is a positive integer that grows with every release
-// (Android versionCode, CFBundleVersion, which Sparkle compares).
-// Plain `KEY = value` lines only: Gradle (settings.gradle.kts) and the workflow read this file too.
+// (Android versionCode, CFBundleVersion, which Sparkle compares). VERSION_PRERELEASE is empty for a release; a beta of
+// MARKETING_VERSION sets it to <letters>.<number>, its pre-release tag's suffix (beta.3 for 3.0.0-beta.3), so its Linux
+// packages sort before MARKETING_VERSION's and the release upgrades them. Only build.yml reads it, and it refuses a
+// release tag while it is set; the other platforms show MARKETING_VERSION alone.
+// Plain `KEY = value` lines only (`KEY =` for an empty value): Gradle (settings.gradle.kts) and the workflow read this
+// file too.
 MARKETING_VERSION = 2.26.0
 CURRENT_PROJECT_VERSION = 160
+VERSION_PRERELEASE =

@@ -2,7 +2,8 @@ name: Build
 run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) || format('Build {0}', github.sha) }}
 
 # The release build: run by hand from main, it builds every platform into Actions artifacts and, given a release tag
-# equal to version.xcconfig's MARKETING_VERSION, drafts a GitHub release with them. A draft needs all five platforms.
+# equal to version.xcconfig's MARKETING_VERSION (and its VERSION_PRERELEASE empty), drafts a GitHub release with them.
+# A draft needs all five platforms.
 #
 #   Android    APKs per ABI (arm64-v8a, armeabi-v7a, x86_64) for the release, each plezy-android-<abi>.tar.gz holding
 #              plezy.apk; as artifacts only the AAB for Google Play and the Amazon Appstore's APK (the ARM ABIs in one
@@ -16,7 +17,8 @@ run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_t
 #              (sideloaded builds), and the MSIX bundle for Partner Center as an artifact only, unsigned because the
 #              Store signs it (store builds).
 #   Linux      deb, rpm, pacman, tarball, AppImage (+ zsync) and Flatpak per architecture (x64, arm64), with
-#              JetBrains Runtime, for the release. Sideloaded builds.
+#              JetBrains Runtime, for the release. Sideloaded builds. A beta's (VERSION_PRERELEASE set) deb, rpm and
+#              pacman packages carry it in their version, so they sort before the release's.
 # The release also carries appcast.xml, the Sparkle feed of the macOS and Windows apps (an enclosure for each signed
 # installer; update-packages.yml copies it to the appcast branch the apps read once the release is published), and
 # SHA256SUMS, every attached file's sha256, for people who download them by hand.
@@ -93,6 +95,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.version.outputs.build_number }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - name: Require the protected main branch
         run: |
@@ -113,10 +116,15 @@ jobs:
         run: |
           version=$(sed -n 's/^MARKETING_VERSION *= *\([^ ]*\) *$/\1/p' version.xcconfig)
           build_number=$(sed -n 's/^CURRENT_PROJECT_VERSION *= *\([^ ]*\) *$/\1/p' version.xcconfig)
+          prerelease=$(sed -n 's/^VERSION_PRERELEASE *= *\([^ ]*\) *$/\1/p' version.xcconfig)
           [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "MARKETING_VERSION is not major.minor.patch: $version" >&2; exit 1; }
           [[ $build_number =~ ^[1-9][0-9]*$ ]] || { echo "CURRENT_PROJECT_VERSION is not a positive integer: $build_number" >&2; exit 1; }
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          [[ -z $prerelease || $prerelease =~ ^[a-z]+\.[0-9]+$ ]] || { echo "VERSION_PRERELEASE is not <letters>.<number>: $prerelease" >&2; exit 1; }
+          {
+            echo "version=$version"
+            echo "build_number=$build_number"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
 
       # Before any build, so a wrong tag doesn't cost a full run.
       - name: Validate release tag
@@ -124,6 +132,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
           VERSION: ${{ steps.version.outputs.version }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
           if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
@@ -131,6 +140,10 @@ jobs:
           fi
           if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
             echo "Release tag $RELEASE_TAG does not match MARKETING_VERSION $VERSION in version.xcconfig." >&2
+            exit 1
+          fi
+          if [[ -n "$PRERELEASE" ]]; then
+            echo "version.xcconfig's VERSION_PRERELEASE is $PRERELEASE: a release needs it empty." >&2
             exit 1
           fi
 
@@ -903,11 +916,14 @@ jobs:
           sudo gem install fpm --version 1.17.0 --no-document
 
       # deb, rpm, pacman and the tarball, from the one staged image (/opt/plezy, /usr/bin/plezy); the script checks the
-      # image's host dependencies before fpm and reads each package's metadata back after.
+      # image's host dependencies before fpm and reads each package's metadata back after. The version it takes is
+      # semantic (3.0.0, or 3.0.0-beta.3 for a beta), and it writes each format's own pre-release syntax.
       - name: Build Linux packages
+        env:
+          PRERELEASE: ${{ needs.validate-trusted-ref.outputs.prerelease }}
         run: |
           python3 desktop/app/packaging/linux/build-packages.py --app "$APP_IMAGE" --arch "$ARCH" \
-            --version "$VERSION" --output "$GITHUB_WORKSPACE"
+            --version "$VERSION${PRERELEASE:+-$PRERELEASE}" --output "$GITHUB_WORKSPACE"
 
       # Its update information names this repository's latest release
       # (gh-releases-zsync|edde746|plezy|latest|plezy-linux-<arch>.AppImage.zsync), which AppImageUpdate and Gear

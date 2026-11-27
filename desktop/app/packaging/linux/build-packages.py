@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Package the Linux app image as plezy-linux-<arch>.deb, .rpm and .pkg.tar.zst, and the portable .tar.gz.
 
-  build-packages.py --app <image dir> --arch x64|arm64 --version X.Y.Z --output <dir>
+  build-packages.py --app <image dir> --arch x64|arm64 --version X.Y.Z[-<letters>.<number>] --output <dir>
 
 stage-image.py assembles the tree (the image, plezy.sh, lib/mpv-deps) and checks DEPENDS against what it needs from
 the host (check-host-deps.py). fpm (1.17.0) packages it as `plezy`, the name Plezy's earlier releases' packages had,
 so a newer version replaces theirs: the tree in /opt/plezy, plezy.sh as /usr/bin/plezy, the desktop entry (with the
 plezy:// scheme handler), the metainfo and the hicolor icons (desktop/app/icons, tools/brand's) as `plezy`; then
-check-packages.py reads back what fpm wrote. The tarball holds the tree at its root, plezy.sh to start it.
+check-packages.py reads back what fpm wrote. The tarball holds the tree at its root, plezy.sh to start it. A beta's
+version (3.0.0-beta.3) is written in each format's pre-release syntax (package_version).
 
 Runs on Ubuntu 24.04 with fpm, rpm (rpmbuild), bsdtar (libarchive-tools), zstd and xz, and the libraries the app needs
 from the host installed (check-host-deps.py resolves them).
@@ -15,6 +16,7 @@ from the host installed (check-host-deps.py resolves them).
 
 import argparse
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tarfile
@@ -61,12 +63,14 @@ DEPENDS = {
     ],
 }
 
-# Per format: the file's extension, the package architecture per release architecture, and fpm's options.
+# Per format: the file's extension, the package architecture per release architecture, fpm's options, and what joins a
+# pre-release's label to its version (package_version).
 FORMATS = {
     "deb": {
         "ext": "deb",
         "arch": {"x64": "amd64", "arm64": "arm64"},
         "options": ["--category", "video", "--deb-compression", "xz", "--deb-priority", "optional"],
+        "prerelease": "~",
     },
     "rpm": {
         "ext": "rpm",
@@ -74,13 +78,31 @@ FORMATS = {
         # rpm owns only the folders a package lists: these make /opt/plezy's go with the package.
         "options": ["--category", "Multimedia", "--rpm-compression", "xzmt", "--rpm-os", "linux",
                     "--rpm-auto-add-directories"],
+        "prerelease": "~",
     },
     "pacman": {
         "ext": "pkg.tar.zst",
         "arch": {"x64": "x86_64", "arm64": "aarch64"},
         "options": ["--pacman-compression", "zstd"],
+        "prerelease": "",
     },
 }
+
+# The app's semantic version: version.xcconfig's MARKETING_VERSION, then on a beta -VERSION_PRERELEASE.
+SEMANTIC_VERSION = re.compile(r"(\d+\.\d+\.\d+)(?:-([a-z]+)\.(\d+))?")
+
+
+def package_version(distro: str, version: str) -> str:
+    """The package's version (fpm's -v, before the iteration) for the app's semantic version: X.Y.Z as it is, a
+    pre-release in the format's own syntax, which sorts before its release, so the release upgrades every beta of it.
+    deb and rpm (4.10 and later) sort `~` before anything, the end included: 3.0.0~beta3 < 3.0.0. pacman has no such
+    character, but vercmp sorts a trailing letter segment before the end: 3.0.0beta3 < 3.0.0. In all three the number
+    orders the betas (beta3 < beta10) and the letters the stages (alpha < beta < rc)."""
+    match = SEMANTIC_VERSION.fullmatch(version)
+    if match is None:
+        raise ValueError(f"version must be X.Y.Z or X.Y.Z-<letters>.<number> (3.0.0-beta.3); got {version!r}")
+    release, label, number = match.groups()
+    return release if label is None else f"{release}{FORMATS[distro]['prerelease']}{label}{number}"
 
 
 def file_mappings(tree: Path) -> list[str]:
@@ -98,7 +120,8 @@ def file_mappings(tree: Path) -> list[str]:
 def fpm_command(distro: str, tree: Path, arch: str, version: str, output: Path) -> list[str]:
     config = FORMATS[distro]
     command = [
-        "fpm", "-s", "dir", "-t", distro, "-n", METADATA["name"], "-v", version, "--iteration", "1",
+        "fpm", "-s", "dir", "-t", distro, "-n", METADATA["name"], "-v", package_version(distro, version),
+        "--iteration", "1",
         "--license", METADATA["license"], "--vendor", METADATA["vendor"], "--maintainer", METADATA["maintainer"],
         "--url", METADATA["url"], "--description", METADATA["description"], "--architecture", config["arch"][arch],
         *config["options"],
@@ -125,7 +148,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--app", required=True, type=Path, help="the app image (createReleaseDistributable's Plezy/)")
     parser.add_argument("--arch", required=True, choices=ARCHITECTURES)
-    parser.add_argument("--version", required=True)
+    parser.add_argument("--version", required=True, help="the app's semantic version: X.Y.Z, 3.0.0-beta.3 for a beta")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     output = args.output.resolve()

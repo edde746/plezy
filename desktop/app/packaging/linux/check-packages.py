@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Read back the packages build-packages.py wrote and check what they say against what it declares.
 
-  check-packages.py <dir> --arch x64|arm64 --version X.Y.Z
+  check-packages.py <dir> --arch x64|arm64 --version X.Y.Z[-<letters>.<number>]
 
-For plezy-linux-<arch>.deb, .rpm and .pkg.tar.zst: the package's name, version (iteration 1) and architecture, its
-dependencies, exactly build-packages.py's DEPENDS (a flag fpm dropped would leave a package that installs and then
-can't start), its install and remove scripts, and the files every install needs (FILES: the launcher, libmpv and
-lib/mpv-deps, the wrapper as /usr/bin/plezy, the desktop entry, the metainfo, the icons). For plezy-linux-<arch>.tar.gz:
-the tree at its root (TARBALL_FILES). Needs dpkg-deb, rpm and bsdtar.
+For plezy-linux-<arch>.deb, .rpm and .pkg.tar.zst: the package's name, version (build-packages.py's package_version,
+iteration 1) and architecture, its dependencies, exactly build-packages.py's DEPENDS (a flag fpm dropped would leave a
+package that installs and then can't start), its install and remove scripts, and the files every install needs (FILES:
+the launcher, libmpv and lib/mpv-deps, the wrapper as /usr/bin/plezy, the desktop entry, the metainfo, the icons). For
+plezy-linux-<arch>.tar.gz: the tree at its root (TARBALL_FILES). Needs dpkg-deb, rpm and bsdtar.
 """
 
 import argparse
@@ -112,7 +112,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--arch", required=True, choices=ARCHITECTURES)
-    parser.add_argument("--version", required=True)
+    parser.add_argument("--version", required=True, help="the app's semantic version, as build-packages.py took it")
     args = parser.parse_args()
     module = packaging()
     name = module.METADATA["name"]
@@ -123,7 +123,7 @@ def main() -> int:
             errors.append(f"{package} was not written")
             continue
         found = READERS[distro](package)
-        expected = (name, f"{args.version}-1", config["arch"][args.arch])
+        expected = (name, f"{module.package_version(distro, args.version)}-1", config["arch"][args.arch])
         if found["identity"] != expected:
             errors.append(f"{package.name} is {found['identity']}, not {expected}")
         declared = set(module.DEPENDS[distro])

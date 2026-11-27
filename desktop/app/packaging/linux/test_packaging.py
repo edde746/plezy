@@ -90,8 +90,8 @@ class DependsTest(unittest.TestCase):
 class FpmTest(unittest.TestCase):
     tree = Path("/stage/plezy")
 
-    def command(self, distro, arch="x64"):
-        return packages.fpm_command(distro, self.tree, arch, "2.26.0", Path("/out"))
+    def command(self, distro, arch="x64", version="2.26.0"):
+        return packages.fpm_command(distro, self.tree, arch, version, Path("/out"))
 
     @staticmethod
     def option(command, flag):
@@ -110,6 +110,17 @@ class FpmTest(unittest.TestCase):
             self.assertEqual(self.option(command, "--url"), ["https://github.com/edde746/plezy"])
             self.assertEqual(self.option(command, "--description"), ["A modern Plex and Jellyfin client for desktop and mobile"])
             self.assertEqual(self.option(command, "--depends"), packages.DEPENDS[distro])
+
+    def test_a_beta_carries_its_label_in_each_formats_pre_release_syntax(self):
+        for distro, version in {"deb": "3.0.0~beta3", "rpm": "3.0.0~beta3", "pacman": "3.0.0beta3"}.items():
+            command = self.command(distro, version="3.0.0-beta.3")
+            self.assertEqual(self.option(command, "-v"), [version])
+            self.assertEqual(self.option(command, "--iteration"), ["1"])
+
+    def test_rejects_a_version_that_is_not_semantic(self):
+        for version in ("3.0", "v3.0.0", "3.0.0-beta", "3.0.0-beta3", "3.0.0-beta.3.1", "3.0.0~beta3", "3.0.0-Beta.3"):
+            with self.assertRaises(ValueError, msg=version):
+                self.command("deb", version=version)
 
     def test_architectures_compression_and_file_names(self):
         expected = {
@@ -147,6 +158,147 @@ class FpmTest(unittest.TestCase):
             self.assertTrue(Path(source).is_file(), source)
             width, height = struct.unpack(">II", Path(source).read_bytes()[16:24])
             self.assertEqual(f"{width}x{height}", Path(source).parts[-3])
+
+
+# How each format's package manager orders versions, for the ordering tests: dpkg's verrevcmp (lib/dpkg/version.c,
+# deb-version(7)), rpm's rpmvercmp (rpmio/rpmvercmp.c, `~` from 4.10; its `^` is left out, no version here has one) and
+# pacman's, libalpm's older copy of rpm's without `~` (lib/libalpm/version.c, vercmp(8)). Each compares the version,
+# then the release (split at the last `-`); the versions here have no epoch. Each returns <0, 0 or >0.
+def run_end(text: str, start: int, kind) -> int:
+    while start < len(text) and kind(text[start]):
+        start += 1
+    return start
+
+
+def compare_segments(one: str, two: str, numeric: bool) -> int:
+    if numeric:
+        one, two = one.lstrip("0"), two.lstrip("0")
+        if len(one) != len(two):
+            return 1 if len(one) > len(two) else -1
+    return (one > two) - (one < two)
+
+
+def dpkg_compare(a: str, b: str) -> int:
+    def order(c: str) -> int:
+        if c.isdigit():
+            return 0
+        if c.isalpha():
+            return ord(c)
+        if c == "~":
+            return -1
+        return ord(c) + 256 if c else 0
+
+    i = j = 0
+    while i < len(a) or j < len(b):
+        first_diff = 0
+        while a[i:i + 1] and not a[i].isdigit() or b[j:j + 1] and not b[j].isdigit():
+            difference = order(a[i:i + 1]) - order(b[j:j + 1])
+            if difference:
+                return difference
+            i, j = i + 1, j + 1
+        while a[i:i + 1] == "0":
+            i += 1
+        while b[j:j + 1] == "0":
+            j += 1
+        while a[i:i + 1].isdigit() and b[j:j + 1].isdigit():
+            first_diff = first_diff or ord(a[i]) - ord(b[j])
+            i, j = i + 1, j + 1
+        if a[i:i + 1].isdigit():
+            return 1
+        if b[j:j + 1].isdigit():
+            return -1
+        if first_diff:
+            return first_diff
+    return 0
+
+
+def rpm_compare(a: str, b: str) -> int:
+    i = j = 0
+    while i < len(a) or j < len(b):
+        while i < len(a) and not a[i].isalnum() and a[i] != "~":
+            i += 1
+        while j < len(b) and not b[j].isalnum() and b[j] != "~":
+            j += 1
+        x, y = a[i:i + 1], b[j:j + 1]
+        if x == "~" or y == "~":
+            if x != y:
+                return -1 if x == "~" else 1
+            i, j = i + 1, j + 1
+            continue
+        if not x or not y:
+            break
+        numeric = x.isdigit()
+        kind = str.isdigit if numeric else str.isalpha
+        m, n = run_end(a, i, kind), run_end(b, j, kind)
+        if n == j:
+            return 1 if numeric else -1
+        result = compare_segments(a[i:m], b[j:n], numeric)
+        if result:
+            return result
+        i, j = m, n
+    return (i < len(a)) - (j < len(b))
+
+
+def alpm_compare(a: str, b: str) -> int:
+    i = j = previous_i = previous_j = 0
+    while i < len(a) and j < len(b):
+        while i < len(a) and not a[i].isalnum():
+            i += 1
+        while j < len(b) and not b[j].isalnum():
+            j += 1
+        if i == len(a) or j == len(b):
+            break
+        # Separators of different lengths: the longer one is newer.
+        if i - previous_i != j - previous_j:
+            return -1 if i - previous_i < j - previous_j else 1
+        numeric = a[i].isdigit()
+        kind = str.isdigit if numeric else str.isalpha
+        m, n = run_end(a, i, kind), run_end(b, j, kind)
+        if n == j:
+            return 1 if numeric else -1
+        result = compare_segments(a[i:m], b[j:n], numeric)
+        if result:
+            return result
+        i, j = previous_i, previous_j = m, n
+    if i == len(a) and j == len(b):
+        return 0
+    # What is left of one but not the other: a letter segment is older than the end, anything else newer.
+    x, y = a[i:i + 1], b[j:j + 1]
+    return -1 if (not x and not y.isalpha()) or x.isalpha() else 1
+
+
+COMPARE = {"deb": dpkg_compare, "rpm": rpm_compare, "pacman": alpm_compare}
+
+
+def package_compare(distro: str, a: str, b: str) -> int:
+    (version_a, _, release_a), (version_b, _, release_b) = a.rpartition("-"), b.rpartition("-")
+    return COMPARE[distro](version_a, version_b) or COMPARE[distro](release_a, release_b)
+
+
+class VersionOrderTest(unittest.TestCase):
+    def assert_ascending(self, distro, versions):
+        for older, newer in zip(versions, versions[1:]):
+            self.assertLess(package_compare(distro, older, newer), 0, f"{distro}: {older} before {newer}")
+            self.assertGreater(package_compare(distro, newer, older), 0, f"{distro}: {newer} after {older}")
+            self.assertEqual(package_compare(distro, older, older), 0, f"{distro}: {older}")
+
+    def test_the_comparisons_sort_their_manuals_examples(self):
+        # deb-version(7): ~~ < ~~a < ~ < the empty part < a. rpm: 1.0~rc1 < 1.0, a letter segment older than a number.
+        # vercmp(8): 1.0a < 1.0b < 1.0beta < 1.0p < 1.0pre < 1.0rc < 1.0 < 1.0.a < 1.0.1, and 1 < 1.0 < … < 3.0.0.
+        examples = {
+            "deb": ["1.0~~", "1.0~~a", "1.0~", "1.0", "1.0a"],
+            "rpm": ["1.0~rc1", "1.0", "1.0a", "1.0.1", "1.10"],
+            "pacman": ["1.0a", "1.0b", "1.0beta", "1.0p", "1.0pre", "1.0rc", "1.0", "1.0.a", "1.0.1"],
+        }
+        for distro, versions in examples.items():
+            self.assert_ascending(distro, [f"{version}-1" for version in versions])
+        self.assert_ascending("pacman", [f"{version}-1" for version in ("1", "1.0", "1.1", "1.1.1", "1.2", "2.0", "3.0.0")])
+
+    def test_each_release_upgrades_its_pre_releases_and_each_beta_the_one_before(self):
+        versions = ["2.26.0", "3.0.0-alpha.1", "3.0.0-beta.2", "3.0.0-beta.3", "3.0.0-beta.10", "3.0.0-rc.1", "3.0.0",
+                    "3.0.1-beta.1", "3.0.1"]
+        for distro in packages.FORMATS:
+            self.assert_ascending(distro, [f"{packages.package_version(distro, version)}-1" for version in versions])
 
 
 class DesktopEntryTest(unittest.TestCase):
