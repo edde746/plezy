@@ -78,6 +78,9 @@ class DownloadsPageTest {
             waitUntil(timeoutMillis = 20_000) { "home.downloads" in placed }
             onNode(hasClickAction() and hasText(T.navigation.downloads)).performClick()
             waitUntil(timeoutMillis = 5_000) { app.navigator.backStack.value == listOf(Route.Downloads) }
+            // The shell publishes its state from the navigator's on the session's main thread, a moment after the
+            // navigator's own: its selection is read once it has left Home.
+            waitUntil(timeoutMillis = 5_000) { app.shell.state.value.selected != TopLevelDestination.HOME }
             assertEquals(TopLevelDestination.DOWNLOADS, app.shell.state.value.selected)
         }
     }
