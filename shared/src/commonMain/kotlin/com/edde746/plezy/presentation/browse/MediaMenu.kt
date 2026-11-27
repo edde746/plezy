@@ -319,15 +319,20 @@ class MediaMenu(
 
     /**
      * Has the providers fetch, once per item, what its first menu should know ([warmAhead]: the watchlists, loaded once
-     * for every menu); [revision] moves if one learnt something.
+     * for every menu); [revision] moves if one learnt something. A fetch that failed (a request timed out as the session
+     * started) is made again as the item is next peeked.
      */
     private fun fetchAhead(target: MenuTarget) {
-        if (providers.isEmpty() || !fetchedAhead.add(target.aheadKey())) return
-        scope.launch { if (warmAhead(target)) mutableRevision.update { it + 1 } }
+        val key = target.aheadKey()
+        if (providers.isEmpty() || !fetchedAhead.add(key)) return
+        scope.launch { if (warmAhead(target) { fetchedAhead.remove(key) }) mutableRevision.update { it + 1 } }
     }
 
-    /** Has the providers fetch what [target]'s menu should know (`MenuEntryProvider.warmAhead`); true if one learnt something. */
-    private suspend fun warmAhead(target: MenuTarget): Boolean = coroutineScope {
+    /**
+     * Has the providers fetch what [target]'s menu should know (`MenuEntryProvider.warmAhead`); true if one learnt
+     * something. [failed] when one failed.
+     */
+    private suspend fun warmAhead(target: MenuTarget, failed: () -> Unit = {}): Boolean = coroutineScope {
         providers.map { provider ->
             async {
                 try {
@@ -335,7 +340,8 @@ class MediaMenu(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.d(TAG, e) { "Warming the menu of ${target.title} ahead failed" }
+                    Log.w(TAG, e) { "Warming the menu of ${target.title} ahead failed" }
+                    failed()
                     false
                 }
             }

@@ -178,6 +178,8 @@ internal class WatchlistMenuEntries(
         val candidates = known ?: candidates().watchlistCandidatesFor(serverId, item.id, item.kind, client(serverId))
         val unloaded = candidates.filter { it.isMember(item.kind) == null }
         coroutineScope { unloaded.map { launch { it.source.ensureWatchlistLoaded() } } }
+        // An answer missing a source that failed to resolve isn't kept, and the menu labels from what is kept.
+        checkNotNull(candidates().cachedWatchlistCandidatesFor(serverId, item.id)) { "Watchlist candidates of ${item.id} are partial" }
         return known == null || unloaded.isNotEmpty()
     }
 

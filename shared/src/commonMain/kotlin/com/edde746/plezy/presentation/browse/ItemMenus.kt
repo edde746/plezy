@@ -91,8 +91,9 @@ interface MenuEntryProvider {
 
     /**
      * Fetches, once for every menu that needs it (shared loads, kept for the session), what [target]'s menu should know
-     * (the watchlists' membership): as its menu is first peeked ([MediaMenu.peek]), and as it opens. True when it learnt
-     * something the menu's entries may now show; the peeked menus are then read again, and the open menu shows it.
+     * (the watchlists' membership): as its menu is first peeked ([MediaMenu.peek]), and as it opens. True when it
+     * learnt something the menu's entries may now show; the peeked menus are then read again, and the open menu shows
+     * it. Throws when it couldn't: the item's next peek fetches again.
      */
     suspend fun warmAhead(target: MenuTarget): Boolean = false
 

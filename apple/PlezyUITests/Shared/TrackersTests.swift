@@ -517,6 +517,9 @@ final class TrackersTests: PlezyUITestCase {
         require("search.screen", timeout: 30, "the Search screen")
         card = try movieResult()
         _ = waitUntil(5) { card.isHittable }
+        // The result's menu reads ahead what it should know (the movie's ids, the watchlists) as it shows, again where
+        // the read as Home showed it failed, with nothing to wait on: the system's menu keeps what it showed as it opened.
+        Thread.sleep(forTimeInterval: 3)
         openMenu(on: card)
         require("menu.watchlist_remove", timeout: 10, "the first menu after a relaunch offers Remove from Watchlist")
         shot("first menu on the watchlist")

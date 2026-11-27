@@ -671,6 +671,26 @@ class MediaMenuTest {
     }
 
     @Test
+    fun aCardWhoseFetchAheadFailedFetchesAgainAsItIsNextPeeked() = runTest {
+        val server = plex()
+        var up = false
+        server.externalIds = { if (up) ExternalIds(imdb = "tt-$it") else error("timed out") }
+        val trakt = WatchlistSource(CatalogSourceId.TRAKT, members = null).apply { onLoad = mutableSetOf("tt-m-1") }
+        val menu = menu(providers = listOf(watchlist(trakt)))
+        fun watchlistEntry() = ids(assertNotNull(menu.peek { menu.open(movie(server)) }).entries)
+            .single { it == WatchlistMenuEntries.ADD || it == WatchlistMenuEntries.REMOVE }
+
+        assertEquals(WatchlistMenuEntries.ADD, watchlistEntry(), "the server's ids fail to load")
+        advanceUntilIdle()
+        up = true
+        val revision = menu.revision.value
+        assertEquals(WatchlistMenuEntries.ADD, watchlistEntry(), "nothing known yet")
+        advanceUntilIdle()
+        assertTrue(menu.revision.value > revision, "what the second fetch learnt has the menus read again")
+        assertEquals(WatchlistMenuEntries.REMOVE, watchlistEntry())
+    }
+
+    @Test
     fun anOpenMenuOfACardOnTheWatchlistOpensAtOnceThenOffersRemoveOnceTheWatchlistLoads() = runTest {
         val server = plex()
         server.externalIds = { ExternalIds(imdb = "tt-$it") }
