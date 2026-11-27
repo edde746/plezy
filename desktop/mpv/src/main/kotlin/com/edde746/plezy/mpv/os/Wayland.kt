@@ -10,7 +10,8 @@ import java.lang.invoke.MethodType
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * libwayland-client through FFM: the requests the video plane and the scale probe make, and the events they read.
+ * libwayland-client through FFM: the requests the video plane, Compose's GPU layer and the window's decoration make,
+ * and the events they read.
  *
  * Requests go through `wl_proxy_marshal_array_flags` (one downcall for every request, arguments as a `wl_argument`
  * array) and events through one `wl_proxy_add_dispatcher` upcall that routes by proxy to a Kotlin handler, so no
@@ -42,8 +43,6 @@ internal object Wl {
     private val flush = lib.fn("wl_display_flush", I32, PTR)
     private val getFd = lib.fn("wl_display_get_fd", I32, PTR)
     private val getError = lib.fn("wl_display_get_error", I32, PTR)
-    private val connect = lib.fn("wl_display_connect", PTR, PTR)
-    private val disconnect = lib.fn("wl_display_disconnect", null, PTR)
 
     /** `WL_MARSHAL_FLAG_DESTROY`: the request is the proxy's destructor. */
     private const val DESTROY = 1
@@ -56,14 +55,7 @@ internal object Wl {
 
     fun interfaceName(iface: MemorySegment): String = iface.reinterpret(8).get(PTR, 0).utf8().orEmpty()
 
-    // ---- connections and queues ------------------------------------------------------------------------------------
-
-    /** A connection of its own to the session's compositor (`WAYLAND_DISPLAY`), or null without one. */
-    fun connect(): MemorySegment? = (connect.call(MemorySegment.NULL) as MemorySegment).takeIf { it.address() != 0L }
-
-    fun disconnect(display: MemorySegment) {
-        disconnect.call(display)
-    }
+    // ---- queues ------------------------------------------------------------------------------------------------------
 
     fun createQueue(display: MemorySegment): MemorySegment = createQueue.call(display) as MemorySegment
 
@@ -278,7 +270,7 @@ internal class QueueWait(private val queue: EventQueue, private val wakeFd: Int,
 
 /**
  * The extension protocols' interface tables (`struct wl_interface` / `struct wl_message`), in memory for the process:
- * viewporter, color-management-v1 (version 3), xdg-output (version 3) and KDE's server-decoration palette.
+ * viewporter, color-management-v1 (version 3) and KDE's server-decoration palette.
  */
 internal object Protocols {
     /** One request or event: its name, its wire signature (since-version prefix, `?` for nullable) and the interface of each `o`/`n` argument. */
@@ -356,12 +348,6 @@ internal object Protocols {
             ),
         ),
         Def("wp_image_description_reference_v1", 1, listOf(Msg("destroy", ""))),
-        Def("zxdg_output_manager_v1", 3, listOf(Msg("destroy", ""), Msg("get_xdg_output", "no", listOf("zxdg_output_v1", "wl_output")))),
-        Def(
-            "zxdg_output_v1", 3,
-            listOf(Msg("destroy", "")),
-            listOf(Msg("logical_position", "ii"), Msg("logical_size", "ii"), Msg("done", ""), Msg("name", "2s"), Msg("description", "2s")),
-        ),
         Def(
             "org_kde_kwin_server_decoration_palette_manager", 1,
             listOf(Msg("create", "no", listOf("org_kde_kwin_server_decoration_palette", "wl_surface"))),

@@ -230,16 +230,17 @@ object WaylandSession {
     private const val TOOLKIT = "sun.awt.wl.WLToolkit"
 
     /**
-     * On Linux with a Wayland session (`WAYLAND_DISPLAY`), makes AWT a native Wayland client, at the desktop's scale
-     * (fractional ones included, which AWT otherwise rounds up to a whole number). Call before anything touches AWT.
-     * The runtime presets `awt.toolkit.name` to `XToolkit` itself, so the choice overrides it.
+     * On Linux with a Wayland session (`WAYLAND_DISPLAY`), makes AWT a native Wayland client. Call before anything
+     * touches AWT. The runtime presets `awt.toolkit.name` to `XToolkit` itself, so the choice overrides it.
+     *
+     * AWT then draws at each output's `wl_output.scale`, which compositors round up at a fractional scale (2 at
+     * 125 %), and the compositor scales the window down to the output's own scale, as it does GTK's windows. Never
+     * `sun.java2d.uiScale` here: the runtime draws at that scale but still presents its buffers at the output's whole
+     * scale, which shrinks the window by their ratio (to 62.5 % at 125 %).
      */
     fun useNativeToolkit() {
         if (!System.getProperty("os.name").startsWith("Linux") || System.getenv("WAYLAND_DISPLAY").isNullOrEmpty()) return
         System.setProperty("awt.toolkit.name", "WLToolkit")
-        if (System.getProperty("sun.java2d.uiScale") == null) {
-            WaylandScale.desktopScale()?.takeIf { it > 1.0 }?.let { System.setProperty("sun.java2d.uiScale", String.format(java.util.Locale.ROOT, "%.4f", it)) }
-        }
     }
 
     /** AWT runs on WLToolkit: the windows are native Wayland toplevels. */
@@ -331,45 +332,6 @@ object WaylandSession {
         } finally {
             Wl.destroyWrapper(wrapper)
             if (palette.address() == 0L) Wl.destroyQueue(queue)
-        }
-    }
-}
-
-/** The desktop's scale, read from the compositor before AWT starts: each output's mode against its logical size. */
-private object WaylandScale {
-    fun desktopScale(): Double? {
-        val display = Wl.connect() ?: return null
-        try {
-            val queue = Wl.createQueue(display)
-            val wrapper = Wl.wrapper(display, queue)
-            val outputs = mutableListOf<MemorySegment>()
-            var manager = MemorySegment.NULL
-            Wl.globals(wrapper) { global ->
-                when (global.iface) {
-                    "wl_output" -> outputs += global.bind(Wl.coreInterface("wl_output"), minOf(global.version, 2))
-                    "zxdg_output_manager_v1" -> manager = global.bind(Protocols["zxdg_output_manager_v1"], minOf(global.version, 3))
-                }
-            }
-            if (Wl.roundtrip(display, queue) < 0 || manager.address() == 0L) return null
-            val scales = outputs.map { output ->
-                val mode = IntArray(2)
-                val logical = IntArray(2)
-                Wl.listen(output) { opcode, args -> if (opcode == 1 && args.uint(0) and 1L != 0L) { mode[0] = args.int(1); mode[1] = args.int(2) } }
-                val xdg = Wl.request(manager, 1, null, output, newInterface = Protocols["zxdg_output_v1"])
-                Wl.listen(xdg) { opcode, args -> if (opcode == 1) { logical[0] = args.int(0); logical[1] = args.int(1) } }
-                mode to logical
-            }
-            Wl.roundtrip(display, queue)
-            Wl.roundtrip(display, queue)
-            // Rotated outputs swap the axes of one against the other: compare the long sides.
-            return scales.mapNotNull { (mode, logical) ->
-                val physical = maxOf(mode[0], mode[1])
-                val logicalSide = maxOf(logical[0], logical[1])
-                if (physical > 0 && logicalSide > 0) physical.toDouble() / logicalSide else null
-            }.maxOrNull()
-        } finally {
-            // The connection goes with everything on it.
-            Wl.disconnect(display)
         }
     }
 }

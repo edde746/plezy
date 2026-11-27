@@ -9,6 +9,7 @@ import java.awt.AWTEvent
 import java.awt.Component
 import java.awt.Dialog
 import java.awt.Frame
+import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.awt.Toolkit
 import java.awt.Window
@@ -97,7 +98,7 @@ class DesktopWindow(private val window: JFrame) {
         if (isWindows) Win32.monitorRect(Peers.hwnd(window)).toList()
         else physical(window.graphicsConfiguration.bounds)
 
-    /** AWT's units on Linux in physical pixels: the same under X11 (AWT at 1×), the desktop's scale under Wayland. */
+    /** AWT's units on Linux in physical pixels: times AWT's own scale (see [composeScale]). */
     private fun physical(r: Rectangle): List<Int> {
         val s = window.graphicsConfiguration.defaultTransform.scaleX
         return listOf((r.x * s).roundToInt(), (r.y * s).roundToInt(), (r.width * s).roundToInt(), (r.height * s).roundToInt())
@@ -107,13 +108,23 @@ class DesktopWindow(private val window: JFrame) {
     fun hasDarkChrome(): Boolean = hasDarkChrome(window)
 
     companion object {
-        /**
-         * The factor Compose must apply on top of AWT's own scaling: `Xft.dpi` / 96 under X11, where AWT stays at 1×;
-         * 1 under Wayland and on Windows, where AWT already scales (per monitor).
-         */
+        /** The factor Compose applies on top of AWT's own scale ([composeScale]). */
         val uiScale: Float by lazy {
-            if (System.getProperty("os.name").startsWith("Linux") && !WaylandSession.active) (X11.xftScale() ?: 1.0).toFloat() else 1f
+            val x11 = System.getProperty("os.name").startsWith("Linux") && !WaylandSession.active
+            val awt = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration.defaultTransform.scaleX
+            composeScale(x11, if (x11) X11.xftScale() else null, awt)
         }
+
+        /**
+         * The factor Compose applies on top of AWT's scale [awtScale], so the app draws at the desktop's scale once.
+         * Under X11 ([x11]) that scale is `Xft.dpi` / 96 ([xftScale]; KDE and GNOME set it to the whole scale, text
+         * scaling included), of which AWT may already apply a part: JetBrains Runtime scales by a whole `Xft.dpi` / 96
+         * or GNOME's scaling factor, times `GDK_SCALE` × `GDK_DPI_SCALE` (2 at 200 %, 1 at 150 %). Compose applies the
+         * rest. Without `Xft.dpi`, AWT's scale alone. Under Wayland AWT draws at each output's scale and on Windows at
+         * each monitor's: 1 there.
+         */
+        internal fun composeScale(x11: Boolean, xftScale: Double?, awtScale: Double): Float =
+            if (x11 && xftScale != null) (xftScale / awtScale).toFloat() else 1f
 
         /**
          * Under X11, the class (`WM_CLASS`, its name and class both) of every window the app makes from now on is the

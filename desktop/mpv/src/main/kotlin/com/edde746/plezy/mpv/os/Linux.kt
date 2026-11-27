@@ -80,8 +80,9 @@ internal object X11 {
 
     /**
      * `Xft.dpi` / 96 from the RESOURCE_MANAGER string (KDE sets 163 at 1.7×), or null when unset or no display is
-     * reachable. AWT only scales by integers on X11, so Compose applies this itself. Opens its own short-lived
-     * connection; no XInitThreads, which would have to precede AWT's own Xlib use (libX11 ≥ 1.8 locks by default).
+     * reachable: the desktop's scale, of which Compose applies what AWT doesn't (DesktopWindow.composeScale). Opens
+     * its own short-lived connection; no XInitThreads, which would have to precede AWT's own Xlib use (libX11 ≥ 1.8
+     * locks by default).
      */
     fun xftScale(): Double? {
         val dpy = xOpenDisplay.call(MemorySegment.NULL) as MemorySegment
