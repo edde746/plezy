@@ -14,8 +14,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -31,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -68,7 +68,10 @@ import com.edde746.plezy.ui.icons.PlezyIcons
 import com.edde746.plezy.ui.image.RemoteImage
 import com.edde746.plezy.ui.music.EqualizerIcon
 import com.edde746.plezy.ui.menu.FileInfoContent
+import com.edde746.plezy.ui.focus.OnTextChange
 import com.edde746.plezy.ui.focus.focusReach
+import com.edde746.plezy.ui.focus.rememberKeyboardOnSelect
+import com.edde746.plezy.ui.focus.remoteLeavesField
 import com.edde746.plezy.ui.probe.layoutProbe
 import com.edde746.plezy.ui.theme.LocalPlezyDimens
 import com.edde746.plezy.ui.theme.PlezyColors
@@ -411,16 +414,19 @@ internal fun FileInfoSheet(info: FileInfoState?, initial: FocusRequester, modifi
 
 /**
  * The subtitle search: the language (opening its list in place), the title searched (each edit goes to the store, which
- * searches once typing pauses; Search on the keyboard searches at once), then a spinner while it searches, the results
- * (each downloads on a pick; while one downloads its row spins and the others wait) and the outcome or failure.
+ * searches once typing pauses; Search on the keyboard searches at once; on TV the keyboard waits for Select and the
+ * arrows leave the field), then a spinner while it searches, the results (each downloads on a pick; while one downloads
+ * its row spins and the others wait) and the outcome or failure.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun SubtitleSearchSheet(search: SubtitleSearchState?, initial: FocusRequester, onCommand: (PlayerCommand) -> Unit, modifier: Modifier) {
     search ?: return
     var picking by remember { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf(search.title) }
-    fun searchTitle(now: Boolean) = onCommand(PlayerCommand.SearchSubtitles(search.languageCode, query.ifBlank { null }, now = now))
+    val query = rememberTextFieldState(search.title)
+    val keyboard = rememberKeyboardOnSelect()
+    fun searchTitle(now: Boolean) = onCommand(PlayerCommand.SearchSubtitles(search.languageCode, query.text.toString().ifBlank { null }, now = now))
+    OnTextChange(query) { searchTitle(now = false) }
     MenuList(modifier) {
         PageEntry(
             PlezyIcons.Subtitles,
@@ -443,17 +449,15 @@ internal fun SubtitleSearchSheet(search: SubtitleSearchState?, initial: FocusReq
             return@MenuList
         }
         OutlinedTextField(
-            value = query,
-            onValueChange = {
-                query = it
-                searchTitle(now = false)
-            },
-            singleLine = true,
+            state = query,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            readOnly = keyboard.readOnly,
             leadingIcon = { Icon(PlezyIcons.Search, contentDescription = null) },
             placeholder = { Text(T.common.search) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { searchTitle(now = true) }),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp).layoutProbe("player.search.title"),
+            onKeyboardAction = { searchTitle(now = true) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)
+                .then(keyboard.modifier).remoteLeavesField(query).layoutProbe("player.search.title"),
         )
         when {
             search.searching -> SheetSpinner()

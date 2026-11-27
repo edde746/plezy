@@ -1,6 +1,8 @@
 package com.edde746.plezy.ui.player
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -277,6 +279,28 @@ class PlayerSheetsTest {
         onNodeWithText(vc.language).performClick()
         onNode(row("Swedish")).performClick()
         runOnIdle { assertEquals(listOf<PlayerCommand>(PlayerCommand.SearchSubtitles("sv", null)), commands) }
+    }
+
+    /**
+     * On an Android TV a remote passing down from the language over the title raises no keyboard (the field isn't
+     * editable) and goes on to the results; Select on the title lets it be typed.
+     */
+    @Test
+    fun theTvRemotePassesOverTheTitleWithoutItsKeyboard() = runComposeUiTest {
+        val results = listOf(SubtitleResult("a", "Dune.2021.srt", "OpenSubtitles", PlayerCommand.DownloadSubtitle("a")))
+        player(FormFactor.TV, onCommand = { commands += it }, keyboardWaitsForSelect = true) {
+            testPlayerState(menu = PlayerMenu.SUBTITLE_SEARCH).copy(subtitleSearch = search(results))
+        }
+        val title = onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText))
+        onNode(row(vc.language)).assertIsFocused()
+        press(Key.DirectionDown)
+        title.assertIsFocused().assert(SemanticsMatcher.expectValue(SemanticsProperties.IsEditable, false))
+        press(Key.DirectionDown)
+        onNode(row("Dune.2021.srt")).assertIsFocused()
+        press(Key.DirectionUp)
+        press(Key.DirectionCenter)
+        title.assertIsFocused().assert(SemanticsMatcher.expectValue(SemanticsProperties.IsEditable, true))
+        runOnIdle { assertEquals(emptyList(), commands) }
     }
 
     /** A result downloads on a pick; while one downloads the others wait; the outcome shows. */

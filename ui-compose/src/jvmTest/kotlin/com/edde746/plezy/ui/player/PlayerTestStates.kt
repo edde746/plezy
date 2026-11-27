@@ -47,6 +47,7 @@ import com.edde746.plezy.ui.adaptive.AdaptiveLayout
 import com.edde746.plezy.ui.app.LocalPlezyPlatform
 import com.edde746.plezy.ui.app.PlezyPlatform
 import com.edde746.plezy.ui.components.OverlayHostBox
+import com.edde746.plezy.ui.focus.LocalKeyboardWaitsForSelect
 import com.edde746.plezy.ui.focus.arrowKeyFocus
 import com.edde746.plezy.ui.probe.LayoutProbe
 import com.edde746.plezy.ui.probe.LocalLayoutProbe
@@ -242,7 +243,8 @@ internal fun ComposeUiTest.tvPlayer(
  * send, [onInput] its keys and pointer events (none taken by default), [dispatcher] carries the system's back, [probe]
  * sees its named elements' bounds, [platform] (where given) is the app's platform the player reaches (its file dialogs),
  * [playbackInfo] the playback info's sections, whose shown card's frames go to [onPlaybackInfoFrame], and how much of the
- * video the bottom controls cover to [onControlsHeightChanged].
+ * video the bottom controls cover to [onControlsHeightChanged]. With [keyboardWaitsForSelect] its text fields wait for
+ * Select, as an Android TV's do.
  */
 @OptIn(ExperimentalTestApi::class)
 internal fun ComposeUiTest.player(
@@ -257,6 +259,7 @@ internal fun ComposeUiTest.player(
     playbackInfo: StateFlow<List<InfoSection>>? = null,
     onPlaybackInfoFrame: (Long) -> Unit = {},
     onControlsHeightChanged: (Double) -> Unit = {},
+    keyboardWaitsForSelect: Boolean = false,
     state: () -> PlayerUiState,
 ) = setContent {
     val owner = remember {
@@ -268,6 +271,7 @@ internal fun ComposeUiTest.player(
         LocalNavigationEventDispatcherOwner provides owner,
         LocalLayoutProbe provides probe,
         platform?.let { LocalPlezyPlatform provides it },
+        if (keyboardWaitsForSelect) LocalKeyboardWaitsForSelect provides true else null,
     )
     CompositionLocalProvider(*locals.toTypedArray()) {
         PlezyTheme {
