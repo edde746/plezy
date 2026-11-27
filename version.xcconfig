@@ -13,4 +13,4 @@
 // (Android versionCode, CFBundleVersion, which Sparkle compares).
 // Plain `KEY = value` lines only: Gradle (settings.gradle.kts) and the workflow read this file too.
 MARKETING_VERSION = 3.0.0
-CURRENT_PROJECT_VERSION = 200
+CURRENT_PROJECT_VERSION = 201
