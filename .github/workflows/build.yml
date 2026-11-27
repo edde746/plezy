@@ -400,11 +400,14 @@ jobs:
           distribution: temurin
           java-version: 27.0.0+35
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-      # The runner has 7 GB of memory, less than the project's local heaps: as in build-ios.
+      # The runner has 7 GB of memory, less than the project's local heaps: as in build-ios. The universal app links
+      # PlezyKit for arm64 and x86_64, each link in the Gradle daemon's heap; one worker links them one after the
+      # other (two at once ran out of the 3 GB heap).
       - name: Fit the Gradle heaps to the runner
         run: |
           mkdir -p ~/.gradle
-          printf '%s\n' 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' 'kotlin.daemon.jvmargs=-Xmx2g' >> ~/.gradle/gradle.properties
+          printf '%s\n' 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' 'kotlin.daemon.jvmargs=-Xmx2g' \
+            'org.gradle.workers.max=1' >> ~/.gradle/gradle.properties
 
       - name: Require signing, notarization and Sparkle for a release
         if: ${{ inputs.release_tag != '' && (env.HAS_SIGNING != 'true' || env.HAS_NOTARIZATION != 'true' || env.HAS_SPARKLE_KEY != 'true') }}
