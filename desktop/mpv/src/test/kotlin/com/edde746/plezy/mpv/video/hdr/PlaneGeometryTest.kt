@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 class PlaneGeometryTest {
     /** One axis's buffer, in physical pixels, for the rect [position, position + extent). */
     private fun bufferExtent(position: Int, extent: Int, scale: Double): Int =
-        planeRect(position, 0, extent, 1, scale).bufferWidth
+        planeRect(position, 0, extent, 1, scale).let { bufferExtent(it.width, scale) }
 
     /** One axis's surface position, in logical units. */
     private fun position(position: Int, scale: Double, offset: Int = 0): Int =
@@ -50,7 +50,7 @@ class PlaneGeometryTest {
         val sliver = planeRect(0, 0, 0, -5, 1.5)
         assertEquals(1, sliver.width)
         assertEquals(1, sliver.height)
-        assertEquals(2, sliver.bufferWidth)
+        assertEquals(2, bufferExtent(sliver.width, 1.5))
     }
 
     @Test
@@ -85,7 +85,7 @@ class PlaneGeometryTest {
                 for (width in 1..80) {
                     val rect = planeRect(x, 0, width, 1, scale)
                     val origin = rect.x.toLong() * unit
-                    val extent = rect.bufferWidth.toLong()
+                    val extent = bufferExtent(rect.width, scale).toLong()
                     assertEquals(rect.width.toLong() * unit, extent)
                     assertTrue(origin <= x)
                     assertTrue(origin + extent >= x.toLong() + width)
@@ -114,8 +114,9 @@ class PlaneGeometryTest {
                     assertTrue(end >= x + width - epsilon, "scale $scale x $x width $width")
                     assertTrue(x - start < scale + epsilon)
                     assertTrue(end - (x + width) < scale + epsilon)
-                    assertTrue(abs(rect.bufferWidth - rect.width * scale) < 1.0)
-                    assertTrue(rect.bufferWidth >= rect.width * scale - epsilon)
+                    val buffer = bufferExtent(rect.width, scale)
+                    assertTrue(abs(buffer - rect.width * scale) < 1.0)
+                    assertTrue(buffer >= rect.width * scale - epsilon)
                 }
             }
         }
@@ -131,8 +132,6 @@ class PlaneGeometryTest {
             assertEquals(rect.y, swapped.x)
             assertEquals(rect.width, swapped.height)
             assertEquals(rect.height, swapped.width)
-            assertEquals(rect.bufferWidth, swapped.bufferHeight)
-            assertEquals(rect.bufferHeight, swapped.bufferWidth)
         }
     }
 
@@ -157,7 +156,7 @@ class PlaneGeometryTest {
         for (scale in fractionalScales) {
             val rect = planeRect(-1, 0, Int.MAX_VALUE, 1, scale)
             assertTrue(rect.width > 0)
-            assertTrue(rect.bufferWidth > 0)
+            assertTrue(bufferExtent(rect.width, scale) > 0)
         }
     }
 
@@ -246,5 +245,30 @@ class PlaneGeometryTest {
         assertEquals(1921, bufferExtent(0, 1921, 0.5))
         assertEquals(1921, bufferExtent(0, 1921, Double.NaN))
         assertEquals(-641, position(-641, Double.POSITIVE_INFINITY))
+    }
+
+    /** At 115 % the toolkit draws at 2: the plane's buffer is at the output's own 1.15, a third of the pixels. */
+    @Test
+    fun theBufferIsAtTheOutputsOwnScaleUnderTheWindowsWholeOne() {
+        assertEquals(1.15, bufferScale(2.0, 1.15))
+        assertEquals(1150, bufferExtent(1000, bufferScale(2.0, 1.15)))
+        assertEquals(1.5, bufferScale(2.0, 1.5))
+        assertEquals(2.0, bufferScale(2.0, 2.0))
+        assertEquals(2.25, bufferScale(3.0, 2.25))
+    }
+
+    @Test
+    fun withoutTheOutputsScaleTheBufferIsAtTheWindowsScale() {
+        assertEquals(2.0, bufferScale(2.0, null))
+        assertEquals(1.0, bufferScale(1.0, null))
+        assertEquals(2.0, bufferScale(2.0, Double.NaN))
+    }
+
+    /** Never more pixels than the window's own content has, never fewer than one per unit. */
+    @Test
+    fun theBufferScaleStaysBetweenOneAndTheWindowsScale() {
+        assertEquals(2.0, bufferScale(2.0, 3.0))
+        assertEquals(1.0, bufferScale(2.0, 0.75))
+        assertEquals(1.0, bufferScale(0.0, 1.5))
     }
 }

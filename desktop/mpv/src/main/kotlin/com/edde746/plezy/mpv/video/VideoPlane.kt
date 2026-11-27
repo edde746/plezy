@@ -20,6 +20,8 @@ import com.edde746.plezy.mpv.video.hdr.HdrMetadata
 import com.edde746.plezy.mpv.video.hdr.HdrToneMapping
 import com.edde746.plezy.mpv.video.hdr.OutputColour
 import com.edde746.plezy.mpv.video.hdr.SourceTransfer
+import com.edde746.plezy.mpv.video.hdr.bufferExtent
+import com.edde746.plezy.mpv.video.hdr.bufferScale
 import com.edde746.plezy.mpv.video.hdr.decideHdr
 import com.edde746.plezy.mpv.video.hdr.describeTonemappedTo
 import com.edde746.plezy.mpv.video.hdr.outputHasHdrHeadroom
@@ -39,7 +41,8 @@ import kotlin.concurrent.withLock
  * mpv's video on a Wayland subsurface stacked below a window's own surface: the window draws the UI with alpha, and
  * the video shows wherever the UI is transparent. The plane has an empty input region (every pointer event goes to the
  * window), an opaque region over all of it, its own EGL window surface and OpenGL ES 3 context, and a viewport, so its
- * buffer is the video's size in physical pixels at any desktop scale.
+ * buffer is the video's size in the output's pixels at any desktop scale: at the output's own scale where the compositor
+ * says it (fractional-scale-v1; 1.15 at 115 %, where the window draws at 2), as [bufferScale] picks.
  *
  * Threads: [create] and the geometry calls ([setRect], [setVisible], [parentFrame]) run on the UI thread; everything
  * else (the plane's private event queue, EGL, mpv's render API, the colour management) on the plane's own [PlaneLoop].
@@ -82,6 +85,7 @@ internal class VideoPlane private constructor(
     private var compositor = MemorySegment.NULL
     private var subcompositor = MemorySegment.NULL
     private var viewporter = MemorySegment.NULL
+    private var fractionalScaleManager = MemorySegment.NULL
     private var colorManager = MemorySegment.NULL
     private val outputs = HashMap<Long, Output>()
 
@@ -102,6 +106,7 @@ internal class VideoPlane private constructor(
     private var surface = MemorySegment.NULL
     private var subsurface = MemorySegment.NULL
     private var viewport = MemorySegment.NULL
+    private var fractionalScale = MemorySegment.NULL
     private var colorSurface = MemorySegment.NULL
     private var feedback = MemorySegment.NULL
     private var eglWindow = MemorySegment.NULL
@@ -119,7 +124,8 @@ internal class VideoPlane private constructor(
     private val surfaceLock = ReentrantLock()
     @Volatile private var destroyed = false
 
-    // Geometry (under surfaceLock): logical units in the window's surface, the buffer in physical pixels.
+    // Geometry (under surfaceLock): logical units in the window's surface, the buffer in physical pixels at the window's
+    // scale or the output's own (bufferScale).
     private var x = Int.MIN_VALUE
     private var y = Int.MIN_VALUE
     private var width = 0
@@ -127,6 +133,9 @@ internal class VideoPlane private constructor(
     private var bufferWidth = 0
     private var bufferHeight = 0
     private var hasRect = false
+    private var surfaceScale = 1.0
+    /** The compositor's preferred scale for the plane (the output it is on), fractional; null until it says one. */
+    @Volatile private var outputScale: Double? = null
     private var visible = true
     private var syncMode = false
     private var resizeSerial = 0L
@@ -220,6 +229,11 @@ internal class VideoPlane private constructor(
         Wl.request(subsurface, 3, parent) // place_below
         Wl.request(subsurface, 5) // set_desync
         viewport = Wl.request(viewporter, 1, null, surface, newInterface = Protocols["wp_viewport"])
+        if (fractionalScaleManager.address() != 0L) {
+            fractionalScale = Wl.request(fractionalScaleManager, 1, null, surface, newInterface = Protocols["wp_fractional_scale_v1"])
+            // preferred_scale, in 120ths.
+            Wl.listen(fractionalScale) { _, args -> outputScaleChanged(args.uint(0) / 120.0) }
+        }
         eglWindow = Egl.window(surface, 1, 1)
         eglSurface = Egl.windowSurface(eglDisplay, eglConfig, eglWindow)
         supportsHdr = colorManager.address() != 0L && parametric && perceptual && bt2020 && (pq || hlg) && depthBits >= 10
@@ -248,6 +262,7 @@ internal class VideoPlane private constructor(
             "wl_compositor" -> compositor = bind(Wl.coreInterface("wl_compositor"), minOf(version, 4))
             "wl_subcompositor" -> subcompositor = bind(Wl.coreInterface("wl_subcompositor"), 1)
             "wp_viewporter" -> viewporter = bind(Protocols["wp_viewporter"], 1)
+            "wp_fractional_scale_manager_v1" -> fractionalScaleManager = bind(Protocols["wp_fractional_scale_manager_v1"], 1)
             "wp_color_manager_v1" -> if (colorManager.address() == 0L) {
                 colorManager = bind(Protocols["wp_color_manager_v1"], minOf(version, COLOR_MANAGER_MAX_VERSION))
                 Wl.listen(colorManager) { opcode, args ->
@@ -302,34 +317,53 @@ internal class VideoPlane private constructor(
     // ---- the UI thread -------------------------------------------------------------------------------------------------
 
     /**
-     * Places the plane at [x], [y] in the window's surface, [width] × [height] logical units, with a buffer of
-     * [bufferWidth] × [bufferHeight] pixels. Call before the window's next commit (during its layout or paint): the
-     * position is window state, and a size change lands with the window's commit.
+     * Places the plane at [x], [y] in the window's surface, [width] × [height] logical units, in a window of
+     * [surfaceScale] pixels per unit; its buffer is at [bufferScale]. Call before the window's next commit (during its
+     * layout or paint): the position is window state, and a size change lands with the window's commit.
      */
-    fun setRect(x: Int, y: Int, width: Int, height: Int, bufferWidth: Int, bufferHeight: Int): Unit = surfaceLock.withLock {
+    fun setRect(x: Int, y: Int, width: Int, height: Int, surfaceScale: Double): Unit = surfaceLock.withLock {
         if (destroyed) return
         if (x != this.x || y != this.y) {
             Wl.request(subsurface, 1, x, y)
             this.x = x
             this.y = y
         }
-        if (width != this.width || height != this.height || bufferWidth != this.bufferWidth || bufferHeight != this.bufferHeight) {
-            if (!syncMode) {
-                Wl.request(subsurface, 4) // set_sync
-                syncMode = true
-            }
-            Wl.request(viewport, 2, width, height)
-            Wl.request(surface, 6) // commit: cached until the window's commit
-            this.width = width
-            this.height = height
-            this.bufferWidth = bufferWidth
-            this.bufferHeight = bufferHeight
-            resizeSerial++
-            forceRender.set(true)
-        }
+        this.surfaceScale = surfaceScale
+        resize(width, height)
         hasRect = true
         Wl.flush(display)
         loop.post {}
+    }
+
+    /** The output's scale for the plane changed (the window moved to another output, or its scale changed). */
+    private fun outputScaleChanged(scale: Double): Unit = surfaceLock.withLock {
+        if (destroyed || scale == outputScale) return
+        outputScale = scale
+        log.log(System.Logger.Level.INFO, "video plane: output scale {0}", scale)
+        if (!hasRect) return
+        resize(width, height)
+        Wl.flush(display)
+        loop.post {}
+    }
+
+    /** The plane at [width] × [height] logical units with its buffer at [bufferScale], under [surfaceLock]. */
+    private fun resize(width: Int, height: Int) {
+        val scale = bufferScale(surfaceScale, outputScale)
+        val bufferWidth = bufferExtent(width, scale)
+        val bufferHeight = bufferExtent(height, scale)
+        if (width == this.width && height == this.height && bufferWidth == this.bufferWidth && bufferHeight == this.bufferHeight) return
+        if (!syncMode) {
+            Wl.request(subsurface, 4) // set_sync
+            syncMode = true
+        }
+        Wl.request(viewport, 2, width, height)
+        Wl.request(surface, 6) // commit: cached until the window's commit
+        this.width = width
+        this.height = height
+        this.bufferWidth = bufferWidth
+        this.bufferHeight = bufferHeight
+        resizeSerial++
+        forceRender.set(true)
     }
 
     /** Shows or hides the plane (hidden: no buffer, so nothing of a last frame stays on screen). */
@@ -439,7 +473,7 @@ internal class VideoPlane private constructor(
             "described" to hdrActive, "decision" to lastHdrDecision?.let { mapOf("describe" to it.describe, "toneMapInPlayer" to it.toneMapInPlayer, "targetPeak" to it.targetPeakNits) },
             "preferred" to mapOf("valid" to p.valid, "tf" to p.tf, "primaries" to p.primaries, "reference" to p.reference, "targetMax" to p.targetMax, "targetMin" to p.targetMinScaled / 10000.0),
             "source" to source.let { mapOf("transfer" to it.transfer.name, "primaries" to it.primaries.name, "maxCll" to it.maxCll, "maxFall" to it.maxFall, "maxLuminance" to it.maxLuminance) },
-            "outputRefreshMilliHz" to outputRefresh,
+            "outputRefreshMilliHz" to outputRefresh, "outputScale" to outputScale,
         )
     }
 
@@ -509,9 +543,10 @@ internal class VideoPlane private constructor(
         if (stagedDescription.address() != 0L) Wl.destroy(stagedDescription)
         if (preferredInfo.address() != 0L) Wl.forget(preferredInfo)
         if (preferredDescription.address() != 0L) Wl.destroy(preferredDescription)
-        for (proxy in listOf(feedback, colorSurface, viewport, subsurface, surface)) if (proxy.address() != 0L) Wl.destroy(proxy)
+        for (proxy in listOf(feedback, colorSurface, fractionalScale, viewport, subsurface, surface)) if (proxy.address() != 0L) Wl.destroy(proxy)
         if (colorManager.address() != 0L) Wl.destroy(colorManager)
         if (viewporter.address() != 0L) Wl.destroy(viewporter)
+        if (fractionalScaleManager.address() != 0L) Wl.destroy(fractionalScaleManager)
         if (subcompositor.address() != 0L) Wl.destroy(subcompositor)
         outputs.values.forEach { if (Wl.version(it.proxy) >= 3) Wl.destroy(it.proxy, 0) else Wl.forget(it.proxy) }
         if (compositor.address() != 0L) Wl.forget(compositor)

@@ -4,18 +4,10 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 /**
- * Where the video plane's subsurface sits and how large it and its buffer are. [x], [y], [width] and [height] are
- * logical (surface) units for wl_subsurface.set_position and wp_viewport.set_destination; [bufferWidth] and
- * [bufferHeight] are the buffer's physical pixels.
+ * Where the video plane's subsurface sits and how large it is, in logical (surface) units for
+ * wl_subsurface.set_position and wp_viewport.set_destination. Its buffer's size is [bufferExtent]'s.
  */
-internal data class PlaneRect(
-    val x: Int,
-    val y: Int,
-    val width: Int,
-    val height: Int,
-    val bufferWidth: Int,
-    val bufferHeight: Int,
-)
+internal data class PlaneRect(val x: Int, val y: Int, val width: Int, val height: Int)
 
 /**
  * The plane for the rect at ([x], [y]) sized [width] × [height] in physical pixels, on an output of [scale] physical
@@ -26,11 +18,11 @@ internal data class PlaneRect(
  * origin inward) and the far edge is taken to the next whole unit, the extent measured between the two. A degenerate
  * rect is still one unit, because a zero-sized buffer or destination is not legal.
  *
- * The viewport scales the buffer to the destination, so the scale may be fractional and the buffer needs no
- * multiple-of-scale rule; its size is the logical extent times the scale, rounded up. A scale below 1 or not finite
- * is treated as 1. Arithmetic is 64-bit because the inputs are unvalidated Ints: the far edge and the offset sum both
- * overflow Int near its ends. Results are clamped so the buffer stays representable, at the cost of coverage only for
- * a rect that is not representable anyway.
+ * The viewport scales the buffer to the destination ([bufferExtent]), so the scale may be fractional and the buffer
+ * needs no multiple-of-scale rule. A scale below 1 or not finite is treated as 1. Arithmetic is 64-bit because the
+ * inputs are unvalidated Ints: the far edge and the offset sum both overflow Int near its ends. Results are clamped so
+ * the buffer at [scale] or less stays representable, at the cost of coverage only for a rect that is not representable
+ * anyway.
  */
 internal fun planeRect(
     x: Int,
@@ -41,18 +33,31 @@ internal fun planeRect(
     offsetX: Int = 0,
     offsetY: Int = 0,
 ): PlaneRect {
-    val s = if (scale.isFinite() && scale >= 1.0) scale else 1.0
-    val logicalWidth = logicalExtent(x, width, s)
-    val logicalHeight = logicalExtent(y, height, s)
+    val s = usable(scale)
     return PlaneRect(
         x = surfacePosition(x, s, offsetX),
         y = surfacePosition(y, s, offsetY),
-        width = logicalWidth,
-        height = logicalHeight,
-        bufferWidth = bufferExtent(logicalWidth, s),
-        bufferHeight = bufferExtent(logicalHeight, s),
+        width = logicalExtent(x, width, s),
+        height = logicalExtent(y, height, s),
     )
 }
+
+/**
+ * The pixels per surface unit of the plane's buffer: the output's own scale [outputScale] (the compositor's preferred
+ * scale for the plane, fractional ones included: 1.15 at 115 %) where it is under the window's [surfaceScale] (the
+ * toolkit's whole scale, 2 there, at which mpv would render three times the pixels the output shows); [surfaceScale]
+ * without one. Never above [surfaceScale], which is all the window's own content has, nor below 1.
+ */
+internal fun bufferScale(surfaceScale: Double, outputScale: Double?): Double {
+    val surface = usable(surfaceScale)
+    return if (outputScale == null || !outputScale.isFinite()) surface else outputScale.coerceIn(1.0, surface)
+}
+
+/** One side of the plane's buffer, in pixels, for [logical] surface units at [scale]: rounded up, at least 1, within Int. */
+internal fun bufferExtent(logical: Int, scale: Double): Int =
+    ceil(logical * usable(scale)).toLong().coerceIn(1, Int.MAX_VALUE.toLong()).toInt()
+
+private fun usable(scale: Double): Double = if (scale.isFinite() && scale >= 1.0) scale else 1.0
 
 private fun originUnits(position: Int, scale: Double): Long = floor(position / scale).toLong()
 
@@ -65,6 +70,3 @@ private fun logicalExtent(position: Int, extent: Int, scale: Double): Int {
     val cap = floor(Int.MAX_VALUE / scale).toLong().coerceAtLeast(1)
     return (end - originUnits(position, scale)).coerceIn(1, cap).toInt()
 }
-
-private fun bufferExtent(logical: Int, scale: Double): Int =
-    ceil(logical * scale).toLong().coerceIn(1, Int.MAX_VALUE.toLong()).toInt()

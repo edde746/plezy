@@ -158,7 +158,7 @@ internal class WaylandVideoHost : VideoHost {
 
     /**
      * The plane over the video's bounds, in the window's surface units (on the UI thread, before the window's commit),
-     * and the window's hole there, in AWT's units.
+     * and the window's hole there, in AWT's units. The plane sizes its buffer itself ([VideoPlane.setRect]).
      */
     private fun place(coordinates: LayoutCoordinates) {
         val w = window ?: return
@@ -170,8 +170,9 @@ internal class WaylandVideoHost : VideoHost {
         if (size.width <= 0 || size.height <= 0) return
         val x = floor(panel.x * scale + at.x).toInt()
         val y = floor(panel.y * scale + at.y).toInt()
-        val r = planeRect(x = x, y = y, width = size.width, height = size.height, scale = w.surfaceScale())
-        p.setRect(r.x, r.y, r.width, r.height, r.bufferWidth, r.bufferHeight)
+        val surfaceScale = w.surfaceScale()
+        val r = planeRect(x = x, y = y, width = size.width, height = size.height, scale = surfaceScale)
+        p.setRect(r.x, r.y, r.width, r.height, surfaceScale)
         p.setVisible(true)
         val hole = planeRect(x = x, y = y, width = size.width, height = size.height, scale = scale)
         w.videoHole = Rectangle(hole.x, hole.y, hole.width, hole.height)

@@ -270,7 +270,7 @@ internal class QueueWait(private val queue: EventQueue, private val wakeFd: Int,
 
 /**
  * The extension protocols' interface tables (`struct wl_interface` / `struct wl_message`), in memory for the process:
- * viewporter, color-management-v1 (version 3) and KDE's server-decoration palette.
+ * viewporter, fractional-scale-v1, color-management-v1 (version 3) and KDE's server decoration and its palette.
  */
 internal object Protocols {
     /** One request or event: its name, its wire signature (since-version prefix, `?` for nullable) and the interface of each `o`/`n` argument. */
@@ -281,6 +281,11 @@ internal object Protocols {
     private val defs = listOf(
         Def("wp_viewporter", 1, listOf(Msg("destroy", ""), Msg("get_viewport", "no", listOf("wp_viewport", "wl_surface")))),
         Def("wp_viewport", 1, listOf(Msg("destroy", ""), Msg("set_source", "ffff"), Msg("set_destination", "ii"))),
+        Def(
+            "wp_fractional_scale_manager_v1", 1,
+            listOf(Msg("destroy", ""), Msg("get_fractional_scale", "no", listOf("wp_fractional_scale_v1", "wl_surface"))),
+        ),
+        Def("wp_fractional_scale_v1", 1, listOf(Msg("destroy", "")), listOf(Msg("preferred_scale", "u"))),
         Def(
             "wp_color_manager_v1", 3,
             listOf(
