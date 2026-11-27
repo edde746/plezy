@@ -180,4 +180,21 @@ class MediaLabelsTest {
         assertNull(formatAudioChannels(0))
         assertNull(formatAudioChannels(-1))
     }
+
+    @Test
+    fun `cropped frames keep their resolution tier`() {
+        assertEquals("4k", resolutionLabelFromDimensions(3832, 1600))
+        assertEquals("4k", resolutionLabelFromDimensions(3840, 1606))
+        assertEquals("1080", resolutionLabelFromDimensions(1920, 800))
+        assertEquals("1080", resolutionLabelFromDimensions(1916, 796))
+        assertEquals("1080", resolutionLabelFromDimensions(2560, 1440))
+        assertEquals("720", resolutionLabelFromDimensions(1280, 534))
+    }
+
+    @Test
+    fun `frame dimensions win over the server resolution`() {
+        assertEquals("4K", versionResolutionLabel("1080", 3832, 1600))
+        assertEquals("1080p", versionResolutionLabel("1080", null, null))
+        assertNull(versionResolutionLabel(" ", 0, null))
+    }
 }

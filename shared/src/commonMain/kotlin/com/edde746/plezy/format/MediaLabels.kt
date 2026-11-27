@@ -48,12 +48,15 @@ fun resolutionLabelFromHeight(height: Int?): String? = when {
     else -> height.toString()
 }
 
-/** The resolution tier of a frame, from either dimension (a 1920×800 scope film is 1080). */
+/**
+ * The resolution tier of a frame, from either dimension (a 1920×800 scope film is 1080). Width thresholds allow for
+ * cropped encodes (3832×1600 is 4K); a 2560×1440 or 2048-wide frame is 1080.
+ */
 fun resolutionLabelFromDimensions(width: Int?, height: Int?): String? = when {
-    (width != null && width >= 3840) || (height != null && height >= 2160) -> "4k"
-    (width != null && width >= 1920) || (height != null && height >= 1080) -> "1080"
-    (width != null && width >= 1280) || (height != null && height >= 720) -> "720"
-    (width != null && width >= 854) || (height != null && height >= 480) -> "480"
+    (width != null && width >= 3600) || (height != null && height >= 2160) -> "4k"
+    (width != null && width >= 1800) || (height != null && height >= 1080) -> "1080"
+    (width != null && width >= 1200) || (height != null && height >= 720) -> "720"
+    (width != null && width >= 800) || (height != null && height >= 480) -> "480"
     else -> resolutionLabelFromHeight(height)
 }
 
@@ -153,3 +156,9 @@ fun formatAudioCodec(codec: String, profile: String? = null): String {
 }
 
 private val NUMERIC_RESOLUTION = Regex("""^(\d+)p?$""")
+
+/** A version's resolution for display: from its frame dimensions when known, else the server's [videoResolution]. */
+fun versionResolutionLabel(videoResolution: String?, width: Int?, height: Int?): String? {
+    resolutionLabelFromDimensions(width?.takeIf { it > 0 }, height?.takeIf { it > 0 })?.let { return resolutionDisplayLabel(it) }
+    return videoResolution?.trim()?.takeIf { it.isNotEmpty() }?.let(::resolutionDisplayLabel)
+}

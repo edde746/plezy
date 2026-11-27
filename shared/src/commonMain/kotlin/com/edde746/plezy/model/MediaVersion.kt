@@ -2,7 +2,7 @@ package com.edde746.plezy.model
 
 import com.edde746.plezy.format.formatBitrate
 import com.edde746.plezy.format.formatVideoCodec
-import com.edde746.plezy.format.resolutionDisplayLabel
+import com.edde746.plezy.format.versionResolutionLabel
 import com.edde746.plezy.strings.T
 import kotlin.math.roundToInt
 
@@ -50,7 +50,7 @@ data class MediaVersion(
      */
     val displayLabel: String
         get() {
-            val resolution = if (!videoResolution.isNullOrEmpty()) resolutionDisplayLabel(videoResolution) else height?.let { "${it}p" }
+            val resolution = versionResolutionLabel(videoResolution, width, height)
             val namesResolution = resolution != null && name?.startsWith(resolution, ignoreCase = true) == true
             val labelParts = buildList {
                 if (resolution != null && !namesResolution) add(resolution)

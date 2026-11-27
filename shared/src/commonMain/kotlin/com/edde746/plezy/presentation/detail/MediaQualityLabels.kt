@@ -4,8 +4,7 @@ import com.edde746.plezy.format.formatAudioChannels
 import com.edde746.plezy.format.formatAudioCodec
 import com.edde746.plezy.format.formatByteSize
 import com.edde746.plezy.format.formatVideoCodec
-import com.edde746.plezy.format.resolutionDisplayLabel
-import com.edde746.plezy.format.resolutionLabelFromDimensions
+import com.edde746.plezy.format.versionResolutionLabel
 import com.edde746.plezy.model.MediaItem
 import com.edde746.plezy.model.MediaStream
 import com.edde746.plezy.model.MediaStreamKind
@@ -42,10 +41,8 @@ fun mediaSizeLabel(item: MediaItem, versionIndex: Int = 0): String? =
 private fun selectedVersion(versions: List<MediaVersion>?, index: Int): MediaVersion? =
     versions?.getOrNull(index) ?: versions?.firstOrNull()
 
-private fun resolution(version: MediaVersion): String? {
-    version.videoResolution?.trim()?.takeIf { it.isNotEmpty() }?.let { return resolutionDisplayLabel(it) }
-    return resolutionLabelFromDimensions(version.width, version.height)?.let(::resolutionDisplayLabel)
-}
+private fun resolution(version: MediaVersion): String? =
+    versionResolutionLabel(version.videoResolution, version.width, version.height)
 
 private fun dynamicRange(video: MediaStream?): String? = when {
     video == null -> null
