@@ -9,6 +9,10 @@ import XCTest
 /// - `PLEZY_FORCED_PLAY`: SRT tracks in three languages and a forced English one, the default, with two cues: 0:05 to
 ///   0:08 at the bottom, 0:15 to 0:18 at the top. The full tracks have cues at 0:11 to 0:14 too, which the forced
 ///   track doesn't: the playback picks the forced track with no menu pick, and only its cues show.
+/// - `PLEZY_COVER_PLAY`: a 4:3 film (a dark grey ground below its middle) with an English SRT track, the default, whose
+///   lines sit at the picture's foot throughout (Tortuga's matrix `h264-4x3.mkv`), played transcoded at the lowest
+///   quality with the picture filling the screen, which crops the 4:3 picture's foot off a wide screen: the lines still
+///   show in the screen's bottom fifth.
 final class SubtitleTests: PlezyUITestCase {
     private var notes = 0
 
@@ -29,6 +33,12 @@ final class SubtitleTests: PlezyUITestCase {
         expect(samples, in: 15.3...17.7, "the forced cue at the top (0:15 to 0:18)") { $0.top.white > 0.003 }
     }
 
+    func testTranscodedSubtitleStaysOnScreenWhenThePictureFillsIt() throws {
+        let settings = ["default_box_fit_mode=cover", "default_quality_preset=p240_320"]
+        guard let samples = try play("PLEZY_COVER_PLAY", until: 18, settings: settings, cover: true) else { return }
+        expect(samples, in: 2.0...17.5, "the lines at the foot of the screen (0:00.5 to 0:20)") { $0.bottom.white > 0.003 }
+    }
+
     // MARK: - Playing and sampling
 
     /// What a sample saw in one band of the screen: the shares (0–1) of its pixels that are yellow, blue and white.
@@ -42,9 +52,10 @@ final class SubtitleTests: PlezyUITestCase {
         let top: Band, bottom: Band
     }
 
-    /// Plays the item `variable` names and samples the screen while the controls are down, until the video passes `end`
-    /// seconds. Nil (failed) when no frame comes.
-    private func play(_ variable: String, until end: Double) throws -> [Sample]? {
+    /// Plays the item `variable` names with this device's `settings` and samples the screen while the controls are down,
+    /// until the video passes `end` seconds; `cover`: the picture fills the screen, so the bands are the screen's. Nil
+    /// (failed) when no frame comes.
+    private func play(_ variable: String, until end: Double, settings: [String] = [], cover: Bool = false) throws -> [Sample]? {
         let env = ProcessInfo.processInfo.environment
         guard let server = env["PLEZY_SERVER"], let play = env[variable]?.removingPercentEncoding else {
             throw XCTSkip("PLEZY_SERVER and \(variable) name the server and the item to play")
@@ -55,7 +66,7 @@ final class SubtitleTests: PlezyUITestCase {
             addTeardownBlock { XCUIDevice.shared.orientation = .portrait }
         }
         #endif
-        launchDev(arguments: ["--dev-server", server, "--dev-play", play])
+        launchDev(settings: settings, arguments: ["--dev-server", server, "--dev-play", play])
         let frame = require("player.video", timeout: 90, "the player opening on \(play)").frame
         if !waitUntil(30, { self.state("firstFrame") == "true" }) {
             fail("no first frame on \(play): \(stateReading)")
@@ -80,7 +91,7 @@ final class SubtitleTests: PlezyUITestCase {
                 controlsSeen = Date()
                 continue
             }
-            guard Date().timeIntervalSince(controlsSeen) > 1, let screen = screenImage(window), let bands = bands(of: frame, on: screen) else { continue }
+            guard Date().timeIntervalSince(controlsSeen) > 1, let screen = screenImage(window), let bands = bands(of: frame, on: screen, cover: cover) else { continue }
             let to = position()
             guard to >= from, state("controls") == "false" else {
                 controlsSeen = Date()
@@ -113,11 +124,12 @@ final class SubtitleTests: PlezyUITestCase {
 
     /// The top and bottom bands of `screen` over the video (`frame`, in points): the picture's top tenth and bottom
     /// fifth, each with the bar beside it where the picture is letterboxed, clear of the picture's sides (the Mac
-    /// window's buttons).
-    private func bands(of frame: CGRect, on screen: (image: CGImage, scale: CGFloat, origin: CGPoint)) -> (top: Band, bottom: Band)? {
+    /// window's buttons). `cover`: the picture fills `frame`, cropped, so the bands are `frame`'s.
+    private func bands(of frame: CGRect, on screen: (image: CGImage, scale: CGFloat, origin: CGPoint), cover: Bool) -> (top: Band, bottom: Band)? {
         let scale = min(frame.width / 16, frame.height / 9)
-        let picture = CGRect(x: frame.midX - 8 * scale, y: frame.midY - 4.5 * scale, width: 16 * scale, height: 9 * scale)
-            .insetBy(dx: 1.6 * scale, dy: 0)
+        let picture = cover
+            ? frame.insetBy(dx: frame.width * 0.1, dy: 0)
+            : CGRect(x: frame.midX - 8 * scale, y: frame.midY - 4.5 * scale, width: 16 * scale, height: 9 * scale).insetBy(dx: 1.6 * scale, dy: 0)
         let top = CGRect(x: picture.minX, y: frame.minY, width: picture.width, height: picture.minY - frame.minY + picture.height * 0.10)
         let bottomY = picture.minY + picture.height * 0.82
         let bottom = CGRect(x: picture.minX, y: bottomY, width: picture.width, height: frame.maxY - bottomY)

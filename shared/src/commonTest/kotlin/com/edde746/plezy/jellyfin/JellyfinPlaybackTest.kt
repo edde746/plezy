@@ -325,7 +325,7 @@ class JellyfinPlaybackTest {
         assertEquals("/Videos/item-1/src-1/Subtitles/2/Stream.srt", path(sidecar.track.url))
     }
 
-    @Test fun subtitleProfileWithholdsExternalOnlyWhenTranscoding() = runTest {
+    @Test fun subtitleProfileOffersTextFilesWhenTranscodingToo() = runTest {
         suspend fun profiles(preset: TranscodeQualityPreset): List<JsonObject> {
             val f = PlaybackFixture()
             f.movie { ok("""{"MediaSources":[{"Id":"src-1","Container":"mkv","MediaStreams":[]}]}""") }
@@ -333,9 +333,41 @@ class JellyfinPlaybackTest {
             return f.playbackInfoRequests().single().json().subtitleProfiles()
         }
         val transcode = profiles(capped)
-        assertTrue(transcode.formats("External").isEmpty())
+        assertEquals(listOf("srt", "ass", "ssa", "vtt"), transcode.formats("External"))
         assertTrue(transcode.formats("Embed").isNotEmpty())
         assertEquals(listOf("srt", "ass", "ssa", "vtt"), profiles(TranscodeQualityPreset.ORIGINAL).formats("External"))
+    }
+
+    @Test fun selectedEmbeddedTextIsFetchedNotBurnedOnTranscode() = runTest {
+        val f = PlaybackFixture()
+        val source = """{"Id":"src-1","Container":"mkv","DefaultSubtitleStreamIndex":2,"MediaStreams":[
+            {"Index":2,"Type":"Subtitle","Codec":"subrip","Language":"eng","DisplayTitle":"English - SRT","IsDefault":true,
+             "DeliveryMethod":"External","DeliveryUrl":"/Videos/item-1/src-1/Subtitles/2/0/Stream.srt"},
+            {"Index":3,"Type":"Subtitle","Codec":"PGSSUB","Language":"eng","DisplayTitle":"English - PGS"}]}"""
+        f.movie(sources = "[$source]") { transcodeOf(source) }
+        val result = f.initialize(qualityPreset = capped)
+        assertTrue(result.isTranscoding)
+        // The server extracts the selected text row as a file the player draws; the bitmap can't be fetched.
+        val sidecar = result.subtitleSidecars.single()
+        assertEquals(2, sidecar.sourceStreamId)
+        assertEquals("/Videos/item-1/src-1/Subtitles/2/0/Stream.srt", path(sidecar.track.url))
+    }
+
+    @Test fun selectedEmbeddedBitmapIsBurnedOnTranscode() = runTest {
+        val f = PlaybackFixture()
+        val source = """{"Id":"src-1","Container":"mkv","MediaStreams":[
+            {"Index":2,"Type":"Subtitle","Codec":"subrip","Language":"eng","DisplayTitle":"English - SRT",
+             "DeliveryMethod":"External","DeliveryUrl":"/Videos/item-1/src-1/Subtitles/2/0/Stream.srt"},
+            {"Index":3,"Type":"Subtitle","Codec":"PGSSUB","Language":"eng","DisplayTitle":"English - PGS","DeliveryMethod":"Encode"}]}"""
+        f.movie(sources = "[$source]") { transcodeOf(source) }
+        val result = f.initialize(
+            qualityPreset = capped,
+            preferredSubtitleTrack = SubtitlePreference.Track(language = "eng", title = "English - PGS", codec = "pgssub", sourceStreamId = 3),
+        )
+        assertEquals("3", f.playbackInfoRequests().single().query["SubtitleStreamIndex"])
+        // 3 is in the picture; the text row stays fetchable as a second subtitle, lazily.
+        assertEquals(listOf(2), result.subtitleSidecars.map { it.sourceStreamId })
+        assertFalse(result.subtitleSidecars.single().preload)
     }
 
     private val externalSrt =
@@ -373,7 +405,6 @@ class JellyfinPlaybackTest {
         f.movie(sources = "[$source]") { transcodeOf(source) }
         val result = f.initialize(qualityPreset = capped)
         assertTrue(result.isTranscoding)
-        assertTrue(f.playbackInfoRequests().single().json().subtitleProfiles().formats("External").isEmpty())
         assertTrue(result.subtitleSidecars.isEmpty())
     }
 
@@ -525,8 +556,9 @@ class JellyfinPlaybackTest {
 
         assertEquals("Transcode", result.playMethod)
         assertEquals(3, result.mediaInfo!!.subtitleTracks.size)
-        // The burned row (4) is the one not fetched; the rest stay renderable as secondaries, lazily.
-        assertEquals(listOf(3, 5), result.subtitleSidecars.map { it.sourceStreamId })
+        // Text is delivered as files, the selected French row (4) among them: nothing is burned. The rows not selected
+        // stay renderable as secondaries; extracted rows load lazily, the selected one with the media (it is the primary).
+        assertEquals(listOf(3, 4, 5), result.subtitleSidecars.map { it.sourceStreamId })
         assertTrue(result.subtitleSidecars.none { it.preload })
     }
 

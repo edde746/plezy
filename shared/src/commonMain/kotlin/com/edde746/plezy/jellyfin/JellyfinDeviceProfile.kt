@@ -28,7 +28,6 @@ object JellyfinDeviceProfile {
         maxStreamingBitrate: Long?,
         isLiveTv: Boolean,
         audioProfile: Boolean,
-        burnSubtitles: Boolean,
     ): JsonObject = buildJsonObject {
         put("Name", "Plezy")
         maxStreamingBitrate?.let { put("MaxStreamingBitrate", it) }
@@ -55,11 +54,11 @@ object JellyfinDeviceProfile {
                     "AudioCodec" to "flac,mp3,aac,alac,opus,vorbis,wav,wma"))
             }
         })
-        // Embed serves the direct paths. External makes the server extract a stream as a file; withheld when burning so
-        // the server falls through to Encode.
+        // Embed serves the direct paths. External makes the server extract a text stream as a file, on a transcode too, so
+        // text is never burned in; a bitmap has no External profile and is burned into a transcode (Encode).
         put("SubtitleProfiles", buildJsonArray {
             for (format in listOf("srt", "ass", "ssa", "vtt", "pgssub", "dvdsub", "dvbsub")) add(profile("Format" to format, "Method" to "Embed"))
-            if (!burnSubtitles) for (format in listOf("srt", "ass", "ssa", "vtt")) add(profile("Format" to format, "Method" to "External"))
+            for (format in listOf("srt", "ass", "ssa", "vtt")) add(profile("Format" to format, "Method" to "External"))
         })
     }
 

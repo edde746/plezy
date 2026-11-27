@@ -206,14 +206,6 @@ internal class JellyfinPlayback(
             validAudioStreamId(options.selectedAudioStreamId, mediaInfo)
         }
         val requestedSubtitleStreamId = subtitleStreamIdFor(options.preferredSubtitleTrack, mediaInfo)
-        // A real external text file stays a file the client fetches, even on a transcode; anything else selected is
-        // burned in. The server matches its subtitle profiles on format only, so this is decided per request from the
-        // effective selection (explicit, else the server default): reading only the explicit one burned a defaulted
-        // file and fetched it too. Text only: a bitmap file can't be delivered externally and is burned regardless.
-        val effectiveSubtitleStreamId = if (requestedSubtitleStreamId == -1) null else requestedSubtitleStreamId ?: mediaInfo.defaultSubtitleStreamIndex
-        val requestedSubtitleIsExternalFile = effectiveSubtitleStreamId != null && mediaInfo.subtitleTracks.any {
-            it.id == effectiveSubtitleStreamId && it.isExternalFile && isTextSubtitleCodec(it.codec)
-        }
         val maxStreamingBitrate: Long? = when {
             wantsOriginal -> null
             isTrack -> audioPreset.bitrateKbps!! * 1000L
@@ -233,7 +225,6 @@ internal class JellyfinPlayback(
                 audioStreamIndex = requestedAudioStreamId,
                 subtitleStreamIndex = requestedSubtitleStreamId,
                 audioProfile = isTrack,
-                burnSubtitles = !wantsOriginal && !requestedSubtitleIsExternalFile,
             )
             chosenSource = selectNegotiatedSource(negotiation.array("MediaSources"), bundle.selectedSourceId)
         } catch (e: CancellationException) {
@@ -270,9 +261,13 @@ internal class JellyfinPlayback(
         }
 
         mediaInfo = withSelectedAudioStream(mediaInfo, resolveAudioStreamId(requestedAudioStreamId, mediaInfo))
-        // Against the negotiated info: with nothing asked for, the server's (possibly updated) default is what burns.
+        // Against the negotiated info: with nothing asked for, the server's (possibly updated) default is what shows. A
+        // transcode burns it in only when the server doesn't deliver it as a text file: a bitmap, which no `External`
+        // profile takes. Text is drawn by the player, inside the screen whatever the picture's fit, in the viewer's style.
         val negotiatedSubtitleStreamId = if (requestedSubtitleStreamId == -1) null else requestedSubtitleStreamId ?: mediaInfo.defaultSubtitleStreamIndex
-        val burnedSourceStreamId = if (isTranscoding && !requestedSubtitleIsExternalFile) negotiatedSubtitleStreamId else null
+        val burnedSourceStreamId = negotiatedSubtitleStreamId?.takeIf { id ->
+            isTranscoding && mediaInfo.subtitleTracks.none { it.id == id && it.isExternal && isTextSubtitleCodec(it.codec) }
+        }
         // Tracks have no subtitles to assemble: lyrics go through fetchLyrics.
         val sidecars = if (isTrack) emptyList() else buildSubtitleSidecars(metadata.id, effectiveSourceId, mediaInfo, isTranscoding, burnedSourceStreamId)
         mediaInfo = withSidecarBackedSubtitleIdentity(mediaInfo, sidecars)
@@ -334,8 +329,6 @@ internal class JellyfinPlayback(
         allowAudioStreamCopy: Boolean? = null,
         isLiveTv: Boolean = false,
         audioProfile: Boolean = false,
-        /** Withholds `External` subtitle delivery so the server burns the selected subtitle into a transcode. */
-        burnSubtitles: Boolean = false,
         /** The profile to negotiate with instead of the playback one ([JellyfinDeviceProfile.download]). */
         deviceProfile: JsonObject? = null,
     ): JsonObject {
@@ -356,7 +349,7 @@ internal class JellyfinPlayback(
         val body = buildJsonObject {
             put("UserId", core.userId)
             negotiation.forEach { (key, value) -> put(key, value) }
-            put("DeviceProfile", deviceProfile ?: JellyfinDeviceProfile.build(core.dialect, core.codecs, maxStreamingBitrate, isLiveTv, audioProfile, burnSubtitles))
+            put("DeviceProfile", deviceProfile ?: JellyfinDeviceProfile.build(core.dialect, core.codecs, maxStreamingBitrate, isLiveTv, audioProfile))
         }
         val response = core.post(
             "/Items/${JellyfinCore.segment(itemId)}/PlaybackInfo",
@@ -674,9 +667,9 @@ internal class JellyfinPlayback(
     /**
      * The subtitle files this open fetches: never the burned row (it is in the picture), never a bitmap on a
      * transcode (burned whatever is asked); a real external file always; an embedded text row only on a transcode,
-     * where the server extracts it, so a secondary track still renders. Direct play leaves embedded rows to the
-     * player. Files preload with the media (selectable as secondary without a reopen); extracted rows stay lazy
-     * since extraction can stall behind the transcoder.
+     * where the server extracts it: the selected one and every other, so a secondary track still renders. Direct play
+     * leaves embedded rows to the player. Files preload with the media (selectable as secondary without a reopen);
+     * extracted rows not selected stay lazy since extraction can stall behind the transcoder.
      */
     private fun buildSubtitleSidecars(
         itemId: String,

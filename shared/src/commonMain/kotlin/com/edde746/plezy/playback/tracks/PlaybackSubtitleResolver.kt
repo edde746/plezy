@@ -166,7 +166,8 @@ object PlaybackSubtitleResolver {
     /**
      * Whether a subtitle change must go back to the server instead of to the running player; only ever on a transcode.
      * Something burned in now (a source row without a sidecar) needs a new negotiation whatever the target, since
-     * burned pixels are no track to hide; and a target that is neither off nor an external file can only be burned in.
+     * burned pixels are no track to hide; and a target that is neither off nor an external file arrives only with a new
+     * negotiation: burned in (Plex, bitmaps), or as a file the server extracts (Jellyfin and Emby text).
      */
     fun burnRequiresRenegotiation(
         isTranscoding: Boolean,
